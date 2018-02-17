@@ -10,6 +10,7 @@ The command registry adds the ability for commands to be "protected" by permissi
 import (
 	"errors"
 	"fmt"
+	"github.com/bwmarrin/discordgo"
 )
 
 // CommandRegistry struct
@@ -237,14 +238,14 @@ func (h *CommandRegistry) CheckGroup(command string, group string) bool {
 }
 
 // CheckUserGroups function
-func (h *CommandRegistry) CheckUserGroups(command string, user User) bool {
+func (h *CommandRegistry) CheckUserGroups(command string, user User, s *discordgo.Session, m *discordgo.MessageCreate) bool {
 
 	groups, err := h.GetGroups(command)
 	if err != nil {
 		return false
 	}
 
-	usergroups, err := h.user.GetGroups(user.ID)
+	usergroups, err := h.user.GetGroups(user.ID, s, m.ChannelID)
 	if err != nil {
 		return false
 	}
@@ -326,18 +327,18 @@ func (h *CommandRegistry) CheckUser(command string, user string) bool {
 }
 
 // CheckPermission function
-func (h *CommandRegistry) CheckPermission(command string, channel string, user User) bool {
+func (h *CommandRegistry) CheckPermission(command string, user User, s *discordgo.Session, m *discordgo.MessageCreate) bool {
 
 	userpermission := false
 	if h.CheckUser(command, user.ID) {
 		userpermission = true
 	}
 	channelpermission := false
-	if h.CheckChannel(command, channel) {
+	if h.CheckChannel(command, m.ChannelID) {
 		channelpermission = true
 	}
 
-	if h.CheckUserGroups(command, user) {
+	if h.CheckUserGroups(command, user, s, m) {
 		userpermission = true
 	}
 

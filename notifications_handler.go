@@ -49,8 +49,8 @@ func (h *NotificationsHandler) Read(s *discordgo.Session, m *discordgo.MessageCr
 		return
 	}
 
-	if strings.HasPrefix(m.Content, cp+"notifications") {
-		if h.registry.CheckPermission("notifications", m.ChannelID, user) {
+	if strings.HasPrefix(m.Content, cp+"notify") {
+		if h.registry.CheckPermission("notify", user, s, m) {
 
 			command := strings.Fields(m.Content)
 

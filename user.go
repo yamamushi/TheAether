@@ -8,17 +8,20 @@ type User struct {
 	Admin      bool `storm:"index"`
 	SModerator bool `storm:"index"`
 	Moderator  bool `storm:"index"`
-	Editor     bool `storm:"index"`
-	Agora      bool `storm:"index"`
-	Streamer   bool `storm:"index"`
-	Recruiter  bool `storm:"index"`
-	Citizen    bool `storm:"index"`
+	Builder     bool `storm:"index"`
+	Writer      bool `storm:"index"`
+	Scripter   bool `storm:"index"`
+	Architect  bool `storm:"index"`
+	Player    bool `storm:"index"`
+	GuildID		string `storm:"index"` // GuildID of the users current guild
+	RoomID    string `storm:"index"` // ChannelID of the users current room
+
 }
 
 // Init function
 func (u *User) Init() {
 	ClearRoles(u)
-	CitizenRole(u)
+	PlayerRole(u)
 }
 
 // SetRole function
@@ -38,20 +41,20 @@ func (u *User) SetRole(role string) {
 	case "moderator":
 		ModeratorRole(u)
 
-	case "editor":
-		EditorRole(u)
+	case "builder":
+		BuilderRole(u)
 
-	case "agora":
-		AgoraRole(u)
+	case "writer":
+		WriterRole(u)
 
-	case "streamer":
-		StreamerRole(u)
+	case "scripter":
+		ScripterRole(u)
 
-	case "recruiter":
-		RecruiterRole(u)
+	case "architect":
+		ArchitectRole(u)
 
-	case "citizen":
-		CitizenRole(u)
+	case "player":
+		PlayerRole(u)
 
 	case "clear":
 		ClearRoles(u)
@@ -78,20 +81,20 @@ func (u *User) RemoveRole(role string) {
 	case "moderator":
 		u.Moderator = false
 
-	case "editor":
-		u.Editor = false
+	case "builder":
+		u.Builder = false
 
-	case "agora":
-		u.Agora = false
+	case "writer":
+		u.Writer = false
 
-	case "streamer":
-		u.Streamer = false
+	case "scripter":
+		u.Scripter = false
 
-	case "recruiter":
-		u.Recruiter = false
+	case "architect":
+		u.Architect = false
 
-	case "citizen":
-		u.Citizen = false
+	case "player":
+		u.Player = false
 
 	}
 }
@@ -113,20 +116,20 @@ func (u *User) CheckRole(role string) bool {
 	case "moderator":
 		return u.Moderator
 
-	case "editor":
-		return u.Editor
+	case "builder":
+		return u.Builder
 
-	case "agora":
-		return u.Agora
+	case "writer":
+		return u.Writer
 
-	case "streamer":
-		return u.Streamer
+	case "scripter":
+		return u.Scripter
 
-	case "recruiter":
-		return u.Recruiter
+	case "architect":
+		return u.Architect
 
-	case "citizen":
-		return u.Citizen
+	case "player":
+		return u.Player
 	}
 
 	return false

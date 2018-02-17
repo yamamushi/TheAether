@@ -32,7 +32,7 @@ func (h *PermissionsHandler) Read(s *discordgo.Session, m *discordgo.MessageCrea
 	}
 
 	// Verify the user account exists (creates one if it doesn't exist already)
-	h.user.CheckUser(m.Author.ID)
+	h.user.CheckUser(m.Author.ID, s, m.ChannelID )
 
 	/*
 		user, err := h.db.GetUser(m.Author.ID)
@@ -120,7 +120,7 @@ func (h *PermissionsHandler) ReadPromote(commands []string, s *discordgo.Session
 			h.logchan <- "Permissions " + m.Author.Mention() + " attempted to run promote to admin"
 			return
 		}
-		err = h.Promote(target, group)
+		err = h.Promote(target, group, s, m)
 		if err != nil {
 			s.ChannelMessageSend(m.ChannelID, "Error: "+err.Error())
 			h.logchan <- "Permissions " + m.Author.Mention() + " attempted to run promote to admin || " +
@@ -139,7 +139,7 @@ func (h *PermissionsHandler) ReadPromote(commands []string, s *discordgo.Session
 			h.logchan <- "Permissions " + m.Author.Mention() + " attempted to run promote to smoderator"
 			return
 		}
-		err = h.Promote(target, group)
+		err = h.Promote(target, group, s, m)
 		if err != nil {
 			s.ChannelMessageSend(m.ChannelID, "Error: "+err.Error())
 			h.logchan <- "Permissions " + m.Author.Mention() + " attempted to run promote to smoderator || " +
@@ -158,7 +158,7 @@ func (h *PermissionsHandler) ReadPromote(commands []string, s *discordgo.Session
 			h.logchan <- "Permissions " + m.Author.Mention() + " attempted to run promote to moderator"
 			return
 		}
-		err = h.Promote(target, group)
+		err = h.Promote(target, group, s, m)
 		if err != nil {
 			s.ChannelMessageSend(m.ChannelID, "Error: "+err.Error())
 			h.logchan <- "Permissions " + m.Author.Mention() + " attempted to run promote to moderator || " +
@@ -171,14 +171,14 @@ func (h *PermissionsHandler) ReadPromote(commands []string, s *discordgo.Session
 		return
 
 	}
-	if group == "editor" {
+	if group == "builder" {
 
 		if !user.Moderator {
 			s.ChannelMessageSend(m.ChannelID, "You do not have permission to assign this group")
 			h.logchan <- "Permissions " + m.Author.Mention() + " attempted to run promote to editor"
 			return
 		}
-		err = h.Promote(target, group)
+		err = h.Promote(target, group, s, m)
 		if err != nil {
 			s.ChannelMessageSend(m.ChannelID, "Error: "+err.Error())
 			h.logchan <- "Permissions " + m.Author.Mention() + " attempted to run promote to editor || " +
@@ -190,14 +190,14 @@ func (h *PermissionsHandler) ReadPromote(commands []string, s *discordgo.Session
 		return
 
 	}
-	if group == "agora" {
+	if group == "writer" {
 
 		if !user.Moderator {
 			s.ChannelMessageSend(m.ChannelID, "You do not have permission to assign this group")
 			h.logchan <- "Permissions " + m.Author.Mention() + " attempted to run promote to agora"
 			return
 		}
-		err = h.Promote(target, group)
+		err = h.Promote(target, group, s, m)
 		if err != nil {
 			s.ChannelMessageSend(m.ChannelID, "Error: "+err.Error())
 			h.logchan <- "Permissions " + m.Author.Mention() + " attempted to run promote to agora || " +
@@ -209,14 +209,14 @@ func (h *PermissionsHandler) ReadPromote(commands []string, s *discordgo.Session
 		return
 
 	}
-	if group == "streamer" {
+	if group == "scripter" {
 
 		if !user.Moderator {
 			s.ChannelMessageSend(m.ChannelID, "You do not have permission to assign this group")
 			h.logchan <- "Permissions " + m.Author.Mention() + " attempted to run promote to streamer"
 			return
 		}
-		err = h.Promote(target, group)
+		err = h.Promote(target, group, s, m)
 		if err != nil {
 			s.ChannelMessageSend(m.ChannelID, "Error: "+err.Error())
 			h.logchan <- "Permissions " + m.Author.Mention() + " attempted to run promote to streamer || " +
@@ -228,14 +228,14 @@ func (h *PermissionsHandler) ReadPromote(commands []string, s *discordgo.Session
 		return
 
 	}
-	if group == "recruiter" {
+	if group == "architect" {
 
 		if !user.Moderator {
 			s.ChannelMessageSend(m.ChannelID, "You do not have permission to assign this group")
 			h.logchan <- "Permissions " + m.Author.Mention() + " attempted to run promote to recruiter"
 			return
 		}
-		err = h.Promote(target, group)
+		err = h.Promote(target, group, s, m)
 		if err != nil {
 			s.ChannelMessageSend(m.ChannelID, "Error: "+err.Error())
 			h.logchan <- "Permissions " + m.Author.Mention() + " attempted to run promote to recruiter || " +
@@ -255,10 +255,10 @@ func (h *PermissionsHandler) ReadPromote(commands []string, s *discordgo.Session
 }
 
 // Promote Set the given role on a user, and save the changes in the database
-func (h *PermissionsHandler) Promote(userid string, group string) (err error) {
+func (h *PermissionsHandler) Promote(userid string, group string, s *discordgo.Session, m *discordgo.MessageCreate) (err error) {
 
 	// Get user from the database using the userid
-	user, err := h.user.GetUser(userid)
+	user, err := h.user.GetUser(userid, s, m.ChannelID)
 	if err != nil {
 		return err
 	}
@@ -370,7 +370,7 @@ func (h *PermissionsHandler) ReadDemote(commands []string, s *discordgo.Session,
 		return
 
 	}
-	if group == "editor" {
+	if group == "builder" {
 
 		if !user.Moderator {
 			s.ChannelMessageSend(m.ChannelID, "You do not have permission to assign this group")
@@ -389,7 +389,7 @@ func (h *PermissionsHandler) ReadDemote(commands []string, s *discordgo.Session,
 		return
 
 	}
-	if group == "agora" {
+	if group == "writer" {
 
 		if !user.Moderator {
 			s.ChannelMessageSend(m.ChannelID, "You do not have permission to assign this group")
@@ -408,7 +408,7 @@ func (h *PermissionsHandler) ReadDemote(commands []string, s *discordgo.Session,
 		return
 
 	}
-	if group == "streamer" {
+	if group == "scripter" {
 
 		if !user.Moderator {
 			s.ChannelMessageSend(m.ChannelID, "You do not have permission to assign this group")
@@ -427,7 +427,7 @@ func (h *PermissionsHandler) ReadDemote(commands []string, s *discordgo.Session,
 		return
 
 	}
-	if group == "recruiter" {
+	if group == "architect" {
 
 		if !user.Moderator {
 			s.ChannelMessageSend(m.ChannelID, "You do not have permission to assign this group")
@@ -477,19 +477,19 @@ func (h *PermissionsHandler) Demote(userid string, group string) (err error) {
 		userobject.Admin = false
 		userobject.SModerator = false
 	}
-	if group == "agora" {
-		userobject.Agora = false
+	if group == "builder" {
+		userobject.Builder = false
 	}
-	if group == "recruiter" {
-		userobject.Recruiter = false
-	}
-
-	if group == "streamer" {
-		userobject.Streamer = false
+	if group == "writer" {
+		userobject.Writer = false
 	}
 
-	if group == "editor" {
-		userobject.Editor = false
+	if group == "scripter" {
+		userobject.Scripter = false
+	}
+
+	if group == "architect" {
+		userobject.Architect = false
 	}
 
 	err = db.DeleteStruct(&userobject)

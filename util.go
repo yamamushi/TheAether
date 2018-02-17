@@ -7,6 +7,7 @@ import (
 	"github.com/bwmarrin/discordgo"
 	"strings"
 	"time"
+	"github.com/pkg/errors"
 )
 
 // minDuration and maxDuration const for rounding
@@ -105,7 +106,7 @@ func MentionChannel(channelid string, s *discordgo.Session) (mention string, err
 // CheckPermissions function
 func CheckPermissions(command string, channelid string, user *User, s *discordgo.Session, com *CommandHandler) bool {
 
-	usergroups, err := com.user.GetGroups(user.ID)
+	usergroups, err := com.user.GetGroups(user.ID, s, channelid)
 	if err != nil {
 		//fmt.Println("Error Retrieving User Groups for " + user.ID)
 		return false
@@ -267,4 +268,72 @@ func truncateString(str string, num int) string {
 		bnoden = str[0:num] + "..."
 	}
 	return bnoden
+}
+
+
+func getGuildID(s *discordgo.Session, channelID string) (guildID string, err error) {
+
+	channel, err := s.Channel(channelID)
+	if err != nil {
+		return "", err
+	}
+
+	return channel.GuildID, nil
+}
+
+
+func getGuildOwnerID(s *discordgo.Session, channelID string) (ownerID string, err error) {
+
+	guildID, err := getGuildID(s, channelID)
+	if err != nil {
+		return "", err
+	}
+
+	guild, err := s.Guild(guildID)
+	if err != nil {
+		return "", err
+	}
+
+	return guild.OwnerID, nil
+
+}
+
+
+func FlushMessages(s *discordgo.Session, channelID string, count int) (err error){
+
+	if count <= 0 {
+		return errors.New(":rotating_light: Invalid message count supplied!")
+	}
+
+	if count > 100 {
+		return errors.New(":rotating_light: Count must be less than or equal to 100!")
+
+	}
+
+	_, err = s.Channel(channelID)
+	if err != nil {
+		return err
+	}
+
+	messages, err := s.ChannelMessages(channelID, count, "", "", "")
+	if err != nil {
+		return err
+	}
+
+	if count > len(messages) {
+		count = len(messages)
+	}
+
+	var flushmessages []string
+
+	for i := 0; i < count; i++ {
+		flushmessages = append(flushmessages, messages[i].ID)
+	}
+
+	err = s.ChannelMessagesBulkDelete(channelID, flushmessages)
+	if err != nil {
+		return err
+	}
+
+	return nil
 }

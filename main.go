@@ -96,22 +96,66 @@ func main() {
 		http.ListenAndServe(":8080", http.DefaultServeMux)
 	}
 
-	// Open a websocket connection to Discord and begin listening.
-	fmt.Println("Opening Connection to Discord")
-	err = dg.Open()
-	if err != nil {
-		fmt.Println("Error Opening Connection: ", err)
-		return
-	}
-	fmt.Println("Connection Established")
+
+	logchannel := make(chan string)
+	logger := Logger{logchan: logchannel}
+
+	// Create a callback handler and add it to our Handler Queue
+	fmt.Println("Adding Callback Handler")
+	callbackhandler := CallbackHandler{dg: dg, logger: &logger}
+	dg.AddHandler(callbackhandler.Read)
+
+	// Create our user handler
+	fmt.Println("Adding User Handler")
+	userhandler := UserHandler{conf: &conf, db: &dbhandler, logchan: logchannel}
+	userhandler.Init()
+	dg.AddHandler(userhandler.Read)
+
+	// Create our permissions handler
+	fmt.Println("Adding Permissions Handler")
+	permissionshandler := PermissionsHandler{dg: dg, conf: &conf, callback: &callbackhandler, db: &dbhandler,
+		user: &userhandler, logchan: logchannel}
+	dg.AddHandler(permissionshandler.Read)
+
+	// Create our command handler
+	fmt.Println("Adding Command Registry Handler")
+	commandhandler := CommandHandler{dg: dg, db: &dbhandler, callback: &callbackhandler,
+		user: &userhandler, conf: &conf, perm: &permissionshandler, logchan: logchannel}
+
+	// Create our permissions handler
+	fmt.Println("Adding Channel Permissions Handler")
+	channelhandler := ChannelHandler{db: &dbhandler, conf: &conf, registry: commandhandler.registry,
+		user: &userhandler, logchan: logchannel}
+	channelhandler.Init()
+	dg.AddHandler(channelhandler.Read)
+
+	// Don't forget to initialize the command handler -AFTER- the Channel Handler!
+	commandhandler.Init(&channelhandler)
+	dg.AddHandler(commandhandler.Read)
 
 
-	fmt.Println("Updating Discord Status")
-	err = dg.UpdateStatus(0, conf.MainConfig.Playing)
+
+	// Initalize our Logger
+	fmt.Println("Initializing Logger")
+	logger.Init(&channelhandler, logchannel, dg)
+
+	// Now we create and initialize our main handler
+	fmt.Println("\n|| Initializing Main Handler ||\n")
+	handler := MainHandler{db: &dbhandler, conf: &conf, dg: dg, callback: &callbackhandler, perm: &permissionshandler,
+		command: &commandhandler, logchan: logchannel, user: &userhandler, channel: &channelhandler}
+	err = handler.Init()
 	if err != nil {
-		fmt.Println("error updating now playing,", err)
+		fmt.Println("error in mainHandler.init", err)
 		return
 	}
+	fmt.Println("\n|| Main Handler Initialized ||\n")
+
+
+	// Setup Profiler if enabled in config
+	if conf.MainConfig.Profiler {
+		http.ListenAndServe(":8080", http.DefaultServeMux)
+	}
+
 
 	// Wait here until CTRL-C or other term signal is received.
 	fmt.Println("Bot is now running.  Press CTRL-C to exit.")

@@ -3,6 +3,8 @@ package main
 import (
 	"github.com/bwmarrin/discordgo"
 	"strconv"
+	"fmt"
+	"time"
 )
 
 // ChannelHandler struct
@@ -31,7 +33,7 @@ func (h *ChannelHandler) Read(s *discordgo.Session, m *discordgo.MessageCreate) 
 		return
 	}
 
-	user, err := h.user.GetUser(m.Author.ID)
+	user, err := h.user.GetUser(m.Author.ID, s, m.ChannelID)
 	if err != nil {
 		return
 	}
@@ -73,6 +75,63 @@ func (h *ChannelHandler) ReadCommand(message []string, s *discordgo.Session, m *
 		h.ReadGroup(payload, s, m)
 		return
 	}
+	if command == "flush" {
+		if len(payload) < 1 {
+			s.ChannelMessageSend(m.ChannelID, ":rotating_light: Expected a value for flushchannel!")
+			return
+		}
+		h.FlushChannel(payload, s, m)
+		return
+	}
+}
+
+func (h* ChannelHandler) FlushChannel(payload []string, s *discordgo.Session, m *discordgo.MessageCreate){
+
+	var strcount string
+	var channelID string
+	if len(payload) > 1 {
+		strcount = payload[1]
+		channelID = CleanChannel(payload[0])
+	} else {
+		strcount = payload[0]
+		channelID = m.ChannelID
+	}
+
+	_, err := s.Channel(channelID)
+	if err != nil{
+		s.ChannelMessageSend(m.ChannelID, ":rotating_light: Error flushing channel: " + err.Error())
+		return
+	}
+
+	count, err := strconv.Atoi(strcount)
+	if err != nil{
+		s.ChannelMessageSend(m.ChannelID, ":rotating_light: Error flushing channel: " + err.Error())
+		return
+	}
+
+	fmt.Print("Flushing Messages")
+
+	err = FlushMessages(s, channelID, count)
+	if err != nil {
+		s.ChannelMessageSend(m.ChannelID, ":rotating_light: Error flushing channel: " + err.Error())
+		return
+	}
+
+	validated, err := s.ChannelMessageSend(m.ChannelID, ":ballot_box_with_check:  Deleted " + payload[0] + " messages from channel!")
+	if err != nil {
+		s.ChannelMessageSend(m.ChannelID, ":rotating_light: Error flushing channel: " + err.Error())
+		return
+	}
+	sleeptime := time.Duration(time.Second * 3)
+	time.Sleep(sleeptime)
+
+	err = s.ChannelMessageDelete(m.ChannelID, validated.ID)
+	if err != nil {
+		s.ChannelMessageSend(m.ChannelID, ":rotating_light: Error flushing channel: " + err.Error())
+		return
+	}
+
+	return
 }
 
 // Info function
@@ -191,7 +250,7 @@ func (h *ChannelHandler) Set(payload []string, s *discordgo.Session, m *discordg
 			return
 		}
 		if payload[0] == "hq" {
-			user, err := h.user.GetUser(m.Author.ID)
+			user, err := h.user.GetUser(m.Author.ID, s, m.ChannelID)
 			if err != nil {
 				s.ChannelMessageSend(m.ChannelID, err.Error())
 				return
@@ -211,7 +270,7 @@ func (h *ChannelHandler) Set(payload []string, s *discordgo.Session, m *discordg
 			return
 		}
 		if payload[0] == "musicroom" {
-			user, err := h.user.GetUser(m.Author.ID)
+			user, err := h.user.GetUser(m.Author.ID, s, m.ChannelID)
 			if err != nil {
 				s.ChannelMessageSend(m.ChannelID, err.Error())
 				return
@@ -275,7 +334,7 @@ func (h *ChannelHandler) Set(payload []string, s *discordgo.Session, m *discordg
 			return
 		}
 		if payload[0] == "hq" {
-			user, err := h.user.GetUser(m.Author.ID)
+			user, err := h.user.GetUser(m.Author.ID, s, m.ChannelID)
 			if err != nil {
 				s.ChannelMessageSend(m.ChannelID, err.Error())
 				return
@@ -295,7 +354,7 @@ func (h *ChannelHandler) Set(payload []string, s *discordgo.Session, m *discordg
 			return
 		}
 		if payload[0] == "musicroom" {
-			user, err := h.user.GetUser(m.Author.ID)
+			user, err := h.user.GetUser(m.Author.ID, s, m.ChannelID)
 			if err != nil {
 				s.ChannelMessageSend(m.ChannelID, err.Error())
 				return
@@ -354,7 +413,7 @@ func (h *ChannelHandler) Unset(payload []string, s *discordgo.Session, m *discor
 		return
 	}
 	if payload[0] == "hq" {
-		user, err := h.user.GetUser(m.Author.ID)
+		user, err := h.user.GetUser(m.Author.ID, s, m.ChannelID)
 		if err != nil {
 			s.ChannelMessageSend(m.ChannelID, err.Error())
 			return
@@ -374,7 +433,7 @@ func (h *ChannelHandler) Unset(payload []string, s *discordgo.Session, m *discor
 		return
 	}
 	if payload[0] == "musicroom" {
-		user, err := h.user.GetUser(m.Author.ID)
+		user, err := h.user.GetUser(m.Author.ID, s, m.ChannelID)
 		if err != nil {
 			s.ChannelMessageSend(m.ChannelID, err.Error())
 			return

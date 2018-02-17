@@ -38,7 +38,7 @@ func (h *CommandHandler) Init(channelhandler *ChannelHandler) {
 	pagecount := h.conf.MainConfig.PerPageCount
 	if pagecount < 2 {
 		count := strconv.Itoa(pagecount)
-		fmt.Println("Invalid Config Parameter Setting: [du-bot]:per_page_count must be 2 or higher - Found " + count)
+		fmt.Println("Invalid Config Parameter Setting: [main]:per_page_count must be 2 or higher - Found " + count)
 		os.Exit(0)
 	}
 	h.registry.db = h.db
@@ -54,7 +54,7 @@ func (h *CommandHandler) Read(s *discordgo.Session, m *discordgo.MessageCreate) 
 		return
 	}
 
-	user, err := h.user.GetUser(m.Author.ID)
+	user, err := h.user.GetUser(m.Author.ID, s, m.ChannelID)
 	if err != nil {
 		return
 	}
