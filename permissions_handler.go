@@ -59,23 +59,65 @@ func (h *PermissionsHandler) Read(s *discordgo.Session, m *discordgo.MessageCrea
 	command[0] = strings.TrimPrefix(command[0], cp)
 
 	// After our command string has been trimmed down, check it against the command list
-	if command[0] == "set" {
+	if command[0] == "perms" {
 		if len(command) < 1 {
-			s.ChannelMessageSend(m.ChannelID, "<set> expects an argument.")
+			s.ChannelMessageSend(m.ChannelID, "<perms> expects an argument.")
+			return
+		}
+
+		if command[1] == "addrole"{
+			if len(command) != 4 {
+				s.ChannelMessageSend(m.ChannelID, "<addrole> expects two argument - <role name> <user mention>.")
+				return
+			}
+
+			if len(m.Mentions) < 1 {
+				s.ChannelMessageSend(m.ChannelID, "<addrole> expects two argument - <role name> <user mention>.")
+				return
+			}
+
+			err := h.AddRoleToUser( command[2], m.Mentions[0].ID, s, m)
+			if err != nil{
+				s.ChannelMessageSend(m.ChannelID, "Error adding role: " + err.Error())
+				return
+			}
+
+			s.ChannelMessageSend(m.ChannelID, "Role " + command[2] + " added to user")
+			return
+		}
+		if command[1] == "removerole"{
+			if len(command) < 4{
+				s.ChannelMessageSend(m.ChannelID, "<removerole> expects two argument - <role name> <user mention>.")
+				return
+			}
+
+			if len(m.Mentions) < 1 {
+				s.ChannelMessageSend(m.ChannelID, "<addrole> expects two argument - <role name> <user mention>.")
+				return
+			}
+
+			err := h.RemoveRoleFromUser( command[2], m.Mentions[0].ID, s, m)
+			if err != nil {
+				s.ChannelMessageSend(m.ChannelID, "Error removing role: " + err.Error())
+				return
+			}
+			s.ChannelMessageSend(m.ChannelID, "Role " + command[2] + " removed from user")
+			return
+		}
+		if command[1] == "promote" {
+			// Run our promote command function
+			command = RemoveStringFromSlice(command, command[0])
+			h.ReadPromote(command, s, m)
+			return
+		}
+		if command[1] == "demote" {
+			// Run our promote command function
+			command = RemoveStringFromSlice(command, command[0])
+			h.ReadDemote(command, s, m)
 			return
 		}
 	}
-	if command[0] == "promote" {
-		// Run our promote command function
-		h.ReadPromote(command, s, m)
-		return
-	}
 
-	if command[0] == "demote" {
-		// Run our promote command function
-		h.ReadDemote(command, s, m)
-		return
-	}
 	return
 }
 
@@ -608,6 +650,7 @@ func (h *PermissionsHandler) CreatePermissionInt(roleperms RolePermissions ) (pe
 	return perm
 }
 
+
 func (h *PermissionsHandler) CreateRole(name string, guildID string, hoist bool, mentionable bool, color int, perm int, s *discordgo.Session) (createdrole *discordgo.Role, err error){
 	roles, err := s.GuildRoles(guildID)
 	if err != nil {
@@ -631,7 +674,97 @@ func (h *PermissionsHandler) CreateRole(name string, guildID string, hoist bool,
 	return createdrole, nil
 }
 
-func (h *PermissionsHandler) UpdateRole( guildID string, s *discordgo.Session) (err error){
+
+
+
+
+func (h *PermissionsHandler) AddRoleToUser(rolename string, userID string, s *discordgo.Session, m *discordgo.MessageCreate) (err error) {
+	// Get user from the database using the userid
+	user, err := h.user.GetUser(userID, s, m.ChannelID)
+	if err != nil {
+		return err
+	}
+
+	guildID, err := getGuildID(s, m.ChannelID)
+	if err != nil {
+		return err
+	}
+
+	// Checks if Role Exists in Guild
+	roleID, err := getRoleIDByName(s, guildID, rolename)
+	if err != nil {
+		return err
+	}
+
+
+	// Checks if a user is in a role based on the group string
+	if user.CheckRole(rolename) {
+		return errors.New("User Already Belongs to Role " + rolename + "!")
+	}
+
+	// Open the "Users" bucket in the database
+	db := h.db.rawdb.From("Users")
+
+	// Assign the group to our target user
+	user.JoinRole(rolename)
+	// Save the user changes in the database
+	err = db.Update(&user)
+	if err != nil {
+		return err
+	}
+
+	err = s.GuildMemberRoleAdd(guildID, user.ID, roleID)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (h *PermissionsHandler) RemoveRoleFromUser(rolename string, userID string, s *discordgo.Session, m *discordgo.MessageCreate) (err error){
+
+	// Get user from the database using the userid
+	user, err := h.user.GetUser(userID, s, m.ChannelID)
+	if err != nil {
+		return err
+	}
+
+	guildID, err := getGuildID(s, m.ChannelID)
+	if err != nil {
+		return err
+	}
+
+	// Checks if Role Exists in Guild
+	roleID, err := getRoleIDByName(s, guildID, rolename)
+	if err != nil {
+		return err
+	}
+
+	// Checks if a user is in a role based on the group string
+	if !user.CheckRole(rolename) {
+		return errors.New("User Does Not Belong to Role " + rolename + "!")
+	}
+
+	// Open the "Users" bucket in the database
+	db := h.db.rawdb.From("Users")
+
+	// Assign the group to our target user
+	user.LeaveRole(rolename)
+	// Save the user changes in the database
+	err = db.Update(&user)
+	if err != nil {
+		return err
+	}
+
+	err = s.GuildMemberRoleRemove(guildID, user.ID, roleID)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (h *PermissionsHandler) UpdateUserRole( roleID string, userID string, guildID string, s *discordgo.Session) (err error){
 
 	return nil
 

@@ -80,6 +80,36 @@ func (h *UserHandler) Read(s *discordgo.Session, m *discordgo.MessageCreate) {
 		}
 	}
 
+	if message[0] == cp+"roles" {
+		mentions := m.Mentions
+
+		if len(mentions) == 0 {
+			roles, err := h.GetRoles(user.ID, s, m.ChannelID)
+			if err != nil {
+				s.ChannelMessageSend(m.ChannelID, "Error retrieving roles: "+err.Error())
+				return
+			}
+			s.ChannelMessageSend(m.ChannelID, h.FormatRoles(roles))
+			return
+		}
+
+		if !user.CheckRole("moderator") {
+			s.ChannelMessageSend(m.ChannelID, "You do not have permission to use this command")
+			return
+		}
+
+		if len(message) == 2 {
+			roles, err := h.GetRoles(mentions[0].ID, s, m.ChannelID)
+			if err != nil {
+				s.ChannelMessageSend(m.ChannelID, "Error retrieving roles: "+err.Error())
+				h.logchan <- "Bot " + mention + " || " + m.Author.Username + " || " + "roles" + "||" + err.Error()
+				return
+			}
+			s.ChannelMessageSend(m.ChannelID, h.FormatRoles(roles))
+			return
+		}
+	}
+
 	if message[0] == cp+"repairuser" {
 		if !user.CheckRole("moderator") {
 			s.ChannelMessageSend(m.ChannelID, "You do not have permission to use this command")
@@ -261,6 +291,16 @@ func (h *UserHandler) CheckUser(ID string, s *discordgo.Session, channelID strin
 }
 
 
+func (h *UserHandler) GetRoles(ID string, s *discordgo.Session, channelID string) (roles []string, err error) {
+
+	h.CheckUser(ID, s, channelID)
+	user, err := h.GetUser(ID, s, channelID)
+	if err != nil {
+		return roles, err
+	}
+
+	return user.Roles, nil
+}
 
 
 // GetGroups function
@@ -309,6 +349,21 @@ func (h *UserHandler) FormatGroups(groups []string) (formatted string) {
 			formatted = formatted + group
 		} else {
 			formatted = formatted + group + ", "
+		}
+
+	}
+
+	return formatted
+}
+
+
+// FormatRoles function
+func (h *UserHandler) FormatRoles(roles []string) (formatted string) {
+	for i, role := range roles {
+		if i == len(roles)-1 {
+			formatted = formatted + role
+		} else {
+			formatted = formatted + role + ", "
 		}
 
 	}

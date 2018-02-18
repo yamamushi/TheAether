@@ -108,6 +108,15 @@ func (h *CommandHandler) ReadCommand(message []string, s *discordgo.Session, m *
 		return
 
 	}
+	if command == "roles" {
+		if len(payload) < 1 {
+			s.ChannelMessageSend(m.ChannelID, "<roles> requires at least one argument")
+			return
+		}
+		h.ReadRoles(payload, s, m)
+		return
+
+	}
 	if command == "users" {
 		if len(payload) < 1 {
 			s.ChannelMessageSend(m.ChannelID, "<user> requires at least one argument")
@@ -262,6 +271,105 @@ func (h *CommandHandler) ReadGroups(message []string, s *discordgo.Session, m *d
 		return
 	}
 }
+
+
+
+// ReadRoles function
+func (h *CommandHandler) ReadRoles(message []string, s *discordgo.Session, m *discordgo.MessageCreate) {
+	command := message[0]
+	payload := RemoveStringFromSlice(message, command)
+
+	if len(payload) < 1 {
+		s.ChannelMessageSend(m.ChannelID, command+" requires an argument")
+		return
+	}
+	// list
+	if command == "list" {
+		roles, err := h.registry.GetRoles(payload[0])
+		if err != nil {
+			s.ChannelMessageSend(m.ChannelID, err.Error())
+			return
+		}
+
+		if len(roles) < 1 {
+			s.ChannelMessageSend(m.ChannelID, ":\nNo Role assignments found for "+payload[0])
+			return
+		}
+
+		var formatted string
+		for i, role := range roles {
+
+			if i == len(roles)-1 {
+				formatted = formatted + role
+			} else {
+				formatted = formatted + role + ", "
+			}
+		}
+
+		s.ChannelMessageSend(m.ChannelID, ":\nRoles for "+payload[0]+" : "+formatted)
+		return
+	}
+	// add
+	if command == "add" {
+		if len(payload) < 2 {
+			s.ChannelMessageSend(m.ChannelID, command+" requires two arguments <role> <command>")
+			return
+		}
+
+		guildID, err := getGuildID(s, m.ChannelID)
+		if err != nil {
+			s.ChannelMessageSend(m.ChannelID, "Error retrieving GuildID: " + err.Error())
+			return
+		}
+
+		// Checks if Role Exists in Guild
+		_, err = getRoleIDByName(s, guildID, payload[0])
+		if err != nil {
+			s.ChannelMessageSend(m.ChannelID, "Error retrieving roleID: " + err.Error())
+			return
+		}
+
+		err = h.registry.AddRole(payload[1], payload[0])
+		if err != nil {
+			s.ChannelMessageSend(m.ChannelID, err.Error())
+			return
+		}
+
+		s.ChannelMessageSend(m.ChannelID, payload[1]+" has been added to the "+payload[0]+" role.")
+		return
+	}
+	// remove
+	if command == "remove" {
+		if len(payload) < 2 {
+			s.ChannelMessageSend(m.ChannelID, command+" requires two arguments <role> <command>")
+			return
+		}
+
+		guildID, err := getGuildID(s, m.ChannelID)
+		if err != nil {
+			s.ChannelMessageSend(m.ChannelID, "Error retrieving GuildID: " + err.Error())
+			return
+		}
+
+		// Checks if Role Exists in Guild
+		_, err = getRoleIDByName(s, guildID, payload[0])
+		if err != nil {
+			s.ChannelMessageSend(m.ChannelID, "Error retrieving roleID: " + err.Error())
+			return
+		}
+
+		err = h.registry.RemoveRole(payload[1], payload[0])
+		if err != nil {
+			s.ChannelMessageSend(m.ChannelID, err.Error())
+			return
+		}
+
+		s.ChannelMessageSend(m.ChannelID, payload[1]+" has been removed from the "+payload[0]+" role.")
+		return
+	}
+}
+
+
 
 // ReadUsers function
 func (h *CommandHandler) ReadUsers(message []string, s *discordgo.Session, m *discordgo.MessageCreate) {

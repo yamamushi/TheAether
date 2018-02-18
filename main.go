@@ -89,9 +89,7 @@ func main() {
 		return
 	}
 	defer dg.Close()
-
-	fmt.Println(conf.MainConfig.Token)
-
+	
 	if conf.MainConfig.Profiler {
 		http.ListenAndServe(":8080", http.DefaultServeMux)
 	}

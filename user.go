@@ -4,8 +4,8 @@ package main
 type User struct {
 	ID string `storm:"id"` // primary key
 
-	Perms 		[]uint64
-
+	Perms 		[]uint64 // Internal Permissions - NOT Discord Roles
+	Roles		[]string
 	/*Owner      bool `storm:"index"`	1000
 	Admin      bool `storm:"index"`		90
 	SModerator bool `storm:"index"`		80
@@ -66,7 +66,7 @@ func (u *User) SetRole(role string) {
 		ClearRoles(u)
 
 	default:
-		return
+		u.JoinRole(role)
 	}
 }
 
@@ -102,6 +102,8 @@ func (u *User) RemoveRole(role string) {
 	case "player":
 		SetBit(&u.Perms, 10)
 
+	default:
+		u.LeaveRole(role)
 	}
 }
 
@@ -136,7 +138,37 @@ func (u *User) CheckRole(role string) bool {
 
 	case "player":
 		return IsBitSet(&u.Perms, 10)
+
+	default:
+		return u.CheckDiscordRole(role)
+	}
+}
+
+func (u *User) CheckDiscordRole(rolename string) bool {
+
+	for _, role := range u.Roles {
+
+		if role == rolename{
+			return true
+		}
+	}
+	return false
+}
+
+func (u *User) JoinRole(rolename string) {
+	if u.CheckDiscordRole(rolename){
+		return
 	}
 
-	return false
+	u.Roles = append(u.Roles, rolename)
+
+}
+
+
+func (u *User) LeaveRole(rolename string) {
+	if !u.CheckDiscordRole(rolename){
+		return
+	}
+
+	u.Roles = RemoveStringFromSlice(u.Roles, rolename)
 }

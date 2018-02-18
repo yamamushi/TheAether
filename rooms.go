@@ -1,44 +1,121 @@
 package main
 
+import (
+	"sync"
+	"errors"
+)
+
+type Rooms struct {
+	db          *DBHandler
+	querylocker sync.RWMutex
+}
 
 type Room struct {
 
 	ID string `storm:"id"` // primary key
 
-	ChannelID 		string 	 `storm:"index"`
-	ChannelName 	string
+	Name 				string
+	ParentID			string
+
+	RoleID				string
+
 
 	// Connecting Room ID's
-	UpID			string
-	DownID			string
-	NorthID			string
-	NorthEastID		string
-	EastID			string
-	SouthEastID		string
-	SouthID			string
-	SouthWestID		string
-	WestID			string
-	NorthWestID 	string
+	UpID				string
+	UpItemID			[]string
+
+	DownID				string
+	DownItemID			[]string
+
+	NorthID				string
+	NorthItemID			[]string
+
+	NorthEastID			string
+	NorthEastItemID		[]string
+
+	EastID				string
+	EastItemID			[]string
+
+	SouthEastID			string
+	SouthEastItemID		[]string
+
+	SouthID				string
+	SouthItemID			[]string
+
+	SouthWestID			string
+	SouthWestItemID		[]string
+
+	WestID				string
+	WestItemID			[]string
+
+	NorthWestID 		string
+	NorthWestItemID		[]string
+
 
 }
 
 
-func (h *Room) AddRoomToDB(room Room, db *DBHandler) (err error) {
+
+func (h *Rooms) SaveRoomToDB(room Room) (err error) {
+	h.querylocker.Lock()
+	defer h.querylocker.Unlock()
+
+	db := h.db.rawdb.From("Rooms")
+	err = db.Save(&room)
+	return err
+}
+
+func (h *Rooms) RemoveRoomFromDB(room Room) (err error) {
+	h.querylocker.Lock()
+	defer h.querylocker.Unlock()
+
+	db := h.db.rawdb.From("Rooms")
+	err = db.DeleteStruct(&room)
+	return err
+}
+
+func (h *Rooms) RemoveRoomByID(roomID string) (err error) {
+
+	room, err := h.GetRoomByID(roomID)
+	if err != nil {
+		return err
+	}
+
+	err = h.RemoveRoomFromDB(room)
+	if err != nil {
+		return err
+	}
 
 	return nil
 }
 
-func (h *Room) RemoveRoomFromDB(room Room, db *DBHandler) (err error) {
+func (h *Rooms) GetRoomByID(roomID string) (room Room, err error) {
 
-	return nil
+	rooms, err := h.GetAllRooms()
+	if err != nil{
+		return room, err
+	}
+
+	for _, i := range rooms {
+		if i.ID == roomID{
+			return i, nil
+		}
+	}
+
+	return room, errors.New("No record found")
 }
 
-func (h *Room) UpdateRoomFromDB(room Room, db *DBHandler) (err error) {
 
-	return nil
-}
+// GetAllRooms function
+func (h *Rooms) GetAllRooms() (roomlist []Room, err error) {
+	h.querylocker.Lock()
+	defer h.querylocker.Unlock()
 
-func (h *Room) CheckIfRoomExists(room Room, db *DBHandler) (err error) {
+	db := h.db.rawdb.From("Rooms")
+	err = db.All(&roomlist)
+	if err != nil {
+		return roomlist, err
+	}
 
-	return nil
+	return roomlist, nil
 }

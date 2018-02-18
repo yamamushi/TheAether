@@ -23,7 +23,8 @@ type CommandRegistry struct {
 // CommandRecord struct
 type CommandRecord struct {
 	Command     string   `storm:"id"`
-	Groups      []string `storm:"index"`
+	Groups      []string
+	Roles 		[]string
 	Channels    []string `storm:"index"`
 	Users       []string `storm:"index"`
 	Description string
@@ -125,6 +126,26 @@ func (h *CommandRegistry) AddGroup(command string, group string) (err error) {
 	return nil
 }
 
+
+// AddGroup function
+func (h *CommandRegistry) AddRole(command string, role string) (err error) {
+
+	record, err := h.GetCommand(command)
+	if err != nil {
+		return err
+	}
+
+	for _, v := range record.Roles {
+		if v == role {
+			return errors.New("Command already belongs to role " + role)
+		}
+	}
+
+	record.Roles = append(record.Roles, role)
+	h.SaveCommand(record)
+	return nil
+}
+
 // RemoveGroup function
 func (h *CommandRegistry) RemoveGroup(command string, group string) (err error) {
 
@@ -144,6 +165,28 @@ func (h *CommandRegistry) RemoveGroup(command string, group string) (err error) 
 	return errors.New("Command does not belong to group " + group)
 }
 
+
+
+// RemoveRole function
+func (h *CommandRegistry) RemoveRole(command string, role string) (err error) {
+
+	record, err := h.GetCommand(command)
+	if err != nil {
+		return err
+	}
+
+	for _, v := range record.Roles {
+		if v == role {
+			record.Groups = RemoveStringFromSlice(record.Roles, role)
+			h.SaveCommand(record)
+			return nil
+		}
+	}
+
+	return errors.New("Command does not belong to role " + role)
+}
+
+
 // GetGroups function
 func (h *CommandRegistry) GetGroups(command string) (groups []string, err error) {
 
@@ -154,6 +197,18 @@ func (h *CommandRegistry) GetGroups(command string) (groups []string, err error)
 
 	return record.Groups, nil
 }
+
+// GetRoles function
+func (h *CommandRegistry) GetRoles(command string) (roles []string, err error) {
+
+	record, err := h.GetCommand(command)
+	if err != nil {
+		return roles, err
+	}
+
+	return record.Roles, nil
+}
+
 
 // AddChannel function
 func (h *CommandRegistry) AddChannel(command string, channel string) (err error) {
@@ -261,6 +316,31 @@ func (h *CommandRegistry) CheckUserGroups(command string, user User, s *discordg
 	return false
 }
 
+// CheckUserGroups function
+func (h *CommandRegistry) CheckUserRoles(command string, user User, s *discordgo.Session, m *discordgo.MessageCreate) bool {
+
+	roles, err := h.GetRoles(command)
+	if err != nil {
+		return false
+	}
+
+	userroles, err := h.user.GetRoles(user.ID, s, m.ChannelID)
+	if err != nil {
+		return false
+	}
+
+	for _, role := range roles {
+		for _, userrole := range userroles {
+			if role == userrole {
+				return true
+			}
+		}
+	}
+
+	return false
+}
+
+
 // AddUser function
 func (h *CommandRegistry) AddUser(command string, user string) (err error) {
 
@@ -336,6 +416,10 @@ func (h *CommandRegistry) CheckPermission(command string, user User, s *discordg
 	channelpermission := false
 	if h.CheckChannel(command, m.ChannelID) {
 		channelpermission = true
+	}
+
+	if h.CheckUserRoles(command, user, s, m) {
+		userpermission = true
 	}
 
 	if h.CheckUserGroups(command, user, s, m) {

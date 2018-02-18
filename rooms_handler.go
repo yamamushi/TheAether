@@ -28,44 +28,104 @@ func (h* RoomsHandler) InitRooms(s *discordgo.Session, channelID string) (err er
 		return err
 	}
 
-	perms := h.perm.CreatePermissionInt(RolePermissions{MENTION_EVERYONE: true})
-	_, err = h.perm.CreateRole("testtwo", guildID, true, true, 100, perms, s)
+
+	// Create default registered user role
+	registeredperms := h.perm.CreatePermissionInt(RolePermissions{})
+	_, err = h.perm.CreateRole("registered", guildID, false, false, 16777215, registeredperms, s)
 	if err != nil {
-		//return err
+		if !strings.Contains(err.Error(), "already exists"){
+			return err
+		}
 	}
 
-	_, err = h.AddRoom(s, "test", guildID, "Management")
+	// Create default crossroads location role
+	crossroadsperms := h.perm.CreatePermissionInt(RolePermissions{})
+	_, err = h.perm.CreateRole("Crossroads", guildID, false, false, 0, crossroadsperms, s)
 	if err != nil {
-		//return err
-	}
+		if !strings.Contains(err.Error(), "already exists"){
+			return err
+		}	}
 
-	/*
-	overwrite, err := h.perm.CreatePermissionOverwrite(createdrole.ID, "MENTION_EVERYONE", false)
+
+	// The default Welcome Channel -> To be setup correctly a server NEEDS this channel and name as the default channel
+	welcomeChannelID, err := getGuildChannelIDByName(s, guildID, "welcome")
 	if err != nil {
 		return err
 	}
-	*/
-
-	denyperms := h.perm.CreatePermissionInt(RolePermissions{VIEW_CHANNEL: true})
-	allowperms := h.perm.CreatePermissionInt(RolePermissions{})
+	err = h.MoveRoom(s, welcomeChannelID, guildID, "Lobby")
+	if err != nil {
+		return err
+	}
 
 	everyoneID, err := getGuildEveryoneRoleID(s, guildID)
 	if err != nil {
 		return err
 	}
-	fmt.Println("Everyone: " + everyoneID)
-
-	testChannelID, err := getGuildChannelIDByName(s, guildID, "test")
+	denyeveryoneperms := h.perm.CreatePermissionInt(RolePermissions{})
+	alloweveryoneperms := h.perm.CreatePermissionInt(RolePermissions{VIEW_CHANNEL: true, SEND_MESSAGES: true})
+	err = s.ChannelPermissionSet( welcomeChannelID, everyoneID, "role", alloweveryoneperms, denyeveryoneperms)
 	if err != nil {
 		return err
 	}
 
-	err = s.ChannelPermissionSet( testChannelID, everyoneID, "role", allowperms, denyperms)
+	registeredroleID, err := getRoleIDByName(s, guildID, "registered")
+	if err != nil {
+		return err
+	}
+	denyregisteredperms := h.perm.CreatePermissionInt(RolePermissions{VIEW_CHANNEL: true})
+	allowregisteredperms := h.perm.CreatePermissionInt(RolePermissions{})
+	err = s.ChannelPermissionSet( welcomeChannelID, registeredroleID, "role", allowregisteredperms, denyregisteredperms)
 	if err != nil {
 		return err
 	}
 
+
+	// Crossroads
+	_, err = h.AddRoom(s, "crossroads", guildID, "The Aether")
+	if err != nil {
+		if !strings.Contains(err.Error(), "already exists"){
+			return err
+		}
+	}
+	crossroadsChannelID, err := getGuildChannelIDByName(s, guildID, "crossroads")
+	if err != nil {
+		return err
+	}
+	err = h.MoveRoom(s, crossroadsChannelID, guildID, "The Aether")
+	if err != nil {
+		return err
+	}
+
+	everyoneID, err = getGuildEveryoneRoleID(s, guildID)
+	if err != nil {
+		return err
+	}
+	denyeveryoneperms = h.perm.CreatePermissionInt(RolePermissions{VIEW_CHANNEL: true})
+	alloweveryoneperms = h.perm.CreatePermissionInt(RolePermissions{})
+	err = s.ChannelPermissionSet( crossroadsChannelID, everyoneID, "role", alloweveryoneperms, denyeveryoneperms)
+	if err != nil {
+		return err
+	}
+
+	crossroadsRoleID, err := getRoleIDByName(s, guildID, "Crossroads")
+	if err != nil {
+		return err
+	}
+	denyrossroadsperms := h.perm.CreatePermissionInt(RolePermissions{})
+	allowcrossroadsperms := h.perm.CreatePermissionInt(RolePermissions{VIEW_CHANNEL:true})
+	err = s.ChannelPermissionSet( crossroadsChannelID, crossroadsRoleID, "role", allowcrossroadsperms, denyrossroadsperms)
+	if err != nil {
+		return err
+	}
 	return nil
+}
+
+
+
+func (h *RoomsHandler) CreateRoom(s *discordgo.Session, name string, guildID string, parentname string) {
+
+
+
 }
 
 
@@ -86,7 +146,7 @@ func (h *RoomsHandler) AddRoom(s *discordgo.Session, name string, guildID string
 				}
 
 				if parentchannel.Name == parentname {
-					return createdroom, errors.New("Channel with parent category already exists: " + name + " " + parentname)
+					return createdroom, errors.New("Channel with parent category already exists - Channel:" + name + " Parent: " + parentname)
 				}
 			}
 		}
@@ -116,6 +176,36 @@ func (h *RoomsHandler) AddRoom(s *discordgo.Session, name string, guildID string
 }
 
 
+func (h *RoomsHandler) MoveRoom(s *discordgo.Session, channelID string, guildID string, parentname string) (err error) {
+
+	if parentname == "" {
+		return errors.New("No parent category supplied")
+	}
+
+	channels, err := s.GuildChannels(guildID)
+	if err != nil {
+		return err
+	}
+
+	parentID := ""
+
+	for _, channel := range channels {
+		if channel.Name == parentname {
+			parentID = channel.ID
+		}
+	}
+	if parentID == "" {
+		return errors.New("No parent category supplied")
+	}
+
+	modifyChannel := discordgo.ChannelEdit{ParentID: parentID}
+	_, err = s.ChannelEditComplex(channelID, &modifyChannel)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
 
 
 // RegisterCommands function
@@ -173,7 +263,25 @@ func (h *RoomsHandler) ParseCommand(command []string, s *discordgo.Session, m *d
 		s.ChannelMessageSend(m.ChannelID, "Expected flag for 'room' command, see usage for more info")
 		return
 	}
+	if command[1] == "view" {
+		if len(command) == 2 {
+			s.ChannelMessageSend(m.ChannelID, "view requires a room argument")
+			return
+		}
+		h.ViewRoom(command[3], s, m)
+		return
+	}
 
 }
+
+
+func (h *RoomsHandler) ViewRoom(roomID string, s *discordgo.Session, m *discordgo.MessageCreate) {
+
+	//roomID = CleanChannel(room)
+
+
+
+}
+
 
 
