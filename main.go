@@ -133,6 +133,8 @@ func main() {
 
 	roomshandler := RoomsHandler{callback: &callbackhandler, conf: &conf, db: &dbhandler, perm: &permissionshandler,
 	registry: commandhandler.registry, dg: dg, user: &userhandler, ch: &channelhandler}
+	// We add our rooms handler here somewhat-last
+	dg.AddHandler(roomshandler.Read)
 	// No rooms handler init here!
 
 	// Initalize our Logger

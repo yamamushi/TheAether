@@ -16,9 +16,10 @@ type Room struct {
 
 	Name 				string
 	ParentID			string
+	ParentName			string
 
 	RoleID				string
-
+	GuildID				string
 
 	// Connecting Room ID's
 	UpID				string
@@ -51,7 +52,10 @@ type Room struct {
 	NorthWestID 		string
 	NorthWestItemID		[]string
 
+	Items				[]string
+	NPC					[]string
 
+	Description			string
 }
 
 
@@ -98,6 +102,22 @@ func (h *Rooms) GetRoomByID(roomID string) (room Room, err error) {
 
 	for _, i := range rooms {
 		if i.ID == roomID{
+			return i, nil
+		}
+	}
+
+	return room, errors.New("No record found")
+}
+
+func (h *Rooms) GetRoomByName(roomname string) (room Room, err error) {
+
+	rooms, err := h.GetAllRooms()
+	if err != nil{
+		return room, err
+	}
+
+	for _, i := range rooms {
+		if i.Name == roomname{
 			return i, nil
 		}
 	}

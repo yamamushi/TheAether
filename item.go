@@ -10,6 +10,7 @@ type ItemType struct {
 	Description string
 	Weight		float64
 	Durability	float64
+	Status 		[]string
 
 }
 
