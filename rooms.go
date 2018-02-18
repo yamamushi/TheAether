@@ -30,6 +30,7 @@ type Room struct {
 	 */
 
 	GuildID				string
+	TransferID			string
 
 	// Connecting Room ID's
 	UpID				string

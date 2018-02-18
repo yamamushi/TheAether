@@ -110,7 +110,7 @@ func (h *TravelHandler) ParseCommand(command []string, s *discordgo.Session, m *
 	}
 	leaveoutout := discorduser.Username + " has left traveling " + command[1]
 
-	s.ChannelMessageSend(m.ChannelID, leaveoutout)
+	s.ChannelMessageSend(m.ChannelID, leaveoutout	)
 	return
 }
 
