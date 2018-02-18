@@ -130,8 +130,33 @@ func (h *UserHandler) Read(s *discordgo.Session, m *discordgo.MessageCreate) {
 
 	}
 
-
 	return
+}
+
+
+func (h *UserHandler) AddItem(itemid string, userid string,  s *discordgo.Session, channelID string) (err error) {
+
+	// Make sure user is in the database before we pull it out!
+	user, err := h.GetUser(userid, s, channelID)
+	if err != nil {
+		return err
+	}
+
+	user.ItemsMap = append(user.ItemsMap, itemid)
+	return nil
+}
+
+
+func (h *UserHandler) RemoveItem(itemid string, userid string,  s *discordgo.Session, channelID string) (err error) {
+
+	// Make sure user is in the database before we pull it out!
+	user, err := h.GetUser(userid, s, channelID)
+	if err != nil {
+		return err
+	}
+
+	user.ItemsMap = RemoveStringFromSlice(user.ItemsMap, itemid)
+	return nil
 }
 
 

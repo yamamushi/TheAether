@@ -4,17 +4,21 @@ package main
 type User struct {
 	ID string `storm:"id"` // primary key
 
-	Owner      bool `storm:"index"`
-	Admin      bool `storm:"index"`
-	SModerator bool `storm:"index"`
-	Moderator  bool `storm:"index"`
-	Builder     bool `storm:"index"`
-	Writer      bool `storm:"index"`
-	Scripter   bool `storm:"index"`
-	Architect  bool `storm:"index"`
-	Player    bool `storm:"index"`
+	Perms 		[]uint64
+
+	/*Owner      bool `storm:"index"`	1000
+	Admin      bool `storm:"index"`		90
+	SModerator bool `storm:"index"`		80
+	Moderator  bool `storm:"index"`		70
+	Builder     bool `storm:"index"`	60
+	Writer      bool `storm:"index"`	50
+	Scripter   bool `storm:"index"`		40
+	Architect  bool `storm:"index"`		30
+	Player    bool `storm:"index"`		10
+	*/
 	GuildID		string `storm:"index"` // GuildID of the users current guild
 	RoomID    string `storm:"index"` // ChannelID of the users current room
+	ItemsMap	[]string	// An ID pointing to the
 
 }
 
@@ -23,6 +27,8 @@ func (u *User) Init() {
 	ClearRoles(u)
 	PlayerRole(u)
 }
+
+
 
 // SetRole function
 func (u *User) SetRole(role string) {
@@ -70,31 +76,31 @@ func (u *User) RemoveRole(role string) {
 	switch role {
 
 	case "owner":
-		u.Owner = false
+		SetBit(&u.Perms, 1000)
 
 	case "admin":
-		u.Admin = false
+		SetBit(&u.Perms, 90)
 
 	case "smoderator":
-		u.SModerator = false
+		SetBit(&u.Perms, 80)
 
 	case "moderator":
-		u.Moderator = false
+		SetBit(&u.Perms, 70)
 
 	case "builder":
-		u.Builder = false
+		SetBit(&u.Perms, 60)
 
 	case "writer":
-		u.Writer = false
+		SetBit(&u.Perms, 50)
 
 	case "scripter":
-		u.Scripter = false
+		SetBit(&u.Perms, 40)
 
 	case "architect":
-		u.Architect = false
+		SetBit(&u.Perms, 30)
 
 	case "player":
-		u.Player = false
+		SetBit(&u.Perms, 10)
 
 	}
 }
@@ -105,31 +111,31 @@ func (u *User) CheckRole(role string) bool {
 	switch role {
 
 	case "owner":
-		return u.Owner
+		return IsBitSet(&u.Perms, 1000)
 
 	case "admin":
-		return u.Admin
+		return IsBitSet(&u.Perms, 90)
 
 	case "smoderator":
-		return u.SModerator
+		return IsBitSet(&u.Perms, 80)
 
 	case "moderator":
-		return u.Moderator
+		return IsBitSet(&u.Perms, 70)
 
 	case "builder":
-		return u.Builder
+		return IsBitSet(&u.Perms, 60)
 
 	case "writer":
-		return u.Writer
+		return IsBitSet(&u.Perms, 50)
 
 	case "scripter":
-		return u.Scripter
+		return IsBitSet(&u.Perms, 40)
 
 	case "architect":
-		return u.Architect
+		return IsBitSet(&u.Perms, 30)
 
 	case "player":
-		return u.Player
+		return IsBitSet(&u.Perms, 10)
 	}
 
 	return false

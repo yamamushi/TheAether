@@ -62,7 +62,7 @@ func (h *NotificationsHandler) Read(s *discordgo.Session, m *discordgo.MessageCr
 				fmt.Println("error retrieving user:" + m.Author.ID)
 			}
 
-			if user.Moderator {
+			if user.CheckRole("moderator") {
 				h.ParseCommand(command, s, m)
 			}
 		}

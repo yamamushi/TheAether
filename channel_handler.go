@@ -256,7 +256,7 @@ func (h *ChannelHandler) Set(payload []string, s *discordgo.Session, m *discordg
 				return
 			}
 
-			if !user.Owner {
+			if !user.CheckRole("owner") {
 				s.ChannelMessageSend(m.ChannelID, "http://i.imgur.com/eYcGQ5t.gif")
 				return
 			}
@@ -276,7 +276,7 @@ func (h *ChannelHandler) Set(payload []string, s *discordgo.Session, m *discordg
 				return
 			}
 
-			if !user.Owner {
+			if !user.CheckRole("owner") {
 				s.ChannelMessageSend(m.ChannelID, "http://i.imgur.com/eYcGQ5t.gif")
 				return
 			}
@@ -340,7 +340,7 @@ func (h *ChannelHandler) Set(payload []string, s *discordgo.Session, m *discordg
 				return
 			}
 
-			if !user.Owner {
+			if !user.CheckRole("owner") {
 				s.ChannelMessageSend(m.ChannelID, "http://i.imgur.com/eYcGQ5t.gif")
 				return
 			}
@@ -360,7 +360,7 @@ func (h *ChannelHandler) Set(payload []string, s *discordgo.Session, m *discordg
 				return
 			}
 
-			if !user.Owner {
+			if !user.CheckRole("owner") {
 				s.ChannelMessageSend(m.ChannelID, "http://i.imgur.com/eYcGQ5t.gif")
 				return
 			}
@@ -419,7 +419,7 @@ func (h *ChannelHandler) Unset(payload []string, s *discordgo.Session, m *discor
 			return
 		}
 
-		if !user.Owner {
+		if !user.CheckRole("owner") {
 			s.ChannelMessageSend(m.ChannelID, "http://i.imgur.com/eYcGQ5t.gif")
 			return
 		}
@@ -439,7 +439,7 @@ func (h *ChannelHandler) Unset(payload []string, s *discordgo.Session, m *discor
 			return
 		}
 
-		if !user.Owner {
+		if !user.CheckRole("owner") {
 			s.ChannelMessageSend(m.ChannelID, "http://i.imgur.com/eYcGQ5t.gif")
 			return
 		}

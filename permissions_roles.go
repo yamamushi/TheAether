@@ -2,75 +2,79 @@ package main
 
 // OwnerRole function
 func OwnerRole(u *User) {
-	u.Owner = true
-	u.Admin = true
-	u.SModerator = true
-	u.Moderator = true
-	u.Builder = true
-	u.Writer = true
-	u.Scripter = true
-	u.Player = true
+	SetBit(&u.Perms, 1000) // Owner
+	SetBit(&u.Perms, 90) // Admin
+	SetBit(&u.Perms, 80) // Smoderator
+	SetBit(&u.Perms, 70) // Moderator
+	SetBit(&u.Perms, 60) // Builder
+	SetBit(&u.Perms, 50) // Writer
+	SetBit(&u.Perms, 40) // Scripter
+	SetBit(&u.Perms, 30) // Architect
+	SetBit(&u.Perms, 10) // Player
+
 }
 
 // AdminRole function
 func AdminRole(u *User) {
-	u.Admin = true
-	u.SModerator = true
-	u.Moderator = true
-	u.Builder = true
-	u.Writer = true
-	u.Scripter = true
-	u.Player = true
+	SetBit(&u.Perms, 90) // Admin
+	SetBit(&u.Perms, 80) // Smoderator
+	SetBit(&u.Perms, 70) // Moderator
+	SetBit(&u.Perms, 60) // Builder
+	SetBit(&u.Perms, 50) // Writer
+	SetBit(&u.Perms, 40) // Scripter
+	SetBit(&u.Perms, 10) // Player
+
 }
 
 // SModeratorRole function
 func SModeratorRole(u *User) {
-	u.SModerator = true
-	u.Moderator = true
-	u.Builder = true
-	u.Writer = true
-	u.Scripter = true
-	u.Player = true
+	SetBit(&u.Perms, 80) // Smoderator
+	SetBit(&u.Perms, 70) // Moderator
+	SetBit(&u.Perms, 60) // Builder
+	SetBit(&u.Perms, 50) // Writer
+	SetBit(&u.Perms, 40) // Scripter
+	SetBit(&u.Perms, 10) // Player
+
 }
 
 // ModeratorRole function
 func ModeratorRole(u *User) {
-	u.Moderator = true
+	SetBit(&u.Perms, 70) // Moderator
 }
 
 // BuilderRole function
 func BuilderRole(u *User) {
-	u.Builder = true
+	SetBit(&u.Perms, 60) // Builder
 }
 
 // WriterRole function
 func WriterRole(u *User) {
-	u.Writer = true
+	SetBit(&u.Perms, 50) // Writer
 }
 
 // StreamerRole function
 func ScripterRole(u *User) {
-	u.Scripter = true
+	SetBit(&u.Perms, 40) // Scripter
 }
 
 // RecruiterRole function
 func ArchitectRole(u *User) {
-	u.Architect = true
+	SetBit(&u.Perms, 30) // Scripter
 }
 
 // ClearRoles function
 func ClearRoles(u *User) {
-	u.Owner = false
-	u.Admin = false
-	u.SModerator = false
-	u.Moderator = false
-	u.Builder = false
-	u.Writer = false
-	u.Scripter = false
-	u.Architect = false
+	ClearBit(&u.Perms, 90) // Admin
+	ClearBit(&u.Perms, 80) // Smoderator
+	ClearBit(&u.Perms, 70) // Moderator
+	ClearBit(&u.Perms, 60) // Builder
+	ClearBit(&u.Perms, 50) // Writer
+	ClearBit(&u.Perms, 40) // Scripter
+	ClearBit(&u.Perms, 30) // Architect
+	ClearBit(&u.Perms, 10) // Player
 }
 
 // CitizenRole function
 func PlayerRole(u *User) {
-	u.Player = true
+	SetBit(&u.Perms, 10) // Player
 }
