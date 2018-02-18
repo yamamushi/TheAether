@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"strings"
 	"errors"
+	"time"
 )
 
 type TravelHandler struct {
@@ -98,10 +99,7 @@ func (h *TravelHandler) ParseCommand(command []string, s *discordgo.Session, m *
 		return
 	}
 
-	useroutput :=  "You travel " + command[1] +  " and arrive at " + room.Name
-	useroutput = useroutput + "\n```\n" + room.Description + "\n```"
 
-	s.ChannelMessageSend(user.RoomID, useroutput )
 
 	discorduser, err := s.User(user.ID)
 	if err != nil{
@@ -110,9 +108,63 @@ func (h *TravelHandler) ParseCommand(command []string, s *discordgo.Session, m *
 	}
 	leaveoutout := discorduser.Username + " has left traveling " + command[1]
 
-	s.ChannelMessageSend(m.ChannelID, leaveoutout	)
+	s.ChannelMessageSend(m.ChannelID, leaveoutout)
+
+	travelfrom := ""
+	if command[1] == "north" {
+		travelfrom = "south"
+	} else if command[1] == "northeast" {
+		travelfrom = "southwest"
+	} else if command[1] == "east" {
+		travelfrom = "west"
+	} else if command[1] == "southeast" {
+		travelfrom = "northwest"
+	} else if command[1] == "south" {
+		travelfrom = "north"
+	} else if command[1] == "southwest" {
+		travelfrom = "northeast"
+	} else if command[1] == "west" {
+		travelfrom = "east"
+	} else if command[1] == "northwest" {
+		travelfrom = "southeast"
+	} else if command[1] == "up" {
+		travelfrom = "below"
+	} else if command[1] == "down" {
+		travelfrom = "above"
+	}
+
+	// If we're leaving this server, we want to avoid sending an arrival message to the holding channel
+	if room.TransferID != "" {
+		h.HandleServerTransfer(user, travelfrom, s, m)
+		return
+	}
+
+	time.Sleep(3000)
+	// If we're not leaving the server, we want to notify the channel that the user has arrived
+	if travelfrom == "below" || travelfrom == "above" {
+		s.ChannelMessageSend(user.RoomID, discorduser.Mention() + " has arrived from " + travelfrom + ".")
+
+	} else {
+		s.ChannelMessageSend(user.RoomID, discorduser.Mention() + " has arrived from the " + travelfrom + ".")
+	}
+
+	/*
+	useroutput :=  "You arrive at " + room.Name
+	useroutput = useroutput + "\n```\n" + room.Description + "\n```"
+
+	time.Sleep(3000)
+	s.ChannelMessageSend(user.RoomID, useroutput )
+	*/
+
 	return
 }
+
+
+func (h *TravelHandler) HandleServerTransfer(user User, travelfrom string, s *discordgo.Session, m *discordgo.MessageCreate) {
+
+
+}
+
 
 func (h *TravelHandler) Travel(direction string, s *discordgo.Session, m *discordgo.MessageCreate) (err error){
 

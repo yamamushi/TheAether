@@ -573,6 +573,8 @@ func (h *RoomsHandler) Read(s *discordgo.Session, m *discordgo.MessageCreate) {
 }
 
 
+
+
 // ParseCommand function
 func (h *RoomsHandler) ParseCommand(command []string, s *discordgo.Session, m *discordgo.MessageCreate) {
 
@@ -749,8 +751,16 @@ func (h *RoomsHandler) LinkRole(rolename string, roomID string, s *discordgo.Ses
 		return
 	}
 
-	denyrperms := h.perm.CreatePermissionInt(RolePermissions{})
-	allowperms := h.perm.CreatePermissionInt(RolePermissions{VIEW_CHANNEL:true})
+	denyrperms := 0
+	allowperms := 0
+	if room.TransferID != "" {
+		denyrperms = h.perm.CreatePermissionInt(RolePermissions{SEND_MESSAGES:false, READ_MESSAGE_HISTORY:false})
+		allowperms = h.perm.CreatePermissionInt(RolePermissions{VIEW_CHANNEL:true})
+	} else {
+		denyrperms = h.perm.CreatePermissionInt(RolePermissions{})
+		allowperms = h.perm.CreatePermissionInt(RolePermissions{VIEW_CHANNEL:true, SEND_MESSAGES: true})
+	}
+
 	err = s.ChannelPermissionSet( room.ID, roleID, "role", allowperms, denyrperms)
 	if err != nil {
 		s.ChannelMessageSend(m.ChannelID, "Error setting permissions: " + err.Error())
