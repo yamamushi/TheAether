@@ -21,3 +21,24 @@ type Room struct {
 	NorthWestID 	string
 
 }
+
+
+func (h *Room) AddRoomToDB(room Room, db *DBHandler) (err error) {
+
+	return nil
+}
+
+func (h *Room) RemoveRoomFromDB(room Room, db *DBHandler) (err error) {
+
+	return nil
+}
+
+func (h *Room) UpdateRoomFromDB(room Room, db *DBHandler) (err error) {
+
+	return nil
+}
+
+func (h *Room) CheckIfRoomExists(room Room, db *DBHandler) (err error) {
+
+	return nil
+}

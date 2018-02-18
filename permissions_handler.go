@@ -504,3 +504,135 @@ func (h *PermissionsHandler) Demote(userid string, group string) (err error) {
 
 	return nil
 }
+
+
+func (h *PermissionsHandler) CreatePermissionOverwrite(roleid string, permtype string, allow bool) (overwrite discordgo.PermissionOverwrite, err error) {
+
+	if allow {
+		overwrite = discordgo.PermissionOverwrite{ID: roleid, Type: permtype, Deny: 0, Allow: 1}
+	} else {
+		overwrite = discordgo.PermissionOverwrite{ID: roleid, Type: permtype, Deny: 1, Allow: 0}
+	}
+
+	return overwrite, nil
+}
+
+func (h *PermissionsHandler) CreatePermissionInt(roleperms RolePermissions ) (perm int){
+
+	perm = 0
+	if roleperms.CREATE_INSTANT_INVITE {
+		perm = perm | 0x00000001
+	}
+	if roleperms.KICK_MEMBERS {
+		perm = perm | 0x00000002
+	}
+	if roleperms.BAN_MEMBERS {
+		perm = perm | 0x00000004
+	}
+	if roleperms.ADMINISTRATOR {
+		perm = perm | 0x00000008
+	}
+	if roleperms.MANAGE_CHANNELS {
+		perm = perm | 0x00000010
+	}
+	if roleperms.MANAGE_GUILD {
+		perm = perm | 0x00000020
+	}
+	if roleperms.ADD_REACTIONS {
+		perm = perm | 0x00000040
+	}
+	if roleperms.VIEW_AUDIT_LOG {
+		perm = perm | 0x00000080
+	}
+	if roleperms.VIEW_CHANNEL {
+		perm = perm | 0x00000400
+	}
+	if roleperms.SEND_MESSAGES {
+		perm = perm | 0x00000800
+	}
+	if roleperms.SEND_TTS_MESSAGES {
+		perm = perm | 0x00001000
+	}
+	if roleperms.MANAGE_MESSAGES {
+		perm = perm | 0x00002000
+	}
+	if roleperms.EMBED_LINKS {
+		perm = perm | 0x00004000
+	}
+	if roleperms.ATTACH_FILES {
+		perm = perm | 0x00008000
+	}
+	if roleperms.READ_MESSAGE_HISTORY {
+		perm = perm | 0x00010000
+	}
+	if roleperms.MENTION_EVERYONE {
+		perm = perm | 0x00020000
+	}
+	if roleperms.USE_EXTERNAL_EMOJIS {
+		perm = perm | 0x00040000
+	}
+	if roleperms.CONNECT {
+		perm = perm | 0x00100000
+	}
+	if roleperms.SPEAK {
+		perm = perm | 0x00200000
+	}
+	if roleperms.MUTE_MEMBERS {
+		perm = perm | 0x00400000
+	}
+	if roleperms.DEAFEN_MEMBERS {
+		perm = perm | 0x00800000
+	}
+	if roleperms.MOVE_MEMBERS {
+		perm = perm | 0x01000000
+	}
+	if roleperms.USE_VAD {
+		perm = perm | 0x02000000
+	}
+	if roleperms.CHANGE_NICKNAME {
+		perm = perm | 0x04000000
+	}
+	if roleperms.MANAGE_NICKNAMES {
+		perm = perm | 0x08000000
+	}
+	if roleperms.MANAGE_ROLES {
+		perm = perm | 0x10000000
+	}
+	if roleperms.MANAGE_WEBHOOKS {
+		perm = perm | 0x20000000
+	}
+	if roleperms.MANAGE_EMOJIS {
+		perm = perm | 0x40000000
+	}
+
+	return perm
+}
+
+func (h *PermissionsHandler) CreateRole(name string, guildID string, hoist bool, mentionable bool, color int, perm int, s *discordgo.Session) (createdrole *discordgo.Role, err error){
+	roles, err := s.GuildRoles(guildID)
+	if err != nil {
+		return createdrole, err
+	}
+
+	for _, role := range roles {
+		if role.Name == name {
+			return createdrole, errors.New("Role already exists with name: " + name)
+		}
+	}
+
+	createdrole, err = s.GuildRoleCreate(guildID)
+	createdrole.Name = name
+
+	createdrole, err = s.GuildRoleEdit(guildID, createdrole.ID, name, color, hoist, perm, mentionable)
+	if err != nil {
+		return createdrole, err
+	}
+
+	return createdrole, nil
+}
+
+func (h *PermissionsHandler) UpdateRole( guildID string, s *discordgo.Session) (err error){
+
+	return nil
+
+}

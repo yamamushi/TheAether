@@ -10,13 +10,21 @@ type SetupProcess struct {
 	db       *DBHandler
 	conf     *Config
 	user     *UserHandler
-
+	rooms 	 *RoomsHandler
 }
 
 
-func (h *SetupProcess) Init(s *discordgo.Session, channelID string) error {
+func (h *SetupProcess) Init(s *discordgo.Session, channelID string) (err error) {
 
-	h.SetupOwnerPermissions(s,channelID)
+	err = h.SetupOwnerPermissions(s,channelID)
+	if err != nil {
+		return err
+	}
+
+	err = h.rooms.InitRooms(s, channelID)
+	if err != nil {
+		fmt.Println("Init Rooms: " + err.Error())
+	}
 
 	return nil
 }

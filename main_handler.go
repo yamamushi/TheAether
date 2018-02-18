@@ -19,18 +19,22 @@ type MainHandler struct {
 	registry    *CommandRegistry
 	logchan     chan string
 	channel     *ChannelHandler
+	rooms 		*RoomsHandler
 }
 
 // Init function
-func (h *MainHandler) Init() error {
+func (h *MainHandler) Init() (err error) {
 	// DO NOT add anything above this line!!
 	// Add our main handler -
 	h.dg.AddHandler(h.Read)
 	h.registry = h.command.registry
 
 	fmt.Println("Running Startup Setup")
-	setup := SetupProcess{db: h.db, conf: h.conf, user: h.user}
-	setup.Init(h.dg, h.conf.MainConfig.LobbyChannelID)
+	setup := SetupProcess{db: h.db, conf: h.conf, user: h.user, rooms: h.rooms}
+	err = setup.Init(h.dg, h.conf.MainConfig.LobbyChannelID)
+	if err != nil {
+		return
+	}
 
 	// Add new handlers below this line //
 /*
@@ -50,7 +54,7 @@ func (h *MainHandler) Init() error {
 
 	// Open a websocket connection to Discord and begin listening.
 	fmt.Println("Opening Connection to Discord")
-	err := h.dg.Open()
+	err = h.dg.Open()
 	if err != nil {
 		fmt.Println("Error Opening Connection: ", err)
 		return err

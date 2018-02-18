@@ -133,7 +133,9 @@ func main() {
 	commandhandler.Init(&channelhandler)
 	dg.AddHandler(commandhandler.Read)
 
-
+	roomshandler := RoomsHandler{callback: &callbackhandler, conf: &conf, db: &dbhandler, perm: &permissionshandler,
+	registry: commandhandler.registry, dg: dg, user: &userhandler, ch: &channelhandler}
+	// No rooms handler init here!
 
 	// Initalize our Logger
 	fmt.Println("Initializing Logger")
@@ -142,7 +144,7 @@ func main() {
 	// Now we create and initialize our main handler
 	fmt.Println("\n|| Initializing Main Handler ||\n")
 	handler := MainHandler{db: &dbhandler, conf: &conf, dg: dg, callback: &callbackhandler, perm: &permissionshandler,
-		command: &commandhandler, logchan: logchannel, user: &userhandler, channel: &channelhandler}
+		command: &commandhandler, logchan: logchannel, user: &userhandler, channel: &channelhandler, rooms: &roomshandler}
 	err = handler.Init()
 	if err != nil {
 		fmt.Println("error in mainHandler.init", err)

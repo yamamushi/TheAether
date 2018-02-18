@@ -281,6 +281,40 @@ func getGuildID(s *discordgo.Session, channelID string) (guildID string, err err
 	return channel.GuildID, nil
 }
 
+func getGuildEveryoneRoleID(s *discordgo.Session, guildID string) (everyoneid string, err error) {
+
+	roles, err := s.GuildRoles(guildID)
+	if err != nil {
+		return "", err
+	}
+
+	for _, role := range roles {
+		if role.Name == "@everyone" {
+			return role.ID, nil
+		}
+	}
+
+	return "", errors.New("Everyone Role ID Not Found")
+
+}
+
+
+func getGuildChannelIDByName(s *discordgo.Session, guildID string, name string) (channelid string, err error) {
+
+	channels, err := s.GuildChannels(guildID)
+	if err != nil {
+		return "", err
+	}
+
+	for _, channel := range channels {
+		if channel.Name == name {
+			return channel.ID, nil
+		}
+	}
+
+	return "", errors.New("Channel ID Not Found: " + name)
+
+}
 
 func getGuildOwnerID(s *discordgo.Session, channelID string) (ownerID string, err error) {
 
