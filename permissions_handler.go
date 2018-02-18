@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"github.com/bwmarrin/discordgo"
 	"strings"
+	"strconv"
 )
 
 // PermissionsHandler struct
@@ -65,6 +66,12 @@ func (h *PermissionsHandler) Read(s *discordgo.Session, m *discordgo.MessageCrea
 			return
 		}
 
+		guildID, err := getGuildID(s, m.ChannelID)
+		if err != nil {
+			s.ChannelMessageSend(m.ChannelID, "Could not retrieve GuildID: " + err.Error())
+			return
+		}
+
 		if command[1] == "addrole"{
 			if len(command) != 4 {
 				s.ChannelMessageSend(m.ChannelID, "<addrole> expects two argument - <role name> <user mention>.")
@@ -104,6 +111,59 @@ func (h *PermissionsHandler) Read(s *discordgo.Session, m *discordgo.MessageCrea
 			s.ChannelMessageSend(m.ChannelID, "Role " + command[2] + " removed from user")
 			return
 		}
+
+		if command[1] == "createrole"{
+			if len(command) < 6 {
+				s.ChannelMessageSend(m.ChannelID, "<create> expects 4 arguments - <role name> <hoist> <mentionable> <color int>")
+				return
+			}
+
+			hoist := false
+			if command[3] == "true" {
+				hoist = true
+			} else if command[3] == "false" {
+				hoist = false
+			} else {
+				s.ChannelMessageSend(m.ChannelID, "<hoist> must be true or false)")
+				return
+			}
+
+			mentionable := false
+			if command[4] == "true" {
+				mentionable = true
+			} else if command[4] == "false" {
+				mentionable = false
+			} else {
+				s.ChannelMessageSend(m.ChannelID, "<mentionable> must be true or false)")
+				return
+			}
+
+			color := 0
+			color, err := strconv.Atoi(command[5])
+			if err != nil {
+				s.ChannelMessageSend(m.ChannelID, "<color> must be an integer)")
+				return
+			}
+
+			perms := h.CreatePermissionInt(RolePermissions{})
+			createdrole, err := h.CreateRole( command[2], guildID, hoist, mentionable, color, perms, s)
+			if err != nil {
+				s.ChannelMessageSend(m.ChannelID, "Error creating role: " + err.Error())
+				return
+			}
+			s.ChannelMessageSend(m.ChannelID, "Role " + createdrole.Name + " created: " + createdrole.ID)
+			return
+		}
+		if command[1] == "viewrole" {
+			if len(command) < 3 {
+				s.ChannelMessageSend(m.ChannelID, "<create> expects an argument - <role name> or <role id>")
+				return
+			}
+
+			h.ViewRole(command[2], guildID, s, m)
+			return
+		}
+
 		if command[1] == "promote" {
 			// Run our promote command function
 			command = RemoveStringFromSlice(command, command[0])
@@ -120,6 +180,35 @@ func (h *PermissionsHandler) Read(s *discordgo.Session, m *discordgo.MessageCrea
 
 	return
 }
+
+func (h *PermissionsHandler) ViewRole(rolename string, guildID string, s *discordgo.Session, m *discordgo.MessageCreate) {
+
+	roles, err := s.GuildRoles(guildID)
+	if err != nil {
+		s.ChannelMessageSend(m.ChannelID, "Could not retrieve guild roles: " + err.Error())
+		return
+	}
+
+	formatted := "```\n"
+	for _, role := range roles {
+		if role.Name == rolename || role.ID == rolename {
+			formatted = formatted + "Name: " + role.Name + "\n"
+			formatted = formatted + "ID: " + role.ID + "\n"
+			formatted = formatted + "Perms: " + strconv.Itoa(role.Permissions) + "\n"
+			formatted = formatted + "Hoist: " + strconv.FormatBool(role.Hoist) + "\n"
+			formatted = formatted + "Mentionable: " + strconv.FormatBool(role.Mentionable) + "\n"
+			formatted = formatted + "Color: " + strconv.Itoa(role.Color) + "\n"
+		}
+	}
+	formatted = formatted + "```\n"
+
+
+	s.ChannelMessageSend(m.ChannelID, "Role: \n" + formatted)
+	return
+}
+
+
+
 
 // ReadPromote The promote command runs using our commands array to get the promotion settings
 func (h *PermissionsHandler) ReadPromote(commands []string, s *discordgo.Session, m *discordgo.MessageCreate) {
@@ -315,7 +404,6 @@ func (h *PermissionsHandler) Promote(userid string, group string, s *discordgo.S
 
 	// Assign the group to our target user
 	user.SetRole(group)
-
 	// Save the user changes in the database
 	db.Update(&user)
 	return nil
@@ -706,6 +794,7 @@ func (h *PermissionsHandler) AddRoleToUser(rolename string, userID string, s *di
 	db := h.db.rawdb.From("Users")
 
 	// Assign the group to our target user
+	user.SetRole(strings.ToLower(rolename))
 	user.JoinRole(rolename)
 	// Save the user changes in the database
 	err = db.Update(&user)
@@ -749,6 +838,7 @@ func (h *PermissionsHandler) RemoveRoleFromUser(rolename string, userID string, 
 	db := h.db.rawdb.From("Users")
 
 	// Assign the group to our target user
+	user.RemoveRole(strings.ToLower(rolename))
 	user.LeaveRole(rolename)
 	// Save the user changes in the database
 	err = db.Update(&user)

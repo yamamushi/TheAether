@@ -76,28 +76,28 @@ func (u *User) RemoveRole(role string) {
 	switch role {
 
 	case "owner":
-		SetBit(&u.Perms, 1000)
-
-	case "admin":
-		SetBit(&u.Perms, 90)
-
-	case "smoderator":
-		SetBit(&u.Perms, 80)
-
-	case "moderator":
-		SetBit(&u.Perms, 70)
-
-	case "builder":
 		SetBit(&u.Perms, 60)
 
+	case "admin":
+		SetBit(&u.Perms, 59)
+
+	case "smoderator":
+		SetBit(&u.Perms, 58)
+
+	case "moderator":
+		SetBit(&u.Perms, 57)
+
+	case "builder":
+		SetBit(&u.Perms, 56)
+
 	case "writer":
-		SetBit(&u.Perms, 50)
+		SetBit(&u.Perms, 55)
 
 	case "scripter":
-		SetBit(&u.Perms, 40)
+		SetBit(&u.Perms, 54)
 
 	case "architect":
-		SetBit(&u.Perms, 30)
+		SetBit(&u.Perms, 53)
 
 	case "player":
 		SetBit(&u.Perms, 10)
@@ -113,28 +113,28 @@ func (u *User) CheckRole(role string) bool {
 	switch role {
 
 	case "owner":
-		return IsBitSet(&u.Perms, 1000)
-
-	case "admin":
-		return IsBitSet(&u.Perms, 90)
-
-	case "smoderator":
-		return IsBitSet(&u.Perms, 80)
-
-	case "moderator":
-		return IsBitSet(&u.Perms, 70)
-
-	case "builder":
 		return IsBitSet(&u.Perms, 60)
 
+	case "admin":
+		return IsBitSet(&u.Perms, 59)
+
+	case "smoderator":
+		return IsBitSet(&u.Perms, 58)
+
+	case "moderator":
+		return IsBitSet(&u.Perms, 57)
+
+	case "builder":
+		return IsBitSet(&u.Perms, 56)
+
 	case "writer":
-		return IsBitSet(&u.Perms, 50)
+		return IsBitSet(&u.Perms, 55)
 
 	case "scripter":
-		return IsBitSet(&u.Perms, 40)
+		return IsBitSet(&u.Perms, 54)
 
 	case "architect":
-		return IsBitSet(&u.Perms, 30)
+		return IsBitSet(&u.Perms, 53)
 
 	case "player":
 		return IsBitSet(&u.Perms, 10)

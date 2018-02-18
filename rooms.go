@@ -18,7 +18,7 @@ type Room struct {
 	ParentID			string
 	ParentName			string
 
-	RoleID				string
+	RoleIDs				[]string
 	GuildID				string
 
 	// Connecting Room ID's
@@ -109,7 +109,7 @@ func (h *Rooms) GetRoomByID(roomID string) (room Room, err error) {
 	return room, errors.New("No record found")
 }
 
-func (h *Rooms) GetRoomByName(roomname string) (room Room, err error) {
+func (h *Rooms) GetRoomByName(roomname string, guildID string) (room Room, err error) {
 
 	rooms, err := h.GetAllRooms()
 	if err != nil{
@@ -117,7 +117,7 @@ func (h *Rooms) GetRoomByName(roomname string) (room Room, err error) {
 	}
 
 	for _, i := range rooms {
-		if i.Name == roomname{
+		if i.Name == roomname && i.GuildID == guildID{
 			return i, nil
 		}
 	}
@@ -138,4 +138,46 @@ func (h *Rooms) GetAllRooms() (roomlist []Room, err error) {
 	}
 
 	return roomlist, nil
+}
+
+
+func (h *Rooms) IsRoomLinkedTo(roomID string, checklink string) (linked bool, err error) {
+
+	room, err := h.GetRoomByID(roomID)
+	if err != nil {
+		return false, err
+	}
+
+	if room.NorthID == checklink {
+		return true, nil
+	}
+	if room.NorthEastID == checklink {
+		return true, nil
+	}
+	if room.EastID == checklink {
+		return true, nil
+	}
+	if room.SouthEastID == checklink {
+		return true, nil
+	}
+	if room.SouthID == checklink {
+		return true, nil
+	}
+	if room.SouthWestID == checklink {
+		return true, nil
+	}
+	if room.WestID == checklink {
+		return true, nil
+	}
+	if room.NorthWestID == checklink {
+		return true, nil
+	}
+	if room.UpID == checklink {
+		return true, nil
+	}
+	if room.DownID == checklink {
+		return true, nil
+	}
+
+	return false, nil
 }

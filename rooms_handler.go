@@ -354,10 +354,17 @@ func (h *RoomsHandler) CreateRoom(s *discordgo.Session, name string, guildID str
 
 }
 
+func (h *RoomsHandler) DeleteRoom(s *discordgo.Session, name string, guildID string, parentname string) {
+
+
+
+}
+
+
 
 func (h *RoomsHandler) AddRoom(s *discordgo.Session, name string, guildID string, parentname string) (createdroom *discordgo.Channel, err error) {
 
-	existingrecord, err := h.rooms.GetRoomByName(name)
+	existingrecord, err := h.rooms.GetRoomByName(name, guildID)
 	if err != nil {
 
 		channels, err := s.GuildChannels(guildID)
@@ -404,11 +411,34 @@ func (h *RoomsHandler) AddRoom(s *discordgo.Session, name string, guildID string
 
 		existingrecord = Room{ID: createdchannel.ID, GuildID: guildID, Name: name, ParentID: parentID, ParentName: parentname}
 
+		everyoneID, err := getGuildEveryoneRoleID(s, guildID)
+		if err != nil {
+			return createdroom, err
+		}
+		denyeveryoneperms := h.perm.CreatePermissionInt(RolePermissions{VIEW_CHANNEL: true})
+		alloweveryoneperms := h.perm.CreatePermissionInt(RolePermissions{})
+		err = s.ChannelPermissionSet( createdroom.ID, everyoneID, "role", alloweveryoneperms, denyeveryoneperms)
+		if err != nil {
+			return createdroom, err
+		}
+
 		h.rooms.SaveRoomToDB(existingrecord)
 		return createdroom, nil
 	} else {
 		return createdroom, errors.New("Room already exists in database!")
 	}
+}
+
+
+func (h *RoomsHandler) RemoveRoom(s *discordgo.Session, name string, guildID string) (err error) {
+
+	existingrecord, err := h.rooms.GetRoomByName(name, guildID)
+	if err != nil{
+		return err
+	}
+
+	s.ChannelDelete(existingrecord.ID)
+	return h.rooms.RemoveRoomFromDB(existingrecord)
 }
 
 
@@ -505,6 +535,12 @@ func (h *RoomsHandler) Read(s *discordgo.Session, m *discordgo.MessageCreate) {
 // ParseCommand function
 func (h *RoomsHandler) ParseCommand(command []string, s *discordgo.Session, m *discordgo.MessageCreate) {
 
+	guildID, err := getGuildID(s, m.ChannelID)
+	if err != nil {
+		s.ChannelMessageSend(m.ChannelID, "Could not retrieve GuildID: " + err.Error())
+		return
+	}
+
 	if len(command) < 2 {
 		s.ChannelMessageSend(m.ChannelID, "Expected flag for 'room' command, see usage for more info")
 		return
@@ -517,33 +553,174 @@ func (h *RoomsHandler) ParseCommand(command []string, s *discordgo.Session, m *d
 		h.ViewRoom(command[2], s, m)
 		return
 	}
+	if command[1] == "add" {
+		if len(command) < 3 {
+			s.ChannelMessageSend(m.ChannelID, "add requires at least one argument: <name> <category name>")
+			return
+		}
 
+		parentname := ""
+		if len(command) > 4 {
+			for i, field := range command {
+				if i > 2 {
+					parentname = parentname + " " + field
+				}
+				parentname = strings.TrimSpace(parentname)
+			}
+		} else if len(command) == 4{
+			parentname = command[3]
+		} else {
+			parentname = "The Aether"
+		}
+
+		channel, err := h.AddRoom(s, command[2], guildID, parentname)
+		if err != nil {
+			s.ChannelMessageSend(m.ChannelID, "Error adding channel: " + err.Error())
+			return
+		}
+
+		formatted, err := h.FormatRoomInfo(channel.ID)
+		if err != nil {
+			s.ChannelMessageSend(m.ChannelID, "Error Retrieving Room: " + err.Error())
+			return
+		}
+
+		s.ChannelMessageSend(m.ChannelID, "Channel Created: " + formatted)
+		return
+	}
+	if command[1] == "linkdirection" {
+		if len(command) < 5 {
+			s.ChannelMessageSend(m.ChannelID, "linkdirection requires three arguments: <from> <to> <direction>")
+			return
+		}
+		h.LinkDirection(command[4], command[2], command[3], s, m)
+		return
+	}
+	if command[1] == "remove" {
+		if len(command) < 3 {
+			s.ChannelMessageSend(m.ChannelID, "remove requires an argument: <room name>")
+			return
+		}
+
+		roomname := ""
+		if strings.Contains(command[2], "#"){
+			roomname := strings.TrimPrefix(command[2], "<#")
+			roomname = strings.TrimSuffix(roomname, ">")
+
+			room, err := h.rooms.GetRoomByID(roomname)
+			if err != nil {
+				s.ChannelMessageSend(m.ChannelID, "Error removing channel: " + err.Error())
+				return
+			}
+			err = h.RemoveRoom(s, room.Name, guildID)
+			if err != nil {
+				s.ChannelMessageSend(m.ChannelID, "Error removing channel: " + err.Error())
+				return
+			}
+		} else {
+			err := h.RemoveRoom(s, roomname, guildID)
+			if err != nil {
+				s.ChannelMessageSend(m.ChannelID, "Error removing channel: " + err.Error())
+				return
+			}
+		}
+
+		s.ChannelMessageSend(m.ChannelID, "Channel " + command[2] + " removed.")
+		return
+	}
+	if command[1] == "linkrole" {
+		if len(command) < 4 {
+			s.ChannelMessageSend(m.ChannelID, "linkrole requires two arguments - <rolename> <room>")
+			return
+		}
+
+		h.LinkRole(command[2], command[3], s, m)
+		return
+	}
 }
 
 
-func (h *RoomsHandler) ViewRoom(roomID string, s *discordgo.Session, m *discordgo.MessageCreate) {
+func (h *RoomsHandler) LinkRole(rolename string, roomID string, s *discordgo.Session, m *discordgo.MessageCreate) {
+
+	guildID, err := getGuildID(s, m.ChannelID)
+	if err != nil {
+		s.ChannelMessageSend(m.ChannelID, "Could not retrieve GuildID: " + err.Error())
+		return
+	}
+
+	roleID, err := getRoleIDByName(s, guildID, rolename)
+	if err != nil {
+		s.ChannelMessageSend(m.ChannelID, "Error retrieving roleID: " + err.Error())
+		return
+	}
+
+	roomID = CleanChannel(roomID)
+	room, err := h.rooms.GetRoomByID(roomID)
+	if err != nil {
+		s.ChannelMessageSend(m.ChannelID, "Error retrieving roomID: " + err.Error())
+		return
+	}
+
+	for _, roleid := range room.RoleIDs {
+		if roleid == roleID {
+			s.ChannelMessageSend(m.ChannelID, "Room is already linked to role!")
+			return
+		}
+	}
+	room.RoleIDs = append(room.RoleIDs, roleID)
+
+	err = h.rooms.SaveRoomToDB(room)
+	if err != nil {
+		s.ChannelMessageSend(m.ChannelID, "Error updating DB: " + err.Error())
+		return
+	}
+
+	denyrperms := h.perm.CreatePermissionInt(RolePermissions{})
+	allowperms := h.perm.CreatePermissionInt(RolePermissions{VIEW_CHANNEL:true})
+	err = s.ChannelPermissionSet( room.ID, roleID, "role", allowperms, denyrperms)
+	if err != nil {
+		s.ChannelMessageSend(m.ChannelID, "Error setting permissions: " + err.Error())
+		return
+	}
+
+	s.ChannelMessageSend(m.ChannelID, "Role " + rolename + " linked to " + room.Name)
+	return
+}
+
+func (h *RoomsHandler) FormatRoomInfo(roomID string) (formatted string, err error) {
 
 	roomID = CleanChannel(roomID)
 
 	room, err := h.rooms.GetRoomByID(roomID)
 	if err != nil {
-		s.ChannelMessageSend(m.ChannelID, "Error retrieving roomID: " + roomID)
-		return
+		return "", err
 	}
 
-	fmt.Println("Viewing Room")
 	output := "\n```\n"
 	output = output + "ID: " +  room.ID + "\n"
 	output = output + "Name: " + room.Name + "\n"
 	output = output + "Guild: " + room.GuildID + "\n"
 	output = output + "ParentID: " + room.ParentID + "\n"
 	output = output + "ParentName: " + room.ParentName + "\n"
-	output = output + "RoleID: " + room.RoleID + "\n\n"
+
+	roles := ""
+	for i, role := range room.RoleIDs {
+		if i > 0 {
+			roles = ", " + role
+		} else {
+			roles = role
+		}
+	}
+	output = output + "RoleID: " + roles + "\n\n"
 	output = output + "Description: " + room.Description + "\n\n"
 
 
 	if room.UpID != "" {
-		output = output + "Up Room: " + room.UpID + "\n"
+		linkedroom, err := h.rooms.GetRoomByID(room.UpID)
+		if err != nil {
+			return formatted, err
+		}
+		output = output + "Up Room: " + room.UpID + " - " + linkedroom.Name + " \n"
 	}
 	if len(room.UpItemID) > 0 {
 		itemoutput := ""
@@ -554,7 +731,11 @@ func (h *RoomsHandler) ViewRoom(roomID string, s *discordgo.Session, m *discordg
 	}
 
 	if room.DownID != "" {
-		output = output + "Up Room: " + room.DownID + "\n"
+		linkedroom, err := h.rooms.GetRoomByID(room.DownID)
+		if err != nil {
+			return formatted, err
+		}
+		output = output + "Down Room: " + room.DownID + " - " + linkedroom.Name + " \n"
 	}
 	if len(room.DownItemID) > 0 {
 		itemoutput := ""
@@ -565,7 +746,11 @@ func (h *RoomsHandler) ViewRoom(roomID string, s *discordgo.Session, m *discordg
 	}
 
 	if room.NorthID != "" {
-		output = output + "Up Room: " + room.NorthID + "\n"
+		linkedroom, err := h.rooms.GetRoomByID(room.NorthID)
+		if err != nil {
+			return formatted, err
+		}
+		output = output + "North Room: " + room.NorthID + " - " + linkedroom.Name + " \n"
 	}
 	if len(room.NorthItemID) > 0 {
 		itemoutput := ""
@@ -576,7 +761,11 @@ func (h *RoomsHandler) ViewRoom(roomID string, s *discordgo.Session, m *discordg
 	}
 
 	if room.NorthEastID != "" {
-		output = output + "Up Room: " + room.NorthEastID + "\n"
+		linkedroom, err := h.rooms.GetRoomByID(room.NorthEastID)
+		if err != nil {
+			return formatted, err
+		}
+		output = output + "NorthEast Room: " + room.NorthEastID + " - " + linkedroom.Name + " \n"
 	}
 	if len(room.NorthEastItemID) > 0 {
 		itemoutput := ""
@@ -587,7 +776,11 @@ func (h *RoomsHandler) ViewRoom(roomID string, s *discordgo.Session, m *discordg
 	}
 
 	if room.EastID != "" {
-		output = output + "Up Room: " + room.EastID + "\n"
+		linkedroom, err := h.rooms.GetRoomByID(room.EastID)
+		if err != nil {
+			return formatted, err
+		}
+		output = output + "East Room: " + room.EastID + " - " + linkedroom.Name + " \n"
 	}
 	if len(room.EastItemID) > 0 {
 		itemoutput := ""
@@ -598,7 +791,11 @@ func (h *RoomsHandler) ViewRoom(roomID string, s *discordgo.Session, m *discordg
 	}
 
 	if room.SouthEastID != "" {
-		output = output + "Up Room: " + room.SouthEastID + "\n"
+		linkedroom, err := h.rooms.GetRoomByID(room.SouthEastID)
+		if err != nil {
+			return formatted, err
+		}
+		output = output + "SouthEast Room: " + room.SouthEastID + " - " + linkedroom.Name + " \n"
 	}
 	if len(room.SouthEastItemID) > 0 {
 		itemoutput := ""
@@ -609,7 +806,11 @@ func (h *RoomsHandler) ViewRoom(roomID string, s *discordgo.Session, m *discordg
 	}
 
 	if room.SouthID != "" {
-		output = output + "Up Room: " + room.SouthID + "\n"
+		linkedroom, err := h.rooms.GetRoomByID(room.SouthID)
+		if err != nil {
+			return formatted, err
+		}
+		output = output + "South Room: " + room.SouthID + " - " + linkedroom.Name + " \n"
 	}
 	if len(room.SouthItemID) > 0 {
 		itemoutput := ""
@@ -620,7 +821,11 @@ func (h *RoomsHandler) ViewRoom(roomID string, s *discordgo.Session, m *discordg
 	}
 
 	if room.SouthWestID != "" {
-		output = output + "Up Room: " + room.SouthWestID + "\n"
+		linkedroom, err := h.rooms.GetRoomByID(room.SouthWestID)
+		if err != nil {
+			return formatted, err
+		}
+		output = output + "SouthWest Room: " + room.SouthWestID + " - " + linkedroom.Name + " \n"
 	}
 	if len(room.SouthWestItemID) > 0 {
 		itemoutput := ""
@@ -631,7 +836,11 @@ func (h *RoomsHandler) ViewRoom(roomID string, s *discordgo.Session, m *discordg
 	}
 
 	if room.WestID != "" {
-		output = output + "Up Room: " + room.WestID + "\n"
+		linkedroom, err := h.rooms.GetRoomByID(room.WestID)
+		if err != nil {
+			return formatted, err
+		}
+		output = output + "West Room: " + room.WestID + " - " + linkedroom.Name + " \n"
 	}
 	if len(room.WestItemID) > 0 {
 		itemoutput := ""
@@ -642,7 +851,11 @@ func (h *RoomsHandler) ViewRoom(roomID string, s *discordgo.Session, m *discordg
 	}
 
 	if room.NorthWestID != "" {
-		output = output + "Up Room: " + room.NorthWestID + "\n"
+		linkedroom, err := h.rooms.GetRoomByID(room.NorthWestID)
+		if err != nil {
+			return formatted, err
+		}
+		output = output + "NorthWest Room: " + room.NorthWestID + " - " + linkedroom.Name + " \n"
 	}
 	if len(room.NorthWestItemID) > 0 {
 		itemoutput := ""
@@ -653,10 +866,194 @@ func (h *RoomsHandler) ViewRoom(roomID string, s *discordgo.Session, m *discordg
 	}
 
 	output = output + "\n```\n"
+	return output, nil
+}
 
-	s.ChannelMessageSend(m.ChannelID, "Room Details: " + output)
+
+func (h *RoomsHandler) ViewRoom(roomID string, s *discordgo.Session, m *discordgo.MessageCreate) {
+
+	formatted, err := h.FormatRoomInfo(roomID)
+	if err != nil {
+		s.ChannelMessageSend(m.ChannelID, "Error Retrieving Room: " + err.Error())
+		return
+	}
+
+	s.ChannelMessageSend(m.ChannelID, "Room Details: " + formatted)
 	return
 }
 
 
+func (h *RoomsHandler) LinkDirection(direction string, fromroomID string, toroomID string, s *discordgo.Session, m *discordgo.MessageCreate) {
+
+	guildID, err := getGuildID(s, m.ChannelID)
+	if err != nil {
+		s.ChannelMessageSend(m.ChannelID, "Could not retrieve GuildID: " + err.Error())
+		return
+	}
+
+	fromroomID = CleanChannel(fromroomID)
+	fromroom, err := h.rooms.GetRoomByID(fromroomID)
+	if err != nil {
+		s.ChannelMessageSend(m.ChannelID, "Error retrieving fromroomID: " + err.Error())
+		return
+	}
+	if fromroom.GuildID != guildID {
+		s.ChannelMessageSend(m.ChannelID, "Guild ID's Do Not Match: " + err.Error())
+		return
+	}
+
+	toroomID = CleanChannel(toroomID)
+	toroom, err := h.rooms.GetRoomByID(toroomID)
+	if err != nil {
+		s.ChannelMessageSend(m.ChannelID, "Error retrieving toroomID: " + err.Error())
+		return
+	}
+	if toroom.GuildID != guildID {
+		s.ChannelMessageSend(m.ChannelID, "Guild ID's Do Not Match: " + err.Error())
+		return
+	}
+
+	direction = strings.ToLower(direction)
+
+	linked, err := h.rooms.IsRoomLinkedTo(fromroomID, toroomID)
+	if err != nil {
+		s.ChannelMessageSend(m.ChannelID, "Error validating room link: " + err.Error())
+		return
+	}
+	if linked {
+		s.ChannelMessageSend(m.ChannelID, "Rooms already linked!")
+		return
+	}
+
+	if direction == "up" {
+		if toroom.DownID != "" {
+			s.ChannelMessageSend(m.ChannelID, "To room Down is already linked to: "+toroom.DownID)
+			return
+		}
+		if fromroom.UpID != "" {
+			s.ChannelMessageSend(m.ChannelID, "From from Up is already linked to: "+fromroom.UpID)
+			return
+		}
+		toroom.DownID = fromroomID
+		fromroom.UpID = toroomID
+	} else if direction == "down" {
+
+		if toroom.UpID != "" {
+			s.ChannelMessageSend(m.ChannelID, "To room Up is already linked to: "+toroom.UpID)
+			return
+		}
+		if fromroom.DownID != "" {
+			s.ChannelMessageSend(m.ChannelID, "From from Down is already linked to: "+fromroom.DownID)
+			return
+		}
+		toroom.UpID = fromroomID
+		fromroom.DownID = toroomID
+	} else if direction == "north" {
+		if toroom.SouthID != "" {
+			s.ChannelMessageSend(m.ChannelID, "To room South is already linked to: "+toroom.SouthID)
+			return
+		}
+		if fromroom.NorthID != "" {
+			s.ChannelMessageSend(m.ChannelID, "From from North is already linked to: "+fromroom.NorthID)
+			return
+		}
+		toroom.SouthID = fromroomID
+		fromroom.NorthID = toroomID
+	} else if direction == "northeast" {
+		if toroom.SouthWestID != "" {
+			s.ChannelMessageSend(m.ChannelID, "To room SouthWest is already linked to: "+toroom.SouthWestID)
+			return
+		}
+		if fromroom.NorthEastID != "" {
+			s.ChannelMessageSend(m.ChannelID, "From from NorthEast is already linked to: "+fromroom.NorthEastID)
+			return
+		}
+		toroom.SouthWestID = fromroomID
+		fromroom.NorthEastID = toroomID
+	} else if direction == "east" {
+		if toroom.WestID != "" {
+			s.ChannelMessageSend(m.ChannelID, "To room West is already linked to: "+toroom.WestID)
+			return
+		}
+		if fromroom.EastID != "" {
+			s.ChannelMessageSend(m.ChannelID, "From from East is already linked to: "+fromroom.EastID)
+			return
+		}
+		toroom.WestID = fromroomID
+		fromroom.EastID = toroomID
+	} else if direction == "southeast" {
+		if toroom.NorthWestID != "" {
+			s.ChannelMessageSend(m.ChannelID, "To room NorthWest is already linked to: "+toroom.NorthWestID)
+			return
+		}
+		if fromroom.SouthEastID != "" {
+			s.ChannelMessageSend(m.ChannelID, "From from SouthEast is already linked to: "+fromroom.SouthEastID)
+			return
+		}
+		toroom.NorthWestID = fromroomID
+		fromroom.SouthEastID = toroomID
+	} else if direction == "south" {
+		if toroom.NorthID != "" {
+			s.ChannelMessageSend(m.ChannelID, "To room North is already linked to: "+toroom.NorthID)
+			return
+		}
+		if fromroom.SouthID != "" {
+			s.ChannelMessageSend(m.ChannelID, "From from South is already linked to: "+fromroom.SouthID)
+			return
+		}
+		toroom.NorthID = fromroomID
+		fromroom.SouthID = toroomID
+	} else if direction == "southwest" {
+		if toroom.NorthEastID != "" {
+			s.ChannelMessageSend(m.ChannelID, "To room NorthEast is already linked to: "+toroom.NorthEastID)
+			return
+		}
+		if fromroom.SouthWestID != "" {
+			s.ChannelMessageSend(m.ChannelID, "From from SouthWest is already linked to: "+fromroom.SouthWestID)
+			return
+		}
+		toroom.NorthEastID = fromroomID
+		fromroom.SouthWestID = toroomID
+	} else if direction == "west" {
+		if toroom.EastID != "" {
+			s.ChannelMessageSend(m.ChannelID, "To room East is already linked to: "+toroom.EastID)
+			return
+		}
+		if fromroom.WestID != "" {
+			s.ChannelMessageSend(m.ChannelID, "From from WestID is already linked to: "+fromroom.WestID)
+			return
+		}
+		toroom.EastID = fromroomID
+		fromroom.WestID = toroomID
+	} else if direction == "northwest" {
+		if toroom.SouthEastID != "" {
+			s.ChannelMessageSend(m.ChannelID, "To room SouthEast is already linked to: "+toroom.SouthEastID)
+			return
+		}
+		if fromroom.NorthEastID != "" {
+			s.ChannelMessageSend(m.ChannelID, "From from NorthEast is already linked to: "+fromroom.NorthEastID)
+			return
+		}
+		toroom.SouthEastID = fromroomID
+		fromroom.NorthWestID = toroomID
+	} else {
+		s.ChannelMessageSend(m.ChannelID, "Unrecognized direction: "+direction)
+		return
+	}
+
+	err = h.rooms.SaveRoomToDB(fromroom)
+	if err != nil {
+		s.ChannelMessageSend(m.ChannelID, "Error updating DB: " + err.Error())
+		return
+	}
+
+	err = h.rooms.SaveRoomToDB(toroom)
+	if err != nil {
+		s.ChannelMessageSend(m.ChannelID, "Error updating DB: " + err.Error())
+		return
+	}
+
+	s.ChannelMessageSend(m.ChannelID, "Room " + fromroom.Name + " linked to " + toroom.Name)
+	return
+}
 
