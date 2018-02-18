@@ -19,6 +19,16 @@ type Room struct {
 	ParentName			string
 
 	RoleIDs				[]string
+	/*
+	These are likely to change, but here's generally what is in the roleID slice
+	0 - Default Travel ID
+	1 - Region Role ID
+	2 - Quest Role ID
+	3 - Spell Role ID
+	4 - Blessing Role ID
+	5 - Override Role ID
+	 */
+
 	GuildID				string
 
 	// Connecting Room ID's

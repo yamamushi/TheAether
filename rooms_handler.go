@@ -126,6 +126,26 @@ func (h* RoomsHandler) InitRooms(s *discordgo.Session, channelID string) (err er
 		return err
 	}
 
+	room, err := h.rooms.GetRoomByID(crossroadsChannelID)
+	if err != nil {
+		return err
+	}
+
+	updatecrossroads := true
+	for _, roleid := range room.RoleIDs {
+		if roleid == crossroadsRoleID {
+			updatecrossroads = false
+		}
+	}
+	if updatecrossroads{
+		room.RoleIDs = append(room.RoleIDs, crossroadsRoleID)
+
+		err = h.rooms.SaveRoomToDB(room)
+		if err != nil {
+			return err
+		}
+	}
+
 	err = h.CreateManagementRooms(guildID, s)
 	if err != nil {
 		return err
@@ -196,7 +216,9 @@ func (h *RoomsHandler) CreateManagementRooms(guildID string, s *discordgo.Sessio
 	}
 	err = h.MoveRoom(s, developerChannelID, guildID, "Management")
 	if err != nil {
-		return err
+		if !strings.Contains(err.Error(), "No record found"){
+			return err // We don't care about no record being found in the Lobby because it is our default room
+		}
 	}
 	everyoneID, err := getGuildEveryoneRoleID(s, guildID)
 	if err != nil {
@@ -233,7 +255,9 @@ func (h *RoomsHandler) CreateManagementRooms(guildID string, s *discordgo.Sessio
 	}
 	err = h.MoveRoom(s, adminChannelID, guildID, "Management")
 	if err != nil {
-		return err
+		if !strings.Contains(err.Error(), "No record found"){
+			return err // We don't care about no record being found in the Lobby because it is our default room
+		}
 	}
 	err = s.ChannelPermissionSet( adminChannelID, everyoneID, "role", alloweveryoneperms, denyeveryoneperms)
 	if err != nil {
@@ -264,7 +288,9 @@ func (h *RoomsHandler) CreateManagementRooms(guildID string, s *discordgo.Sessio
 	}
 	err = h.MoveRoom(s, builderhannelID, guildID, "Management")
 	if err != nil {
-		return err
+		if !strings.Contains(err.Error(), "No record found"){
+			return err // We don't care about no record being found in the Lobby because it is our default room
+		}
 	}
 	err = s.ChannelPermissionSet( builderhannelID, everyoneID, "role", alloweveryoneperms, denyeveryoneperms)
 	if err != nil {
@@ -295,7 +321,9 @@ func (h *RoomsHandler) CreateManagementRooms(guildID string, s *discordgo.Sessio
 	}
 	err = h.MoveRoom(s, moderatorhannelID, guildID, "Management")
 	if err != nil {
-		return err
+		if !strings.Contains(err.Error(), "No record found"){
+			return err // We don't care about no record being found in the Lobby because it is our default room
+		}
 	}
 	err = s.ChannelPermissionSet( moderatorhannelID, everyoneID, "role", alloweveryoneperms, denyeveryoneperms)
 	if err != nil {
@@ -326,7 +354,9 @@ func (h *RoomsHandler) CreateManagementRooms(guildID string, s *discordgo.Sessio
 	}
 	err = h.MoveRoom(s, writerchannelID, guildID, "Management")
 	if err != nil {
-		return err
+		if !strings.Contains(err.Error(), "No record found"){
+			return err // We don't care about no record being found in the Lobby because it is our default room
+		}
 	}
 	err = s.ChannelPermissionSet( writerchannelID, everyoneID, "role", alloweveryoneperms, denyeveryoneperms)
 	if err != nil {
@@ -408,6 +438,10 @@ func (h *RoomsHandler) AddRoom(s *discordgo.Session, name string, guildID string
 			return createdroom, err
 		}
 
+		err = h.registry.AddChannel("travel", createdroom.ID)
+		if err != nil {
+			return createdroom, err
+		}
 
 		existingrecord = Room{ID: createdchannel.ID, GuildID: guildID, Name: name, ParentID: parentID, ParentName: parentname}
 
@@ -438,6 +472,12 @@ func (h *RoomsHandler) RemoveRoom(s *discordgo.Session, name string, guildID str
 	}
 
 	s.ChannelDelete(existingrecord.ID)
+
+	err = h.registry.RemoveChannel("travel", existingrecord.ID)
+	if err != nil {
+		return err
+	}
+
 	return h.rooms.RemoveRoomFromDB(existingrecord)
 }
 

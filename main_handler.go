@@ -20,6 +20,7 @@ type MainHandler struct {
 	logchan     chan string
 	channel     *ChannelHandler
 	rooms 		*RoomsHandler
+	travel 		*TravelHandler
 }
 
 // Init function

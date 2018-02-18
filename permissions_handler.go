@@ -61,7 +61,7 @@ func (h *PermissionsHandler) Read(s *discordgo.Session, m *discordgo.MessageCrea
 
 	// After our command string has been trimmed down, check it against the command list
 	if command[0] == "perms" {
-		if len(command) < 1 {
+		if len(command) < 2 {
 			s.ChannelMessageSend(m.ChannelID, "<perms> expects an argument.")
 			return
 		}
@@ -794,8 +794,7 @@ func (h *PermissionsHandler) AddRoleToUser(rolename string, userID string, s *di
 	db := h.db.rawdb.From("Users")
 
 	// Assign the group to our target user
-	user.SetRole(strings.ToLower(rolename))
-	user.JoinRole(rolename)
+	user.SetRole(rolename)
 	// Save the user changes in the database
 	err = db.Update(&user)
 	if err != nil {
@@ -838,8 +837,7 @@ func (h *PermissionsHandler) RemoveRoleFromUser(rolename string, userID string, 
 	db := h.db.rawdb.From("Users")
 
 	// Assign the group to our target user
-	user.RemoveRole(strings.ToLower(rolename))
-	user.LeaveRole(rolename)
+	user.RemoveRole(rolename)
 	// Save the user changes in the database
 	err = db.Update(&user)
 	if err != nil {

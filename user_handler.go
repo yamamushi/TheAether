@@ -365,7 +365,6 @@ func (h *UserHandler) FormatRoles(roles []string) (formatted string) {
 		} else {
 			formatted = formatted + role + ", "
 		}
-
 	}
 
 	return formatted

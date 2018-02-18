@@ -6,20 +6,80 @@ type User struct {
 
 	Perms 		[]uint64 // Internal Permissions - NOT Discord Roles
 	Roles		[]string
-	/*Owner      bool `storm:"index"`	1000
-	Admin      bool `storm:"index"`		90
-	SModerator bool `storm:"index"`		80
-	Moderator  bool `storm:"index"`		70
-	Builder     bool `storm:"index"`	60
-	Writer      bool `storm:"index"`	50
-	Scripter   bool `storm:"index"`		40
-	Architect  bool `storm:"index"`		30
-	Player    bool `storm:"index"`		10
-	*/
+
+	// Profile stuff
+	SkinTone	string
+	Email 		string
+
+	// Related to tracking taveling
 	GuildID		string `storm:"index"` // GuildID of the users current guild
-	RoomID    string `storm:"index"` // ChannelID of the users current room
+	RoomID    	string `storm:"index"` // ChannelID of the users current room
 	ItemsMap	[]string	// An ID pointing to the
 
+	Strength	float64
+	Dexterity	float64
+	Constitution	float64
+	Intelligence	float64
+	Wisdom		float64
+	Charisma	float64
+	InitiativeMod	float64
+	HitPoints	float64
+	Acrobatics float64
+	Appraise	float64
+	Bluff	float64
+	Climb	float64
+	CraftOneType	float64
+	CraftOne	float64
+	CraftTwoType	float64
+	CraftTwo	float64
+	CraftThreeType	float64
+	CraftThree	float64
+	Diplomacy	float64
+	DisableDevice	float64
+	Disguise	float64
+	EscapeArtist	float64
+	Fly	float64
+	HandleAnimal	float64
+	Heal	float64
+	Intimidate	float64
+	KnowledgeArcana	float64
+	KnowledgeDungeoneering	float64
+	KnowledgeEngineering	float64
+	KnowledgeGeography	float64
+	KnowledgeHistory	float64
+	KnowledgeLocal	float64
+	KnowledgeNature	float64
+	KnowledgeNobility	float64
+	KnowledgePlains	float64
+	KnowledgeReligion	float64
+	Linguistics	float64
+	Perception	float64
+	PerformOneType			string
+	PerformOne	float64
+	PerformTwoType			string
+	PerformTwo	float64
+	ProfessionOneType	float64
+	ProfessionOne	float64
+	ProfessionTwoType	float64
+	ProfessionTwo	float64
+	Ride	float64
+	SenseMotive	float64
+	SleightOfHand	float64
+	Spellcraft	float64
+	Stealth	float64
+	Survival	float64
+	Swim	float64
+	UseMagicDevice	float64
+
+
+	Spellbook				string // An ID of the spellbook in the database
+
+	CopperPieces			int64
+	SilverPieces			int64
+	GoldPieces				int64
+	PlatinumPieces			int64
+
+	ExperiencePoints		int64
 }
 
 // Init function
