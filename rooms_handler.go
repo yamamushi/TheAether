@@ -341,6 +341,16 @@ func (h *RoomsHandler) ParseCommand(command []string, s *discordgo.Session, m *d
 		h.LinkRole(command[2], command[3], s, m)
 		return
 	}
+	if command[1] == "unlinkrole" {
+		if len(command) < 4 {
+			s.ChannelMessageSend(m.ChannelID, "unlinkrole requires two arguments - <rolename> <room>")
+			return
+		}
+
+		h.UnLinkRole(command[2], command[3], s, m)
+		return
+	}
+
 	if command[1] == "setupserver" {
 		if m.Author.ID != h.conf.MainConfig.ClusterOwnerID {
 			s.ChannelMessageSend(m.ChannelID, "Only the cluster owner can run this command.")
@@ -401,6 +411,35 @@ func (h *RoomsHandler) ParseCommand(command []string, s *discordgo.Session, m *d
 		return
 	}
 
+	if command[1] == "guildinvite" {
+		if len(command) == 3 {
+			invite, err := h.GetRoomTransferInvite(command[2])
+			if err != nil{
+				s.ChannelMessageSend(m.ChannelID, "Error retrieving guild invite: " + invite)
+				return
+			}
+			s.ChannelMessageSend(m.ChannelID, "Room: "+ command[2] + " invite: ```\n"+ invite+"\n```\n")
+			return
+		}
+		if len(command) >= 4 {
+
+			err := h.SetRoomTransferInvite(command[2], command[3], s, m)
+			if err != nil {
+				s.ChannelMessageSend(m.ChannelID, "Error setting description: " + err.Error())
+				return
+			}
+			s.ChannelMessageSend(m.ChannelID, "Room invite set: \n" + command[3])
+			return
+		}
+		if len(command) < 3 {
+			s.ChannelMessageSend(m.ChannelID, "guildinvite requires one or two arguments - <room> <invite>")
+			return
+		}
+
+		h.LinkRole(command[2], command[3], s, m)
+		return
+	}
+
 }
 
 
@@ -427,7 +466,7 @@ func (h *RoomsHandler) CreateManagementRooms(guildID string, s *discordgo.Sessio
 	}
 
 	// Create default builder role
-	builderperms := h.perm.CreatePermissionInt(RolePermissions{})
+	builderperms := h.perm.CreatePermissionInt(RolePermissions{VIEW_CHANNEL:true})
 	_, err = h.perm.CreateRole("Builder", guildID, true, false, 11993343, builderperms, s)
 	if err != nil {
 		if !strings.Contains(err.Error(), "already exists") {
@@ -436,7 +475,8 @@ func (h *RoomsHandler) CreateManagementRooms(guildID string, s *discordgo.Sessio
 	}
 
 	// Create default moderator role
-	moderatorperms := h.perm.CreatePermissionInt(RolePermissions{})
+	moderatorperms := h.perm.CreatePermissionInt(RolePermissions{VIEW_CHANNEL: true, SEND_MESSAGES: true,
+		READ_MESSAGE_HISTORY: true, MANAGE_MESSAGES: true, KICK_MEMBERS: true, BAN_MEMBERS: true})
 	_, err = h.perm.CreateRole("Moderator", guildID, true, false, 38659, moderatorperms, s)
 	if err != nil {
 		if !strings.Contains(err.Error(), "already exists") {
@@ -657,6 +697,7 @@ func (h *RoomsHandler) CreateOOCChannels(guildID string, s *discordgo.Session) (
 	denyeveryoneperms := h.perm.CreatePermissionInt(RolePermissions{SEND_MESSAGES: true})
 	alloweveryoneperms := h.perm.CreatePermissionInt(RolePermissions{VIEW_CHANNEL: true, READ_MESSAGE_HISTORY: true})
 
+
 	// rules
 	_, err = h.AddRoom(s, "rules", guildID, "Lobby", "", "")
 	if err != nil {
@@ -704,6 +745,15 @@ func (h *RoomsHandler) CreateOOCChannels(guildID string, s *discordgo.Session) (
 	spoilersdenyperms := h.perm.CreatePermissionInt(RolePermissions{})
 	spoilersallowperms := h.perm.CreatePermissionInt(RolePermissions{VIEW_CHANNEL:true, SEND_MESSAGES: true, READ_MESSAGE_HISTORY: true})
 
+
+	moderatorRoleID, err := getRoleIDByName(s, guildID, "Moderator")
+	if err != nil {
+		return err
+	}
+	allowmoderatorperms := h.perm.CreatePermissionInt(RolePermissions{VIEW_CHANNEL: true, SEND_MESSAGES: true,
+		READ_MESSAGE_HISTORY: true, MANAGE_MESSAGES: true, KICK_MEMBERS: true, BAN_MEMBERS: true})
+	denymoderatorperms := h.perm.CreatePermissionInt(RolePermissions{})
+
 	// ooc
 	_, err = h.AddRoom(s, "ooc", guildID, "OOC", "", "")
 	if err != nil {
@@ -726,6 +776,10 @@ func (h *RoomsHandler) CreateOOCChannels(guildID string, s *discordgo.Session) (
 		return err
 	}
 	err = s.ChannelPermissionSet( oocChannelID, registeredRoleID, "role", allowdevperms, denydevperms)
+	if err != nil {
+		return err
+	}
+	err = s.ChannelPermissionSet( oocChannelID, moderatorRoleID, "role", allowmoderatorperms, denymoderatorperms)
 	if err != nil {
 		return err
 	}
@@ -760,6 +814,10 @@ func (h *RoomsHandler) CreateOOCChannels(guildID string, s *discordgo.Session) (
 		return err
 	}
 	err = s.ChannelPermissionSet( tradesChannelID, registeredRoleID, "role", allowdevperms, denydevperms)
+	if err != nil {
+		return err
+	}
+	err = s.ChannelPermissionSet( tradesChannelID, moderatorRoleID, "role", allowmoderatorperms, denymoderatorperms)
 	if err != nil {
 		return err
 	}
@@ -798,6 +856,10 @@ func (h *RoomsHandler) CreateOOCChannels(guildID string, s *discordgo.Session) (
 	if err != nil {
 		return err
 	}
+	err = s.ChannelPermissionSet( helpChannelID, moderatorRoleID, "role", allowmoderatorperms, denymoderatorperms)
+	if err != nil {
+		return err
+	}
 	helpchannelEdit := new(discordgo.ChannelEdit)
 	helpchannelEdit.Topic = "Help Chat - No Spoilers! Get help on using game commands here"
 	helpchannelEdit.Position = 3
@@ -824,11 +886,15 @@ func (h *RoomsHandler) CreateOOCChannels(guildID string, s *discordgo.Session) (
 			return err // We don't care about no record being found in the Lobby because it is our default room
 		}
 	}
-	err = s.ChannelPermissionSet( tradesChannelID, everyoneID, "role", alloweveryoneperms, denyeveryoneperms)
+	err = s.ChannelPermissionSet( spoilersChannelID, everyoneID, "role", alloweveryoneperms, denyeveryoneperms)
 	if err != nil {
 		return err
 	}
-	err = s.ChannelPermissionSet( tradesChannelID, spoilersRoleID, "role", spoilersallowperms, spoilersdenyperms)
+	err = s.ChannelPermissionSet( spoilersChannelID, spoilersRoleID, "role", spoilersallowperms, spoilersdenyperms)
+	if err != nil {
+		return err
+	}
+	err = s.ChannelPermissionSet( spoilersChannelID, moderatorRoleID, "role", allowmoderatorperms, denymoderatorperms)
 	if err != nil {
 		return err
 	}
@@ -866,6 +932,10 @@ func (h *RoomsHandler) CreateOOCChannels(guildID string, s *discordgo.Session) (
 	if err != nil {
 		return err
 	}
+	err = s.ChannelPermissionSet( bugsChannelID, moderatorRoleID, "role", allowmoderatorperms, denymoderatorperms)
+	if err != nil {
+		return err
+	}
 	bugschannelEdit := new(discordgo.ChannelEdit)
 	bugschannelEdit.Topic = "Bugs Chat - Please provide as much details as you can, or post an issue on github!"
 	bugschannelEdit.Position = 5
@@ -875,12 +945,6 @@ func (h *RoomsHandler) CreateOOCChannels(guildID string, s *discordgo.Session) (
 	}
 
 	return nil
-}
-
-func (h *RoomsHandler) CreateRoom(s *discordgo.Session, name string, guildID string, parentname string) {
-
-
-
 }
 
 func (h *RoomsHandler) DeleteRoom(s *discordgo.Session, name string, guildID string, parentname string) {
@@ -907,7 +971,7 @@ func (h *RoomsHandler) AddRoom(s *discordgo.Session, name string, guildID string
 		}
 	}
 
-	existingrecord, err := h.rooms.GetRoomByName(name, guildID)
+	record, err := h.rooms.GetRoomByName(name, guildID)
 	if err != nil {
 
 		channels, err := s.GuildChannels(guildID)
@@ -956,9 +1020,10 @@ func (h *RoomsHandler) AddRoom(s *discordgo.Session, name string, guildID string
 			return createdroom, err
 		}
 
-		existingrecord = Room{ID: createdchannel.ID, GuildID: guildID, Name: name, ParentID: parentID, ParentName: parentname,
+		record = Room{ID: createdchannel.ID, GuildID: guildID, Name: name, ParentID: parentID, ParentName: parentname,
 		GuildTransferInvite: transferInvite, TransferRoomID: transferRoomID}
 
+		// Everyone Default Roles
 		everyoneID, err := getGuildEveryoneRoleID(s, guildID)
 		if err != nil {
 			return createdroom, err
@@ -970,7 +1035,56 @@ func (h *RoomsHandler) AddRoom(s *discordgo.Session, name string, guildID string
 			return createdroom, err
 		}
 
-		h.rooms.SaveRoomToDB(existingrecord)
+
+		builderID, err := getRoleIDByName(s, guildID, "Builder")
+		if err != nil {
+			return createdroom, err
+		}
+		denybuilder := h.perm.CreatePermissionInt(RolePermissions{})
+		allowbuilder := h.perm.CreatePermissionInt(RolePermissions{VIEW_CHANNEL: true, SEND_MESSAGES: true})
+		err = s.ChannelPermissionSet( createdroom.ID, builderID, "role", allowbuilder, denybuilder)
+		if err != nil {
+			return createdroom, err
+		}
+
+
+		moderatorID, err := getRoleIDByName(s, guildID, "Moderator")
+		if err != nil {
+			return createdroom, err
+		}
+		denymoderator := h.perm.CreatePermissionInt(RolePermissions{})
+		allowmoderator := h.perm.CreatePermissionInt(RolePermissions{VIEW_CHANNEL: true, SEND_MESSAGES: true,
+		READ_MESSAGE_HISTORY: true, MANAGE_MESSAGES: true, KICK_MEMBERS: true, BAN_MEMBERS: true})
+		err = s.ChannelPermissionSet( createdroom.ID, moderatorID, "role", allowmoderator, denymoderator)
+		if err != nil {
+			return createdroom, err
+		}
+
+		createdrole, err := h.perm.CreateRole(name, guildID, false, false, 0, 0, s)
+		if err != nil {
+			return createdroom, err
+		}
+
+
+		record.RoleIDs = append(record.RoleIDs, createdrole.ID)
+		record.TravelRoleID = createdrole.ID
+
+		denyrperms := 0
+		allowperms := 0
+		if record.GuildTransferInvite != "" {
+			denyrperms = h.perm.CreatePermissionInt(RolePermissions{SEND_MESSAGES:false, READ_MESSAGE_HISTORY:false})
+			allowperms = h.perm.CreatePermissionInt(RolePermissions{VIEW_CHANNEL:true})
+		} else {
+			denyrperms = h.perm.CreatePermissionInt(RolePermissions{})
+			allowperms = h.perm.CreatePermissionInt(RolePermissions{VIEW_CHANNEL:true, SEND_MESSAGES: true})
+		}
+		err = s.ChannelPermissionSet( record.ID, createdrole.ID, "role", allowperms, denyrperms)
+		if err != nil {
+			return createdroom, err
+		}
+
+
+		h.rooms.SaveRoomToDB(record)
 		return createdroom, nil
 	} else {
 		return createdroom, errors.New("Room already exists in database!")
@@ -1067,6 +1181,57 @@ func (h *RoomsHandler) SetupNewServer(s *discordgo.Session, m *discordgo.Message
 	return nil
 }
 
+
+func (h *RoomsHandler) SetTravelRole(rolename string, roomID string, s *discordgo.Session,  m *discordgo.MessageCreate) (err error) {
+
+	room, err := h.rooms.GetRoomByID(roomID)
+	if err != nil {
+		return errors.New("Error retrieving roleID: " + err.Error())
+	}
+
+	guildID, err := getGuildID(s, m.ChannelID)
+	if err != nil {
+		return errors.New("Could not retrieve GuildID: " + err.Error())
+	}
+
+	roleID, err := getRoleIDByName(s, guildID, rolename)
+	if err != nil {
+		return errors.New("Error retrieving roleID: " + err.Error())
+	}
+
+	_, err = s.Channel(roomID)
+	if err != nil {
+		return errors.New("Could not find target transfer room: " + err.Error())
+	}
+
+	room.TravelRoleID = roleID
+
+	err = h.rooms.SaveRoomToDB(room)
+	if err != nil {
+		return errors.New("Error updating DB: " + err.Error())
+	}
+
+
+	denyrperms := 0
+	allowperms := 0
+	if room.GuildTransferInvite != "" {
+		denyrperms = h.perm.CreatePermissionInt(RolePermissions{SEND_MESSAGES:false, READ_MESSAGE_HISTORY:false})
+		allowperms = h.perm.CreatePermissionInt(RolePermissions{VIEW_CHANNEL:true})
+	} else {
+		denyrperms = h.perm.CreatePermissionInt(RolePermissions{})
+		allowperms = h.perm.CreatePermissionInt(RolePermissions{VIEW_CHANNEL:true, SEND_MESSAGES: true})
+	}
+
+	err = s.ChannelPermissionSet( room.ID, roleID, "role", allowperms, denyrperms)
+	if err != nil {
+		s.ChannelMessageSend(m.ChannelID, "Error setting permissions: " + err.Error())
+		return
+	}
+
+	return nil
+}
+
+
 func (h *RoomsHandler) LinkRole(rolename string, roomID string, s *discordgo.Session, m *discordgo.MessageCreate) {
 
 	guildID, err := getGuildID(s, m.ChannelID)
@@ -1095,7 +1260,6 @@ func (h *RoomsHandler) LinkRole(rolename string, roomID string, s *discordgo.Ses
 		}
 	}
 	room.RoleIDs = append(room.RoleIDs, roleID)
-	room.TravelRoleID = roleID
 
 	err = h.rooms.SaveRoomToDB(room)
 	if err != nil {
@@ -1122,6 +1286,48 @@ func (h *RoomsHandler) LinkRole(rolename string, roomID string, s *discordgo.Ses
 	s.ChannelMessageSend(m.ChannelID, "Role " + rolename + " linked to " + room.Name)
 	return
 }
+
+func (h *RoomsHandler) UnLinkRole(rolename string, roomID string, s *discordgo.Session, m *discordgo.MessageCreate) {
+
+	guildID, err := getGuildID(s, m.ChannelID)
+	if err != nil {
+		s.ChannelMessageSend(m.ChannelID, "Could not retrieve GuildID: " + err.Error())
+		return
+	}
+
+	roleID, err := getRoleIDByName(s, guildID, rolename)
+	if err != nil {
+		s.ChannelMessageSend(m.ChannelID, "Error retrieving roleID: " + err.Error())
+		return
+	}
+
+	roomID = CleanChannel(roomID)
+	room, err := h.rooms.GetRoomByID(roomID)
+	if err != nil {
+		s.ChannelMessageSend(m.ChannelID, "Error retrieving roomID: " + err.Error())
+		return
+	}
+
+	room.RoleIDs = RemoveStringFromSlice(room.RoleIDs, roleID)
+
+	err = h.rooms.SaveRoomToDB(room)
+	if err != nil {
+		s.ChannelMessageSend(m.ChannelID, "Error updating DB: " + err.Error())
+		return
+	}
+
+	denyperms := h.perm.CreatePermissionInt(RolePermissions{VIEW_CHANNEL:true, SEND_MESSAGES: true})
+
+	err = s.ChannelPermissionSet( room.ID, roleID, "role", 0, denyperms)
+	if err != nil {
+		s.ChannelMessageSend(m.ChannelID, "Error setting permissions: " + err.Error())
+		return
+	}
+
+	s.ChannelMessageSend(m.ChannelID, "Role " + rolename + " linked to " + room.Name)
+	return
+}
+
 
 func (h *RoomsHandler) FormatRoomInfo(roomID string) (formatted string, err error) {
 
@@ -1526,3 +1732,41 @@ func (h *RoomsHandler) SetRoomDescription(roomID string, description string, s *
 
 	return nil
 }
+
+
+func (h *RoomsHandler) 	GetRoomTransferInvite(roomID string) (formatted string, err error) {
+
+	roomID = CleanChannel(roomID)
+
+	room, err := h.rooms.GetRoomByID(roomID)
+	if err != nil {
+		return formatted, nil
+	}
+
+	formatted = room.GuildTransferInvite
+	return formatted, nil
+}
+
+func (h *RoomsHandler) SetRoomTransferInvite(roomID string, invite string, s *discordgo.Session, m *discordgo.MessageCreate) (err error) {
+
+	roomID = CleanChannel(roomID)
+
+	if !strings.HasPrefix(invite, "http"){
+		return errors.New("Invite url is not formatted correctly")
+	}
+
+	room, err := h.rooms.GetRoomByID(roomID)
+	if err != nil {
+		return err
+	}
+
+	room.GuildTransferInvite = invite
+
+	err = h.rooms.SaveRoomToDB(room)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
