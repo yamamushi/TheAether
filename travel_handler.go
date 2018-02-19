@@ -138,20 +138,21 @@ func (h *TravelHandler) ParseCommand(command []string, s *discordgo.Session, m *
 	s.ChannelMessageSend(m.ChannelID, leaveoutout)
 
 
-	// If we're leaving this server, we want to avoid sending an arrival message to the holding channel
-	if fromroom.GuildTransferInvite != "" {
-		// m.ChannelID because this is the channel we are leaving from
-		h.HandleServerTransfer(user, fromroom.ID, fromroom.TransferRoomID, transferroom.GuildID, fromroom, travelfrom, s, m)
-		return
-	}
-
-	time.Sleep(3000)
 	// If we're not leaving the server, we want to notify the channel that the user has arrived
 	if travelfrom == "below" || travelfrom == "above" {
 		s.ChannelMessageSend(user.RoomID, discorduser.Mention() + " has arrived from " + travelfrom + ".")
 
 	} else {
 		s.ChannelMessageSend(user.RoomID, discorduser.Mention() + " has arrived from the " + travelfrom + ".")
+	}
+
+
+	time.Sleep(3000)
+	// If we're leaving this server, we want to avoid sending an arrival message to the holding channel
+	if fromroom.GuildTransferInvite != "" {
+		// m.ChannelID because this is the channel we are leaving from
+		h.HandleServerTransfer(user, fromroom.ID, fromroom.TransferRoomID, transferroom.GuildID, fromroom, travelfrom, s, m)
+		return
 	}
 
 	return
@@ -286,6 +287,7 @@ func (h *TravelHandler) Travel(direction string, s *discordgo.Session, m *discor
 	}
 
 	user.RoomID = targetroom.ID
+	user.GuildID = guildID
 	db := h.db.rawdb.From("Users")
 	err = db.Update(&user)
 	if err != nil {

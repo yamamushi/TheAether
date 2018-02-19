@@ -6,6 +6,7 @@ import (
 	"github.com/bwmarrin/discordgo"
 	"strings"
 	"strconv"
+	"time"
 )
 
 // PermissionsHandler struct
@@ -780,31 +781,26 @@ func (h *PermissionsHandler) AddRoleToUser(rolename string, userID string, s *di
 
 	// Checks if Role Exists in Guild
 	roleID, err := getRoleIDByName(s, guildID, rolename)
-	if err != nil {
-		return err
+	if err == nil {
+		_ = s.GuildMemberRoleAdd(guildID, user.ID, roleID)
 	}
 
 
 	// Checks if a user is in a role based on the group string
-	if user.CheckRole(rolename) {
-		return errors.New("User Already Belongs to Role " + rolename + "!")
+	if !user.CheckRole(rolename) {
+		// Open the "Users" bucket in the database
+		db := h.db.rawdb.From("Users")
+
+		// Assign the group to our target user
+		user.SetRole(rolename)
+		// Save the user changes in the database
+		err = db.Update(&user)
+		if err != nil {
+			return err
+		}
 	}
 
-	// Open the "Users" bucket in the database
-	db := h.db.rawdb.From("Users")
-
-	// Assign the group to our target user
-	user.SetRole(rolename)
-	// Save the user changes in the database
-	err = db.Update(&user)
-	if err != nil {
-		return err
-	}
-
-	err = s.GuildMemberRoleAdd(guildID, user.ID, roleID)
-	if err != nil {
-		return err
-	}
+	_ = s.GuildMemberRoleAdd(user.GuildID, user.ID, roleID)
 
 	return nil
 }
@@ -824,36 +820,46 @@ func (h *PermissionsHandler) RemoveRoleFromUser(rolename string, userID string, 
 
 	// Checks if Role Exists in Guild
 	roleID, err := getRoleIDByName(s, guildID, rolename)
-	if err != nil {
-		return err
+	if err == nil {
+		_ = s.GuildMemberRoleRemove(guildID, user.ID, roleID)
 	}
 
 	// Checks if a user is in a role based on the group string
-	if !user.CheckRole(rolename) {
-		return errors.New("User Does Not Belong to Role " + rolename + "!")
+	if user.CheckRole(rolename) {
+		// Open the "Users" bucket in the database
+		db := h.db.rawdb.From("Users")
+
+		// Remove role from our target user
+		user.RemoveRole(rolename)
+		// Save the user changes in the database
+		err = db.Update(&user)
+		if err != nil {
+			return err
+		}
 	}
 
-	// Open the "Users" bucket in the database
-	db := h.db.rawdb.From("Users")
-
-	// Assign the group to our target user
-	user.RemoveRole(rolename)
-	// Save the user changes in the database
-	err = db.Update(&user)
-	if err != nil {
-		return err
-	}
-
-	err = s.GuildMemberRoleRemove(guildID, user.ID, roleID)
-	if err != nil {
-		return err
+	// Checks if Role Exists in Guild
+	roleID, err = getRoleIDByName(s, user.GuildID, rolename)
+	if err == nil {
+		_ = s.GuildMemberRoleRemove(user.GuildID, user.ID, roleID)
 	}
 
 	return nil
 }
 
-func (h *PermissionsHandler) UpdateUserRole( roleID string, userID string, guildID string, s *discordgo.Session) (err error){
+
+func (h *PermissionsHandler) SyncServerRoles( userID string, channelID string, s *discordgo.Session) (err error){
+
+	// Get user from the database using the userid
+	user, err := h.user.GetUser(userID, s, channelID)
+	if err != nil {
+		return err
+	}
+
+	for _, role := range user.Roles {
+		time.Sleep(time.Duration(time.Second*1))
+		_ = s.GuildMemberRoleAdd(user.GuildID, user.ID, role)
+	}
 
 	return nil
-
 }

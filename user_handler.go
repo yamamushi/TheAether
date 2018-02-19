@@ -359,6 +359,9 @@ func (h *UserHandler) FormatGroups(groups []string) (formatted string) {
 
 // FormatRoles function
 func (h *UserHandler) FormatRoles(roles []string) (formatted string) {
+
+	formatted = ":satellite: ```\n"
+	formatted = formatted + "Roles: "
 	for i, role := range roles {
 		if i == len(roles)-1 {
 			formatted = formatted + role
@@ -367,5 +370,6 @@ func (h *UserHandler) FormatRoles(roles []string) (formatted string) {
 		}
 	}
 
+	formatted = formatted + "\n```"
 	return formatted
 }

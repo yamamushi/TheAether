@@ -236,5 +236,23 @@ func (h *TransferHandler) TransferToChannel(userID string, targetGuildID string,
 		return err
 	}
 
+	user, err := h.user.GetUser(userID, s, m.ChannelID)
+	if err != nil {
+		return err
+	}
+
+	user.RoomID = toroom.ID
+	user.GuildID = toroom.GuildID
+	db := h.db.rawdb.From("Users")
+	err = db.Update(&user)
+	if err != nil {
+		return errors.New("Error updating user record into database!")
+	}
+
+	err = h.perms.SyncServerRoles(user.ID, user.RoomID, s)
+	if err != nil {
+		return err
+	}
+
 	return nil
 }
