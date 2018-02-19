@@ -54,10 +54,10 @@ func (h *SetupProcess) SetupOwnerPermissions(s *discordgo.Session, channelID str
 		return errors.New("Could not complete setup")
 	}
 
-
+	fmt.Println("Getting Guild Record")
 	guildRecord, err := h.guilds.GetGuildByID(guildID)
 	if err != nil {
-		if strings.Contains(err.Error(), "No record found"){
+		if strings.Contains(err.Error(), "No guild record found"){
 			fmt.Println("Registering Guild in Database")
 
 			discordguild, err := s.Guild(guildID)
@@ -74,6 +74,7 @@ func (h *SetupProcess) SetupOwnerPermissions(s *discordgo.Session, channelID str
 			fmt.Println("Guild Registered: " + guildRecord.ID + " - " + guildRecord.Name)
 
 		} else {
+			fmt.Println("Error retrieving guild: " + err.Error())
 			return err
 		}
 	} else {

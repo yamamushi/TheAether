@@ -131,14 +131,25 @@ func main() {
 	commandhandler.Init(&channelhandler)
 	dg.AddHandler(commandhandler.Read)
 
-	fmt.Println("Initializing Rooms Handler")
+	// Initialize Guilds Manager
+	fmt.Println("Adding Guilds Manager")
+	guildsmanager := GuildsManager{db: &dbhandler}
+
+	fmt.Println("Adding Rooms Handler")
 	roomshandler := RoomsHandler{callback: &callbackhandler, conf: &conf, db: &dbhandler, perm: &permissionshandler,
-	registry: commandhandler.registry, dg: dg, user: &userhandler, ch: &channelhandler}
+	registry: commandhandler.registry, dg: dg, user: &userhandler, ch: &channelhandler, guilds: &guildsmanager}
 	dg.AddHandler(roomshandler.Read)
 	// No rooms handler init here!
 
+	fmt.Println("Adding Registration Handler")
+	registrationhandler := RegistrationHandler{callback: &callbackhandler, conf: &conf, db: &dbhandler, perm: &permissionshandler,
+		registry: commandhandler.registry, dg: dg, user: &userhandler, ch: &channelhandler, guilds: &guildsmanager}
+	registrationhandler.Init()
+	dg.AddHandler(registrationhandler.Read)
+	// No rooms handler init here!
+
 	// Inititalize Transfers Handler
-	fmt.Println("Initializing Transfers Handler")
+	fmt.Println("Adding Transfers Handler")
 	transferhandler := TransferHandler{db: &dbhandler, conf: &conf, registry: commandhandler.registry, perms: &permissionshandler,
 		rooms: &roomshandler, user: &userhandler, dg: dg}
 	transferhandler.Init()
@@ -146,15 +157,17 @@ func main() {
 	go transferhandler.HandleTransfers()
 
 	// Initialize Travel Handler
-	fmt.Println("Initializing Travel Handler")
+	fmt.Println("Adding Travel Handler")
 	travelhandler := TravelHandler{db: &dbhandler, conf: &conf, registry: commandhandler.registry, perms: &permissionshandler,
 		room: &roomshandler, user: &userhandler, transfer: &transferhandler}
 	travelhandler.Init()
 	dg.AddHandler(travelhandler.Read)
 
-	// Initialize Guilds Manager
-	fmt.Println("Initializing Guilds Manager")
-	guildsmanager := GuildsManager{db: &dbhandler}
+	// Initialize Welcome Handler
+	fmt.Println("Adding Welcome Handler")
+	Welcomehandler := WelcomeHandler{conf: &conf, user: &userhandler, db: &dbhandler}
+	dg.AddHandler(Welcomehandler.ReadNewMember)
+	dg.AddHandler(Welcomehandler.Read)
 
 	// Initalize our Logger
 	fmt.Println("Initializing Logger")

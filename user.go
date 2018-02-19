@@ -1,7 +1,16 @@
 package main
 
-import "time"
+import (
+	"time"
+	"sync"
+	"errors"
+)
 
+
+type UserManager struct {
+	db          *DBHandler
+	querylocker sync.RWMutex
+}
 // User struct
 type User struct {
 	ID string `storm:"id"` // primary key
@@ -10,10 +19,35 @@ type User struct {
 	Roles		[]string
 
 	// Profile stuff
+	Name		string
 	SkinTone	string
+	Gender		string
+	HairColor	string
+	HairStyle	string
+	Height		string
+
+	Statuses 	[]string
+
+	// Body Parts Can Have Individual States
+	REye		string
+	LEye 		string
+	Mouth 		string
+	RHand		string
+	LHand		string
+	RArm		string
+	LArm 		string
+	Head 		string
+	Torso 		string
+	RLeg		string
+	RFoot		string
+	LLeg		string
+	LFoot		string
+
 	Email 		string
 
+
 	Registered				string
+	RegistrationStatus		string
 	RegisteredDate			time.Time
 
 
@@ -94,13 +128,94 @@ type User struct {
 
 }
 
+
+
+
+func (h *UserManager) SaveUserToDB(user User) (err error) {
+	h.querylocker.Lock()
+	defer h.querylocker.Unlock()
+
+	db := h.db.rawdb.From("Users")
+	err = db.Save(&user)
+	return err
+}
+
+func (h *UserManager) RemoveUserFromDB(user User) (err error) {
+	h.querylocker.Lock()
+	defer h.querylocker.Unlock()
+
+	db := h.db.rawdb.From("Users")
+	err = db.DeleteStruct(&user)
+	return err
+}
+
+func (h *UserManager) RemoveUserByID(userID string) (err error) {
+
+	room, err := h.GetUserByID(userID)
+	if err != nil {
+		return err
+	}
+
+	err = h.RemoveUserFromDB(room)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (h *UserManager) GetUserByID(userID string) (user User, err error) {
+
+	users, err := h.GetAllUsers()
+	if err != nil{
+		return user, err
+	}
+
+	for _, i := range users {
+		if i.ID == userID{
+			return i, nil
+		}
+	}
+
+	return user, errors.New("No record found")
+}
+
+func (h *UserManager) GetUserByName(username string, guildID string) (user User, err error) {
+
+	users, err := h.GetAllUsers()
+	if err != nil{
+		return user, err
+	}
+
+	for _, i := range users {
+		if i.Name == username && i.GuildID == guildID{
+			return i, nil
+		}
+	}
+
+	return user, errors.New("No record found")
+}
+
+func (h *UserManager) GetAllUsers() (userlist []User, err error) {
+	h.querylocker.Lock()
+	defer h.querylocker.Unlock()
+
+	db := h.db.rawdb.From("Users")
+	err = db.All(&userlist)
+	if err != nil {
+		return userlist, err
+	}
+
+	return userlist, nil
+}
+
+
+
 // Init function
 func (u *User) Init() {
 	ClearRoles(u)
 	PlayerRole(u)
 }
-
-
 
 // SetRole function
 func (u *User) SetRole(role string) {

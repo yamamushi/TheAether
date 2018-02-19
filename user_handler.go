@@ -12,11 +12,14 @@ type UserHandler struct {
 	db      *DBHandler
 	cp      string
 	logchan chan string
+	user    *UserManager
 }
 
 // Init function
 func (h *UserHandler) Init() {
 	h.cp = h.conf.MainConfig.CP
+	h.user = new(UserManager)
+	h.user.db = h.db
 }
 
 // Read function
@@ -38,8 +41,6 @@ func (h *UserHandler) Read(s *discordgo.Session, m *discordgo.MessageCreate) {
 	if len(message) < 1 {
 		return
 	}
-
-	h.CheckUser(m.Author.ID, s, m.ChannelID)
 
 	user, err := h.db.GetUser(m.Author.ID)
 	if err != nil {

@@ -48,12 +48,12 @@ func (h *GuildsManager) RemoveGuildFromDB(guild GuildRecord) (err error) {
 
 func (h *GuildsManager) RemoveGuildByID(guildID string) (err error) {
 
-	room, err := h.GetGuildByID(guildID)
+	guild, err := h.GetGuildByID(guildID)
 	if err != nil {
 		return err
 	}
 
-	err = h.RemoveGuildFromDB(room)
+	err = h.RemoveGuildFromDB(guild)
 	if err != nil {
 		return err
 	}
@@ -63,12 +63,12 @@ func (h *GuildsManager) RemoveGuildByID(guildID string) (err error) {
 
 func (h *GuildsManager) GetGuildByID(guildID string) (guild GuildRecord, err error) {
 
-	rooms, err := h.GetAllGuilds()
+	guilds, err := h.GetAllGuilds()
 	if err != nil{
 		return guild, err
 	}
 
-	for _, i := range rooms {
+	for _, i := range guilds {
 		if i.ID == guildID{
 			return i, nil
 		}
@@ -196,7 +196,7 @@ func (h *GuildsManager) RegisterGuild(guildID string, s *discordgo.Session) (err
 
 	guildRecord, err := h.GetGuildByID(guildID)
 	if err != nil {
-		if strings.Contains(err.Error(), "No record found"){
+		if strings.Contains(err.Error(), "No guild record found"){
 
 			discordguild, err := s.Guild(guildID)
 			if err != nil {

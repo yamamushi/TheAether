@@ -18,6 +18,7 @@ type RoomsHandler struct {
 	user     *UserHandler
 	ch       *ChannelHandler
 	rooms	 *Rooms
+	guilds 	 *GuildsManager
 
 }
 
@@ -43,15 +44,7 @@ func (h* RoomsHandler) InitRooms(s *discordgo.Session, channelID string) (err er
 		}
 	}
 
-	// Create default crossroads location role
-	crossroadsperms := h.perm.CreatePermissionInt(RolePermissions{})
-	_, err = h.perm.CreateRole("Crossroads", guildID, true, false, 16747776, crossroadsperms, s)
-	if err != nil {
-		if !strings.Contains(err.Error(), "already exists"){
-			return err
-		}
-	}
-
+	// Spoilers Role
 	spoilerperms := h.perm.CreatePermissionInt(RolePermissions{})
 	_, err = h.perm.CreateRole("Spoilers", guildID, false, false, 16777215, spoilerperms, s)
 	if err != nil {
@@ -61,6 +54,29 @@ func (h* RoomsHandler) InitRooms(s *discordgo.Session, channelID string) (err er
 	}
 
 
+	// Create default crossroads location role
+	crossroadsperms := h.perm.CreatePermissionInt(RolePermissions{})
+	_, err = h.perm.CreateRole("Crossroads", guildID, true, false, 16747776, crossroadsperms, s)
+	if err != nil {
+		if !strings.Contains(err.Error(), "already exists"){
+			return err
+		}
+	}
+
+/*
+	theAetherRoleID, err := getRoleIDByName(s, guildID, "TheAether")
+	theAetherPerms := h.perm.CreatePermissionInt(RolePermissions{CREATE_INSTANT_INVITE: true,
+		KICK_MEMBERS: true, BAN_MEMBERS: true, ADMINISTRATOR: true, MANAGE_CHANNELS: true,
+		MANAGE_GUILD: true, ADD_REACTIONS: true, VIEW_AUDIT_LOG: true, VIEW_CHANNEL: true,
+		SEND_MESSAGES: true, SEND_TTS_MESSAGES: true, MANAGE_MESSAGES: true, EMBED_LINKS: true, ATTACH_FILES: true,
+		READ_MESSAGE_HISTORY: true, MENTION_EVERYONE: true, USE_EXTERNAL_EMOJIS: true, CONNECT: true,
+		SPEAK: true, MUTE_MEMBERS: true, DEAFEN_MEMBERS: true, MOVE_MEMBERS: true, USE_VAD: true,
+		CHANGE_NICKNAME: true, MANAGE_NICKNAMES: true, MANAGE_ROLES: true, MANAGE_WEBHOOKS: true, MANAGE_EMOJIS: true})
+	_, err = s.GuildRoleEdit(guildID, theAetherRoleID, "TheAether", 0, true, theAetherPerms, false)
+	if err != nil {
+		return err
+	}
+*/
 	// The default Welcome Channel -> To be setup correctly a server NEEDS this channel and name as the default channel
 	fmt.Println("Creating Lobby Rooms")
 	welcomeChannelID, err := getGuildChannelIDByName(s, guildID, "welcome")
@@ -400,6 +416,26 @@ func (h *RoomsHandler) CreateManagementRooms(guildID string, s *discordgo.Sessio
 	return nil
 }
 
+func (h *RoomsHandler) CreateDefaultRoles(guildID string, s *discordgo.Session) (err error){
+	// Create default registered user role
+	registeredperms := h.perm.CreatePermissionInt(RolePermissions{})
+	_, err = h.perm.CreateRole("Registered", guildID, false, false, 16777215, registeredperms, s)
+	if err != nil {
+		if !strings.Contains(err.Error(), "already exists"){
+			return err
+		}
+	}
+
+	spoilerperms := h.perm.CreatePermissionInt(RolePermissions{})
+	_, err = h.perm.CreateRole("Spoilers", guildID, false, false, 16777215, spoilerperms, s)
+	if err != nil {
+		if !strings.Contains(err.Error(), "already exists"){
+			return err
+		}
+	}
+
+	return nil
+}
 
 func (h *RoomsHandler) CreateOOCChannels(guildID string, s *discordgo.Session) (err error){
 
@@ -485,7 +521,7 @@ func (h *RoomsHandler) CreateOOCChannels(guildID string, s *discordgo.Session) (
 	}
 	oocChannelEdit := new(discordgo.ChannelEdit)
 	oocChannelEdit.Topic = "Out of Character Chat - DO NOT Discuss spoilers here!"
-	oocChannelEdit.Position = 1
+	oocChannelEdit.Position = 0
 	_, err = s.ChannelEditComplex(oocChannelID, oocChannelEdit)
 	if err != nil {
 		return err
@@ -836,8 +872,6 @@ func (h *RoomsHandler) Read(s *discordgo.Session, m *discordgo.MessageCreate) {
 }
 
 
-
-
 // ParseCommand function
 func (h *RoomsHandler) ParseCommand(command []string, s *discordgo.Session, m *discordgo.MessageCreate) {
 
@@ -958,6 +992,7 @@ func (h *RoomsHandler) ParseCommand(command []string, s *discordgo.Session, m *d
 				s.ChannelMessageSend(m.ChannelID, "Could not setup new server: " + err.Error())
 				return
 			}
+			s.ChannelMessageSend(m.ChannelID, "Server configuration complete.")
 			return
 		} else {
 			s.ChannelMessageSend(m.ChannelID, "setupserver requires an acknowledgement flag (y/n)")
@@ -976,12 +1011,21 @@ func (h *RoomsHandler) SetupNewServer(s *discordgo.Session, m *discordgo.Message
 		return
 	}
 
+	err = h.CreateDefaultRoles( guildID, s )
+	if err != nil {
+		return err
+	}
 	err = h.CreateManagementRooms(guildID, s)
 	if err != nil {
 		return err
 	}
 
 	err = h.CreateOOCChannels(guildID, s)
+	if err != nil {
+		return err
+	}
+
+	err = h.guilds.RegisterGuild(guildID, s)
 	if err != nil {
 		return err
 	}
