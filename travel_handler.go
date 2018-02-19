@@ -65,7 +65,7 @@ func (h *TravelHandler) Read(s *discordgo.Session, m *discordgo.MessageCreate) {
 				fmt.Println("error retrieving user:" + m.Author.ID)
 			}
 
-			if user.CheckRole("moderator") {
+			if user.CheckRole("player") {
 				h.ParseCommand(command, s, m)
 			}
 		}
@@ -122,10 +122,13 @@ func (h *TravelHandler) ParseCommand(command []string, s *discordgo.Session, m *
 		travelfrom = "above"
 	}
 
-	transferroom, err := h.room.rooms.GetRoomByID(fromroom.TransferRoomID)
-	if err != nil {
-		s.ChannelMessageSend(m.ChannelID, "Error retrieving transfer room: " + err.Error())
-		return
+	transferroom := Room{}
+	if fromroom.GuildTransferInvite != "" {
+		transferroom, err = h.room.rooms.GetRoomByID(fromroom.TransferRoomID)
+		if err != nil {
+			s.ChannelMessageSend(m.ChannelID, "Error retrieving transfer room: "+err.Error())
+			return
+		}
 	}
 
 	// Notify channel that user has left
@@ -207,32 +210,32 @@ func (h *TravelHandler) Travel(direction string, s *discordgo.Session, m *discor
 		return err
 	}
 
-	room, err := h.room.rooms.GetRoomByID(m.ChannelID)
+	fromroom, err := h.room.rooms.GetRoomByID(m.ChannelID)
 	if err != nil {
 		return err
 	}
 
 	toroom := ""
 	if direction == "up" {
-		toroom = room.UpID
+		toroom = fromroom.UpID
 	} else if direction == "down" {
-		toroom = room.DownID
+		toroom = fromroom.DownID
 	} else if direction == "north" {
-		toroom = room.NorthID
+		toroom = fromroom.NorthID
 	} else if direction == "northeast" {
-		toroom = room.NorthEastID
+		toroom = fromroom.NorthEastID
 	} else if direction == "east" {
-		toroom = room.EastID
+		toroom = fromroom.EastID
 	} else if direction == "southeast" {
-		toroom = room.SouthEastID
+		toroom = fromroom.SouthEastID
 	} else if direction == "south" {
-		toroom = room.SouthID
+		toroom = fromroom.SouthID
 	} else if direction == "southwest" {
-		toroom = room.SouthWestID
+		toroom = fromroom.SouthWestID
 	} else if direction == "west" {
-		toroom = room.WestID
+		toroom = fromroom.WestID
 	} else if direction == "northwest" {
-		toroom = room.NorthWestID
+		toroom = fromroom.NorthWestID
 	} else {
 		return errors.New("Unrecognized direction: "+direction)
 
@@ -252,14 +255,13 @@ func (h *TravelHandler) Travel(direction string, s *discordgo.Session, m *discor
 		return errors.New("Target room is not configured properly: " + toroom )
 	}
 
-	if len(room.RoleIDs) < 1 {
+	if len(fromroom.RoleIDs) < 1 {
 		return errors.New("From room is not configured properly: " + toroom )
 	}
 
 
 	if len(targetroom.Items) > 0 {
 		// This is where the logic for items validation will go
-
 	}
 
 	guildID, err := getGuildID(s, m.ChannelID)
@@ -267,28 +269,22 @@ func (h *TravelHandler) Travel(direction string, s *discordgo.Session, m *discor
 		return err
 	}
 
-	roles, err := s.GuildRoles(guildID)
+
+	addrolename, err := getRoleNameByID(targetroom.TravelRoleID, guildID, s)
+	if err != nil {
+		return err
+	}
+	removerolename, err := getRoleNameByID(fromroom.TravelRoleID, guildID, s)
 	if err != nil {
 		return err
 	}
 
-	targetrolename := ""
-	targetremoverolename := ""
-	for _, role := range roles {
-		if role.ID == targetroom.TravelRoleID {
-			targetrolename = role.Name
-		}
-		if role.ID == room.TravelRoleID {
-			targetremoverolename = role.Name
-		}
-	}
-
-	err = h.perms.AddRoleToUser(targetrolename, user.ID, s, m)
+	err = h.perms.AddRoleToUser(addrolename, user.ID, s, m)
 	if err != nil{
 		return err
 	}
 
-	err = h.perms.RemoveRoleFromUser(targetremoverolename, user.ID, s, m)
+	err = h.perms.RemoveRoleFromUser(removerolename, user.ID, s, m)
 	if err != nil{
 		return err
 	}

@@ -236,6 +236,12 @@ func (h *TransferHandler) TransferToChannel(userID string, targetGuildID string,
 		return err
 	}
 
+	// Add registered role here
+	err = h.perms.AddRoleToUser("registered", userID, s, m)
+	if err != nil {
+		return err
+	}
+
 	user, err := h.user.GetUser(userID, s, m.ChannelID)
 	if err != nil {
 		return err
