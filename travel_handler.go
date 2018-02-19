@@ -99,8 +99,6 @@ func (h *TravelHandler) ParseCommand(command []string, s *discordgo.Session, m *
 		return
 	}
 
-
-
 	discorduser, err := s.User(user.ID)
 	if err != nil{
 		s.ChannelMessageSend(m.ChannelID, "Error retrieving user: " + err.Error())
@@ -134,8 +132,8 @@ func (h *TravelHandler) ParseCommand(command []string, s *discordgo.Session, m *
 	}
 
 	// If we're leaving this server, we want to avoid sending an arrival message to the holding channel
-	if room.TransferID != "" {
-		h.HandleServerTransfer(user, travelfrom, s, m)
+	if room.GuildTransferInvite != "" {
+		h.HandleServerTransfer(user, travelfrom, room, s, m)
 		return
 	}
 
@@ -160,8 +158,26 @@ func (h *TravelHandler) ParseCommand(command []string, s *discordgo.Session, m *
 }
 
 
-func (h *TravelHandler) HandleServerTransfer(user User, travelfrom string, s *discordgo.Session, m *discordgo.MessageCreate) {
+func (h *TravelHandler) HandleServerTransfer(user User, travelfrom string, room Room, s *discordgo.Session, m *discordgo.MessageCreate) {
 
+	// We create a private message to send to the user
+
+	privateInviteMessage := "You are now traveling through The Aether, please click the invite link below to complete your journey:\n"
+	privateInviteMessage = privateInviteMessage + room.GuildTransferInvite
+
+	userprivatechannel, err := s.UserChannelCreate(user.ID)
+	if err != nil {
+		s.ChannelMessageSend(m.ChannelID, "Error creating Aether Link: " + err.Error())
+		return
+	}
+
+	s.ChannelMessageSend(userprivatechannel.ID, privateInviteMessage)
+	return
+
+	// We create an arrival notification for the arrivals_handler
+
+	// When a user joins the target server, arrivals_handler will check the transfers database
+	// And update user roles accordingly
 
 }
 
@@ -251,13 +267,11 @@ func (h *TravelHandler) Travel(direction string, s *discordgo.Session, m *discor
 
 	err = h.perms.AddRoleToUser(targetrolename, user.ID, s, m)
 	if err != nil{
-		fmt.Println("Error adding role to user")
 		return err
 	}
 
 	err = h.perms.RemoveRoleFromUser(targetremoverolename, user.ID, s, m)
 	if err != nil{
-		fmt.Println("Error removing role from user")
 		return err
 	}
 

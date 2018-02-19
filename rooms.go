@@ -29,8 +29,9 @@ type Room struct {
 	5 - Override Role ID
 	 */
 
-	GuildID				string
-	TransferID			string
+	GuildID						string
+	GuildTransferInvite			string
+	TransferRoomID				string
 
 	// Connecting Room ID's
 	UpID				string

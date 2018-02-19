@@ -1,0 +1,32 @@
+[main]
+# You can get your bot token by going here https://discordapp.com/developers/applications
+# Ensure that you have registered your application as a bot user, as you need your TOKEN not your Client ID
+
+bot_token = "update_me"
+default_command_prefix = "~"
+default_now_playing = "The Aether"
+dbfilename = "database.db"
+per_page_count = 5
+lobby_channel_id = "update_me"
+cluster_owner_id = "update_me"
+central_Server_id = "update_me"
+
+# Minutes between updating notifications
+notifications_update_timeout = 1
+
+enable_profiler = false
+
+[bank]
+bank_name = "Aetheral Central Bank"
+bank_url = "update_me"
+bank_icon_url = "update_me"
+
+# Set this to something long and unique
+bank_pin = "update_me"
+# Setting this to true will only reset the bank wallet, it will not reset accounts
+reset_bank = false
+starting_bank_wallet_value = 1000000
+starting_user_account_value = 1000
+starting_user_wallet_value = 500
+bank_menu_slogan = "update_me"
+
