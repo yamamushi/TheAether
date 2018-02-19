@@ -1,5 +1,7 @@
 package main
 
+import "time"
+
 // User struct
 type User struct {
 	ID string `storm:"id"` // primary key
@@ -11,10 +13,16 @@ type User struct {
 	SkinTone	string
 	Email 		string
 
+	Registered				string
+	RegisteredDate			time.Time
+
+
 	// Related to tracking taveling
 	GuildID		string `storm:"index"` // GuildID of the users current guild
 	RoomID    	string `storm:"index"` // ChannelID of the users current room
-	ItemsMap	[]string	// An ID pointing to the
+
+
+	ItemsMap	[]string	// An ID pointing to the item in the database
 
 	Strength	float64
 	Dexterity	float64
@@ -22,8 +30,13 @@ type User struct {
 	Intelligence	float64
 	Wisdom		float64
 	Charisma	float64
+
 	InitiativeMod	float64
+
 	HitPoints	float64
+	ExperiencePoints		int64
+
+
 	Acrobatics float64
 	Appraise	float64
 	Bluff	float64
@@ -71,15 +84,14 @@ type User struct {
 	Swim	float64
 	UseMagicDevice	float64
 
-
 	Spellbook				string // An ID of the spellbook in the database
 
+	// Money
 	CopperPieces			int64
 	SilverPieces			int64
 	GoldPieces				int64
 	PlatinumPieces			int64
 
-	ExperiencePoints		int64
 }
 
 // Init function

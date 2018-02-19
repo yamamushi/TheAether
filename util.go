@@ -318,6 +318,7 @@ func getGuildChannelIDByName(s *discordgo.Session, guildID string, name string) 
 
 func getRoleIDByName(s *discordgo.Session, guildID string, name string) (roleid string, err error) {
 
+	name = strings.Title(name)
 	roles, err := s.GuildRoles(guildID)
 	if err != nil {
 		return "", err

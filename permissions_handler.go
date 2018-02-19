@@ -741,9 +741,17 @@ func (h *PermissionsHandler) CreatePermissionInt(roleperms RolePermissions ) (pe
 
 
 func (h *PermissionsHandler) CreateRole(name string, guildID string, hoist bool, mentionable bool, color int, perm int, s *discordgo.Session) (createdrole *discordgo.Role, err error){
+
+	// Capitalize roles
+	name = strings.Title(name)
+
 	roles, err := s.GuildRoles(guildID)
 	if err != nil {
 		return createdrole, err
+	}
+
+	if len(roles) >= 90 {
+		return createdrole, errors.New("Maximum supported roles reached!")
 	}
 
 	for _, role := range roles {
@@ -768,6 +776,10 @@ func (h *PermissionsHandler) CreateRole(name string, guildID string, hoist bool,
 
 
 func (h *PermissionsHandler) AddRoleToUser(rolename string, userID string, s *discordgo.Session, m *discordgo.MessageCreate) (err error) {
+
+	// Capitalize roles
+	rolename = strings.Title(rolename)
+
 	// Get user from the database using the userid
 	user, err := h.user.GetUser(userID, s, m.ChannelID)
 	if err != nil {
@@ -806,6 +818,9 @@ func (h *PermissionsHandler) AddRoleToUser(rolename string, userID string, s *di
 }
 
 func (h *PermissionsHandler) RemoveRoleFromUser(rolename string, userID string, s *discordgo.Session, m *discordgo.MessageCreate) (err error){
+
+	// Capitalize Roles
+	rolename = strings.Title(rolename)
 
 	// Get user from the database using the userid
 	user, err := h.user.GetUser(userID, s, m.ChannelID)

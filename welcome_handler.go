@@ -23,22 +23,14 @@ func (h *WelcomeHandler) Read(s *discordgo.Session, m *discordgo.GuildMemberAdd)
 		return
 	}
 
+	welcomemessage := ""
+	welcomemessage = welcomemessage + "Welcome to The Aether " + m.Member.User.Mention() + "!\n\n"
+	welcomemessage = welcomemessage + "Please take a moment to read the #serverrules before proceeding. This is a roleplay enforced "
+	welcomemessage = welcomemessage + "game and it is pivotal to everyones enjoyment of it that you stay in character within the "
+	welcomemessage = welcomemessage + "applicable channels. Please use ooc channels for out of character chat. "
+	welcomemessage = welcomemessage + "```\n"
 
-/*
-	guildChannels, err := s.GuildChannels(m.GuildID)
-	if err != nil {
-		fmt.Print("Error: Could not retrieve guild channels in welcome handler read!")
-		return
-	}
-
-	for _, channel := range guildChannels {
-		if channel.Name == "welcome" {
-
-		}
-	}
-*/
-
-	s.ChannelMessageSend(h.conf.MainConfig.LobbyChannelID, "Welcome to The Aether " + m.Member.User.Mention() + "!")
+		s.ChannelMessageSend(h.conf.MainConfig.LobbyChannelID, welcomemessage)
 
 	return
 }

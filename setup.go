@@ -4,6 +4,7 @@ import (
 	"github.com/bwmarrin/discordgo"
 	"fmt"
 	"errors"
+	"strings"
 )
 
 type SetupProcess struct {
@@ -12,6 +13,7 @@ type SetupProcess struct {
 	conf     *Config
 	user     *UserHandler
 	rooms 	 *RoomsHandler
+	guilds	 *GuildsManager
 }
 
 
@@ -21,6 +23,8 @@ func (h *SetupProcess) Init(s *discordgo.Session, channelID string) (err error) 
 	if err != nil {
 		return err
 	}
+
+	fmt.Println("\n|| Running Rooms Setup ||\n")
 
 	err = h.rooms.InitRooms(s, channelID)
 	if err != nil {
@@ -43,10 +47,37 @@ func (h *SetupProcess) SetupOwnerPermissions(s *discordgo.Session, channelID str
 		return err
 	}
 
+
 	if ownerID != h.conf.MainConfig.ClusterOwnerID || guildID != h.conf.MainConfig.CentralGuildID {
 		fmt.Println("\n\n!!! The bot must first be setup on the main cluster server to be configured properly\n")
 		fmt.Println("!!! The owner ID of the main server must also be configured properly.")
 		return errors.New("Could not complete setup")
+	}
+
+
+	guildRecord, err := h.guilds.GetGuildByID(guildID)
+	if err != nil {
+		if strings.Contains(err.Error(), "No record found"){
+			fmt.Println("Registering Guild in Database")
+
+			discordguild, err := s.Guild(guildID)
+			if err != nil {
+				return err
+			}
+
+			guildRecord = GuildRecord{ID: guildID, Name: discordguild.Name }
+			err = h.guilds.SaveGuildToDB(guildRecord)
+			if err != nil {
+				return err
+			}
+
+			fmt.Println("Guild Registered: " + guildRecord.ID + " - " + guildRecord.Name)
+
+		} else {
+			return err
+		}
+	} else {
+		fmt.Println("Guild Registered: " + guildRecord.ID + " - " + guildRecord.Name)
 	}
 
 	db := h.db.rawdb.From("Users")

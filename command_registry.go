@@ -11,6 +11,7 @@ import (
 	"errors"
 	"fmt"
 	"github.com/bwmarrin/discordgo"
+	"strings"
 )
 
 // CommandRegistry struct
@@ -129,6 +130,7 @@ func (h *CommandRegistry) AddGroup(command string, group string) (err error) {
 
 // AddGroup function
 func (h *CommandRegistry) AddRole(command string, role string) (err error) {
+	role = strings.Title(role)
 
 	record, err := h.GetCommand(command)
 	if err != nil {
@@ -169,6 +171,8 @@ func (h *CommandRegistry) RemoveGroup(command string, group string) (err error) 
 
 // RemoveRole function
 func (h *CommandRegistry) RemoveRole(command string, role string) (err error) {
+
+	role = strings.Title(role)
 
 	record, err := h.GetCommand(command)
 	if err != nil {
@@ -330,7 +334,9 @@ func (h *CommandRegistry) CheckUserRoles(command string, user User, s *discordgo
 	}
 
 	for _, role := range roles {
+		role = strings.Title(role)
 		for _, userrole := range userroles {
+			userrole = strings.Title(userrole)
 			if role == userrole {
 				return true
 			}

@@ -152,9 +152,21 @@ func main() {
 	travelhandler.Init()
 	dg.AddHandler(travelhandler.Read)
 
+	// Initialize Guilds Manager
+	fmt.Println("Initializing Guilds Manager")
+	guildsmanager := GuildsManager{db: &dbhandler}
+
 	// Initalize our Logger
 	fmt.Println("Initializing Logger")
 	logger.Init(&channelhandler, logchannel, dg)
+
+
+	fmt.Println("\n|| Running Startup Setup ||\n")
+	setup := SetupProcess{db: &dbhandler, conf: &conf, user: &userhandler, rooms: &roomshandler, guilds: &guildsmanager}
+	err = setup.Init(dg, conf.MainConfig.LobbyChannelID)
+	if err != nil {
+		return
+	}
 
 	// Now we create and initialize our main handler
 	fmt.Println("\n|| Initializing Main Handler ||\n")

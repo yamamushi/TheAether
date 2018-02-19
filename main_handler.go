@@ -30,12 +30,6 @@ func (h *MainHandler) Init() (err error) {
 	h.dg.AddHandler(h.Read)
 	h.registry = h.command.registry
 
-	fmt.Println("Running Startup Setup")
-	setup := SetupProcess{db: h.db, conf: h.conf, user: h.user, rooms: h.rooms}
-	err = setup.Init(h.dg, h.conf.MainConfig.LobbyChannelID)
-	if err != nil {
-		return
-	}
 
 	// Add new handlers below this line //
 /*
