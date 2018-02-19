@@ -2,7 +2,6 @@ package main
 
 import (
 	"github.com/bwmarrin/discordgo"
-	"fmt"
 	"strings"
 	"errors"
 	"time"

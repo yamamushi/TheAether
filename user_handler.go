@@ -160,7 +160,6 @@ func (h *UserHandler) Read(s *discordgo.Session, m *discordgo.MessageCreate) {
 		}
 	}
 
-
 	if message[0] == cp+"attributes"{
 		/*
 		if !user.CheckRole("player") || !user.CheckRole("Registered") {

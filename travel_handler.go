@@ -177,6 +177,18 @@ func (h *TravelHandler) HandleServerTransfer(user User, travelfromID string, tra
 
 	s.ChannelMessageSend(userprivatechannel.ID, privateInviteMessage)
 
+	channel, err := s.Channel(transerToID)
+	if err != nil {
+		s.ChannelMessageSend(m.ChannelID, "Error creating Aether Link: " + err.Error())
+		return
+	}
+
+	if channel.GuildID != targetGuildID {
+		s.ChannelMessageSend(m.ChannelID, "Error creating Aether Link: " + err.Error())
+		return
+	}
+
+
 	// We create an notification for the transfer_handler
 	err = h.transfer.AddTransfer(user.ID, travelfromID,  transerToID, targetGuildID, fromDirection)
 	if err != nil {

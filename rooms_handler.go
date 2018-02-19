@@ -25,10 +25,7 @@ type RoomsHandler struct {
 func (h* RoomsHandler) InitRooms(s *discordgo.Session, channelID string) (err error){
 
 	fmt.Println("Running Base Room Initialization")
-	guildID, err := getGuildID(s, channelID)
-	if err != nil {
-		return err
-	}
+	guildID := h.conf.MainConfig.CentralGuildID
 
 	h.rooms = new(Rooms)
 	h.rooms.db = h.db
@@ -193,6 +190,219 @@ func (h* RoomsHandler) InitRooms(s *discordgo.Session, channelID string) (err er
 
 	return nil
 }
+
+// RegisterCommands function
+func (h *RoomsHandler) RegisterCommands() (err error) {
+
+	h.registry.Register("room", "Manage rooms for this server", "")
+	h.registry.AddGroup("room", "builder")
+	return nil
+
+}
+
+// Read function
+func (h *RoomsHandler) Read(s *discordgo.Session, m *discordgo.MessageCreate) {
+
+	cp := h.conf.MainConfig.CP
+
+	if !SafeInput(s, m, h.conf) {
+		return
+	}
+
+	user, err := h.db.GetUser(m.Author.ID)
+	if err != nil {
+		//fmt.Println("Error finding user")
+		return
+	}
+	if !user.CheckRole("builder") {
+		return
+	}
+	if strings.HasPrefix(m.Content, cp+"room") {
+		if h.registry.CheckPermission("room", user, s, m) {
+
+			command := strings.Fields(m.Content)
+
+			// Grab our sender ID to verify if this user has permission to use this command
+			db := h.db.rawdb.From("Users")
+			var user User
+			err := db.One("ID", m.Author.ID, &user)
+			if err != nil {
+				fmt.Println("error retrieving user:" + m.Author.ID)
+			}
+
+			if user.CheckRole("moderator") {
+				h.ParseCommand(command, s, m)
+			}
+		}
+	}
+}
+
+// ParseCommand function
+func (h *RoomsHandler) ParseCommand(command []string, s *discordgo.Session, m *discordgo.MessageCreate) {
+
+	guildID, err := getGuildID(s, m.ChannelID)
+	if err != nil {
+		s.ChannelMessageSend(m.ChannelID, "Could not retrieve GuildID: " + err.Error())
+		return
+	}
+
+	if len(command) < 2 {
+		s.ChannelMessageSend(m.ChannelID, "Expected flag for 'room' command, see usage for more info")
+		return
+	}
+	if command[1] == "view" {
+		if len(command) == 2 {
+			s.ChannelMessageSend(m.ChannelID, "view requires a room argument")
+			return
+		}
+		h.ViewRoom(command[2], s, m)
+		return
+	}
+	if command[1] == "add" {
+		if len(command) < 3 {
+			s.ChannelMessageSend(m.ChannelID, "add requires at least one argument: <name> <guildInviteLink> <transferRoomID>")
+			return
+		}
+
+		parentname := "The Aether"
+		transferID := ""
+		transferRoomID := ""
+		if len(command) == 4 {
+			s.ChannelMessageSend(m.ChannelID, "adding a transfer room requires three argument: <name> <guildInviteLink> <transferRoomID>")
+			return
+		}
+		if len(command) > 4 {
+			transferID = command[3]
+			transferRoomID = command[4]
+		}
+
+		channel, err := h.AddRoom(s, command[2], guildID, parentname, transferID, transferRoomID)
+		if err != nil {
+			s.ChannelMessageSend(m.ChannelID, "Error adding channel: " + err.Error())
+			return
+		}
+
+
+		formatted, err := h.FormatRoomInfo(channel.ID)
+		if err != nil {
+			s.ChannelMessageSend(m.ChannelID, "Error Retrieving Room: " + err.Error())
+			return
+		}
+
+		s.ChannelMessageSend(m.ChannelID, "Channel Created: " + formatted)
+		return
+	}
+	if command[1] == "linkdirection" {
+		if len(command) < 5 {
+			s.ChannelMessageSend(m.ChannelID, "linkdirection requires three arguments: <from> <to> <direction>")
+			return
+		}
+		h.LinkDirection(command[4], command[2], command[3], s, m)
+		return
+	}
+	if command[1] == "remove" {
+		if len(command) < 3 {
+			s.ChannelMessageSend(m.ChannelID, "remove requires an argument: <room name>")
+			return
+		}
+
+		roomname := ""
+		if strings.Contains(command[2], "#"){
+			roomname := strings.TrimPrefix(command[2], "<#")
+			roomname = strings.TrimSuffix(roomname, ">")
+
+			room, err := h.rooms.GetRoomByID(roomname)
+			if err != nil {
+				s.ChannelMessageSend(m.ChannelID, "Error removing channel: " + err.Error())
+				return
+			}
+			err = h.RemoveRoom(s, room.Name, guildID)
+			if err != nil {
+				s.ChannelMessageSend(m.ChannelID, "Error removing channel: " + err.Error())
+				return
+			}
+		} else {
+			err := h.RemoveRoom(s, roomname, guildID)
+			if err != nil {
+				s.ChannelMessageSend(m.ChannelID, "Error removing channel: " + err.Error())
+				return
+			}
+		}
+
+		s.ChannelMessageSend(m.ChannelID, "Channel " + command[2] + " removed.")
+		return
+	}
+	if command[1] == "linkrole" {
+		if len(command) < 4 {
+			s.ChannelMessageSend(m.ChannelID, "linkrole requires two arguments - <rolename> <room>")
+			return
+		}
+
+		h.LinkRole(command[2], command[3], s, m)
+		return
+	}
+	if command[1] == "setupserver" {
+		if m.Author.ID != h.conf.MainConfig.ClusterOwnerID {
+			s.ChannelMessageSend(m.ChannelID, "Only the cluster owner can run this command.")
+			return
+		}
+		if len(command) < 3 {
+			s.ChannelMessageSend(m.ChannelID, "setupserver requires an acknowledgement flag (y/n)")
+			return
+		}
+		command[2] = strings.ToLower(command[2])
+		if command[2] == "y" {
+			err := h.SetupNewServer(s,m)
+			if err != nil {
+				s.ChannelMessageSend(m.ChannelID, "Could not setup new server: " + err.Error())
+				return
+			}
+			s.ChannelMessageSend(m.ChannelID, "Server configuration complete.")
+			return
+		} else {
+			s.ChannelMessageSend(m.ChannelID, "setupserver requires an acknowledgement flag (y/n)")
+			return
+		}
+
+	}
+	if command[1] == "description" {
+		if len(command) == 3 {
+			description, err := h.GetRoomDescription(command[2])
+			if err != nil{
+				s.ChannelMessageSend(m.ChannelID, "Error retrieving description: " + description)
+				return
+			}
+			s.ChannelMessageSend(m.ChannelID, "Room: "+ command[2] + " description: ```\n"+ description+"\n```\n")
+			return
+		}
+		if len(command) >= 4 {
+
+			description := ""
+			for i, text := range command {
+				if i > 2 {
+					description = description + text + " "
+				}
+			}
+
+			err := h.SetRoomDescription(command[2], description, s, m)
+			if err != nil {
+				s.ChannelMessageSend(m.ChannelID, "Error setting description: " + err.Error())
+				return
+			}
+			s.ChannelMessageSend(m.ChannelID, "Room description set: \n" + description)
+			return
+		}
+		if len(command) < 3 {
+			s.ChannelMessageSend(m.ChannelID, "description requires one or two arguments - <room> <description>")
+			return
+		}
+
+		h.LinkRole(command[2], command[3], s, m)
+		return
+	}
+
+}
+
 
 
 // CreateManagementRooms function - Useful for creating default management roles and rooms for new guilds
@@ -667,7 +877,6 @@ func (h *RoomsHandler) CreateOOCChannels(guildID string, s *discordgo.Session) (
 	return nil
 }
 
-
 func (h *RoomsHandler) CreateRoom(s *discordgo.Session, name string, guildID string, parentname string) {
 
 
@@ -680,9 +889,8 @@ func (h *RoomsHandler) DeleteRoom(s *discordgo.Session, name string, guildID str
 
 }
 
-
-
-func (h *RoomsHandler) AddRoom(s *discordgo.Session, name string, guildID string, parentname string, transferInvite string, transferRoomID string) (createdroom *discordgo.Channel, err error) {
+func (h *RoomsHandler) AddRoom(s *discordgo.Session, name string, guildID string, parentname string,
+	transferInvite string, transferRoomID string) (createdroom *discordgo.Channel, err error) {
 
 	rooms, err := h.rooms.GetAllRooms()
 	if err != nil {
@@ -690,6 +898,13 @@ func (h *RoomsHandler) AddRoom(s *discordgo.Session, name string, guildID string
 	}
 	if len(rooms) >= 70 {
 		return createdroom, errors.New("Maximum supported rooms reached!")
+	}
+
+	if transferRoomID != "" {
+		_, err := s.Channel(transferRoomID)
+		if err != nil {
+			return createdroom, errors.New("Could not find target transfer room: " + err.Error())
+		}
 	}
 
 	existingrecord, err := h.rooms.GetRoomByName(name, guildID)
@@ -762,7 +977,6 @@ func (h *RoomsHandler) AddRoom(s *discordgo.Session, name string, guildID string
 	}
 }
 
-
 func (h *RoomsHandler) RemoveRoom(s *discordgo.Session, name string, guildID string) (err error) {
 
 	existingrecord, err := h.rooms.GetRoomByName(name, guildID)
@@ -779,7 +993,6 @@ func (h *RoomsHandler) RemoveRoom(s *discordgo.Session, name string, guildID str
 
 	return h.rooms.RemoveRoomFromDB(existingrecord)
 }
-
 
 func (h *RoomsHandler) MoveRoom(s *discordgo.Session, channelID string, guildID string, parentname string) (err error) {
 
@@ -824,183 +1037,6 @@ func (h *RoomsHandler) MoveRoom(s *discordgo.Session, channelID string, guildID 
 }
 
 
-// RegisterCommands function
-func (h *RoomsHandler) RegisterCommands() (err error) {
-
-	h.registry.Register("room", "Manage rooms for this server", "")
-	h.registry.AddGroup("room", "builder")
-	return nil
-
-}
-
-
-// Read function
-func (h *RoomsHandler) Read(s *discordgo.Session, m *discordgo.MessageCreate) {
-
-	cp := h.conf.MainConfig.CP
-
-	if !SafeInput(s, m, h.conf) {
-		return
-	}
-
-	user, err := h.db.GetUser(m.Author.ID)
-	if err != nil {
-		//fmt.Println("Error finding user")
-		return
-	}
-	if !user.CheckRole("builder") {
-		return
-	}
-	if strings.HasPrefix(m.Content, cp+"room") {
-		if h.registry.CheckPermission("room", user, s, m) {
-
-			command := strings.Fields(m.Content)
-
-			// Grab our sender ID to verify if this user has permission to use this command
-			db := h.db.rawdb.From("Users")
-			var user User
-			err := db.One("ID", m.Author.ID, &user)
-			if err != nil {
-				fmt.Println("error retrieving user:" + m.Author.ID)
-			}
-
-			if user.CheckRole("moderator") {
-				h.ParseCommand(command, s, m)
-			}
-		}
-	}
-}
-
-
-// ParseCommand function
-func (h *RoomsHandler) ParseCommand(command []string, s *discordgo.Session, m *discordgo.MessageCreate) {
-
-	guildID, err := getGuildID(s, m.ChannelID)
-	if err != nil {
-		s.ChannelMessageSend(m.ChannelID, "Could not retrieve GuildID: " + err.Error())
-		return
-	}
-
-	if len(command) < 2 {
-		s.ChannelMessageSend(m.ChannelID, "Expected flag for 'room' command, see usage for more info")
-		return
-	}
-	if command[1] == "view" {
-		if len(command) == 2 {
-			s.ChannelMessageSend(m.ChannelID, "view requires a room argument")
-			return
-		}
-		h.ViewRoom(command[2], s, m)
-		return
-	}
-	if command[1] == "add" {
-		if len(command) < 3 {
-			s.ChannelMessageSend(m.ChannelID, "add requires at least one argument: <name> <guildInviteLink> <transferRoomID>")
-			return
-		}
-
-		parentname := "The Aether"
-		transferID := ""
-		transferRoomID := ""
-		if len(command) == 4 {
-			s.ChannelMessageSend(m.ChannelID, "adding a transfer room requires three argument: <name> <guildInviteLink> <transferRoomID>")
-			return
-		}
-		if len(command) > 4 {
-			transferID = command[3]
-			transferRoomID = command[4]
-		}
-
-		channel, err := h.AddRoom(s, command[2], guildID, parentname, transferID, transferRoomID)
-		if err != nil {
-			s.ChannelMessageSend(m.ChannelID, "Error adding channel: " + err.Error())
-			return
-		}
-
-
-		formatted, err := h.FormatRoomInfo(channel.ID)
-		if err != nil {
-			s.ChannelMessageSend(m.ChannelID, "Error Retrieving Room: " + err.Error())
-			return
-		}
-
-		s.ChannelMessageSend(m.ChannelID, "Channel Created: " + formatted)
-		return
-	}
-	if command[1] == "linkdirection" {
-		if len(command) < 5 {
-			s.ChannelMessageSend(m.ChannelID, "linkdirection requires three arguments: <from> <to> <direction>")
-			return
-		}
-		h.LinkDirection(command[4], command[2], command[3], s, m)
-		return
-	}
-	if command[1] == "remove" {
-		if len(command) < 3 {
-			s.ChannelMessageSend(m.ChannelID, "remove requires an argument: <room name>")
-			return
-		}
-
-		roomname := ""
-		if strings.Contains(command[2], "#"){
-			roomname := strings.TrimPrefix(command[2], "<#")
-			roomname = strings.TrimSuffix(roomname, ">")
-
-			room, err := h.rooms.GetRoomByID(roomname)
-			if err != nil {
-				s.ChannelMessageSend(m.ChannelID, "Error removing channel: " + err.Error())
-				return
-			}
-			err = h.RemoveRoom(s, room.Name, guildID)
-			if err != nil {
-				s.ChannelMessageSend(m.ChannelID, "Error removing channel: " + err.Error())
-				return
-			}
-		} else {
-			err := h.RemoveRoom(s, roomname, guildID)
-			if err != nil {
-				s.ChannelMessageSend(m.ChannelID, "Error removing channel: " + err.Error())
-				return
-			}
-		}
-
-		s.ChannelMessageSend(m.ChannelID, "Channel " + command[2] + " removed.")
-		return
-	}
-	if command[1] == "linkrole" {
-		if len(command) < 4 {
-			s.ChannelMessageSend(m.ChannelID, "linkrole requires two arguments - <rolename> <room>")
-			return
-		}
-
-		h.LinkRole(command[2], command[3], s, m)
-		return
-	}
-	if command[1] == "setupserver" {
-		if m.Author.ID != h.conf.MainConfig.ClusterOwnerID {
-			s.ChannelMessageSend(m.ChannelID, "Only the cluster owner can run this command.")
-			return
-		}
-		if len(command) < 3 {
-			s.ChannelMessageSend(m.ChannelID, "setupserver requires an acknowledgement flag (y/n)")
-			return
-		}
-		command[2] = strings.ToLower(command[2])
-		if command[2] == "y" {
-			err := h.SetupNewServer(s,m)
-			if err != nil {
-				s.ChannelMessageSend(m.ChannelID, "Could not setup new server: " + err.Error())
-				return
-			}
-			s.ChannelMessageSend(m.ChannelID, "Server configuration complete.")
-			return
-		} else {
-			s.ChannelMessageSend(m.ChannelID, "setupserver requires an acknowledgement flag (y/n)")
-			return
-		}
-
-	}
-}
 
 
 func (h *RoomsHandler) SetupNewServer(s *discordgo.Session, m *discordgo.MessageCreate) (err error) {
@@ -1030,7 +1066,6 @@ func (h *RoomsHandler) SetupNewServer(s *discordgo.Session, m *discordgo.Message
 
 	return nil
 }
-
 
 func (h *RoomsHandler) LinkRole(rolename string, roomID string, s *discordgo.Session, m *discordgo.MessageCreate) {
 
@@ -1460,3 +1495,34 @@ func (h *RoomsHandler) LinkDirection(direction string, fromroomID string, toroom
 	return
 }
 
+func (h *RoomsHandler) GetRoomDescription(roomID string) (formatted string, err error) {
+
+	roomID = CleanChannel(roomID)
+
+	room, err := h.rooms.GetRoomByID(roomID)
+	if err != nil {
+		return formatted, nil
+	}
+
+	formatted = room.Description
+	return formatted, nil
+}
+
+func (h *RoomsHandler) SetRoomDescription(roomID string, description string, s *discordgo.Session, m *discordgo.MessageCreate) (err error) {
+
+	roomID = CleanChannel(roomID)
+
+	room, err := h.rooms.GetRoomByID(roomID)
+	if err != nil {
+		return err
+	}
+
+	room.Description = description
+
+	err = h.rooms.SaveRoomToDB(room)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
