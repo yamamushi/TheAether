@@ -332,6 +332,23 @@ func getRoleIDByName(s *discordgo.Session, guildID string, name string) (roleid 
 	return "", errors.New("Role ID Not Found: " + name)
 }
 
+func getRoleNameByID(roleID string, guildID string, s *discordgo.Session) (rolename string, err error){
+
+	roles, err := s.GuildRoles(guildID)
+	if err != nil {
+		return "", err
+	}
+
+	for _, role := range roles {
+
+		if role.ID == roleID {
+			return role.Name, nil
+		}
+	}
+
+	return "", errors.New("Role "+ roleID +" not found in guild " + guildID)
+}
+
 
 func getGuildOwnerID(s *discordgo.Session, channelID string) (ownerID string, err error) {
 

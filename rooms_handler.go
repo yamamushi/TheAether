@@ -139,7 +139,7 @@ func (h* RoomsHandler) InitRooms(s *discordgo.Session, channelID string) (err er
 	}
 	if updatecrossroads{
 		room.RoleIDs = append(room.RoleIDs, crossroadsRoleID)
-
+		room.TravelRoleID = crossroadsRoleID
 		err = h.rooms.SaveRoomToDB(room)
 		if err != nil {
 			return err
@@ -530,6 +530,7 @@ func (h *RoomsHandler) MoveRoom(s *discordgo.Session, channelID string, guildID 
 func (h *RoomsHandler) RegisterCommands() (err error) {
 
 	h.registry.Register("room", "Manage rooms for this server", "")
+	h.registry.AddGroup("room", "builder")
 	return nil
 
 }
@@ -750,6 +751,7 @@ func (h *RoomsHandler) LinkRole(rolename string, roomID string, s *discordgo.Ses
 		}
 	}
 	room.RoleIDs = append(room.RoleIDs, roleID)
+	room.TravelRoleID = roleID
 
 	err = h.rooms.SaveRoomToDB(room)
 	if err != nil {
@@ -789,12 +791,12 @@ func (h *RoomsHandler) FormatRoomInfo(roomID string) (formatted string, err erro
 	output := "\n```\n"
 	output = output + "ID: " +  room.ID + "\n"
 	output = output + "Name: " + room.Name + "\n"
-	output = output + "Guild: " + room.GuildID + "\n"
+	output = output + "Guild: " + room.GuildID + "\n\n"
 	output = output + "GuildTransferInvite: " + room.GuildTransferInvite + "\n"
-	output = output + "TransferRoomID: " + room.TransferRoomID + "\n"
+	output = output + "TransferRoomID: " + room.TransferRoomID + "\n\n"
 	output = output + "ParentID: " + room.ParentID + "\n"
-	output = output + "ParentName: " + room.ParentName + "\n"
-
+	output = output + "ParentName: " + room.ParentName + "\n\n"
+	output = output + "TravelRoleID: " + room.TravelRoleID + "\n"
 	roles := ""
 	for i, role := range room.RoleIDs {
 		if i > 0 {

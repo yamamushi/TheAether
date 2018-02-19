@@ -137,9 +137,18 @@ func main() {
 	dg.AddHandler(roomshandler.Read)
 	// No rooms handler init here!
 
+	// Inititalize Transfers Handler
+	fmt.Println("Initializing Transfers Handler")
+	transferhandler := TransferHandler{db: &dbhandler, conf: &conf, registry: commandhandler.registry, perms: &permissionshandler,
+		rooms: &roomshandler, user: &userhandler, dg: dg}
+	transferhandler.Init()
+	dg.AddHandler(transferhandler.Read)
+	go transferhandler.HandleTransfers()
+
+	// Initialize Travel Handler
 	fmt.Println("Initializing Travel Handler")
 	travelhandler := TravelHandler{db: &dbhandler, conf: &conf, registry: commandhandler.registry, perms: &permissionshandler,
-	room: &roomshandler, user: &userhandler}
+		room: &roomshandler, user: &userhandler, transfer: &transferhandler}
 	travelhandler.Init()
 	dg.AddHandler(travelhandler.Read)
 

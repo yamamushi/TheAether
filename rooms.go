@@ -18,9 +18,10 @@ type Room struct {
 	ParentID			string
 	ParentName			string
 
+	TravelRoleID		string
 	RoleIDs				[]string
 	/*
-	These are likely to change, but here's generally what is in the roleID slice
+	These are likely to change, but here's generally what is needed in the roleID slice
 	0 - Default Travel ID
 	1 - Region Role ID
 	2 - Quest Role ID
