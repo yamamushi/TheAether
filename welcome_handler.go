@@ -51,9 +51,9 @@ func (h *WelcomeHandler) ReadNewMember(s *discordgo.Session, m *discordgo.GuildM
 	welcomemessage = welcomemessage + "Please take a moment to read the #serverrules before proceeding. This is a roleplay enforced "
 	welcomemessage = welcomemessage + "game and it is pivotal to everyones enjoyment of it that you stay in character within the "
 	welcomemessage = welcomemessage + "applicable channels. Please use ooc channels for out of character chat.\n\n"
-	welcomemessage = welcomemessage + "When you are ready, you may run ~register and follow the instructions in the dm message you receive. "
+	welcomemessage = welcomemessage + "When you are ready, you may run ~register and follow the instructions in the private message you receive. "
 	welcomemessage = welcomemessage + "For more information about The Aether you can use the ~about command."
-	welcomemessage = welcomemessage + "```\n"
+	welcomemessage = welcomemessage + "\n"
 
 	s.ChannelMessageSend(h.conf.MainConfig.LobbyChannelID, welcomemessage)
 	return

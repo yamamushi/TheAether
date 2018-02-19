@@ -57,7 +57,7 @@ func (h *TransferHandler) Read(s *discordgo.Session, m *discordgo.MessageCreate)
 
 	user, err := h.db.GetUser(m.Author.ID)
 	if err != nil {
-		fmt.Println("Error finding user")
+		//fmt.Println("Error finding user")
 		return
 	}
 

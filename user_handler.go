@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"github.com/bwmarrin/discordgo"
 	"strings"
+	"strconv"
 )
 
 // UserHandler struct
@@ -141,7 +142,6 @@ func (h *UserHandler) Read(s *discordgo.Session, m *discordgo.MessageCreate) {
 
 	}
 
-
 	if message[0] == cp+"debuguser"{
 		if !user.CheckRole("moderator") {
 			s.ChannelMessageSend(m.ChannelID, "You do not have permission to use this command")
@@ -158,7 +158,32 @@ func (h *UserHandler) Read(s *discordgo.Session, m *discordgo.MessageCreate) {
 			}
 			return
 		}
+	}
 
+
+	if message[0] == cp+"attributes"{
+		/*
+		if !user.CheckRole("player") || !user.CheckRole("Registered") {
+			s.ChannelMessageSend(m.ChannelID, "You do not have permission to use this command")
+			return
+		}
+		*/
+		if len(message) > 1 {
+			if !user.CheckRole("moderator")  {
+
+				attributes := h.GetFormattedAttributes(m.Author.ID)
+				s.ChannelMessageSend(m.ChannelID, ":large_blue_diamond: Attributes: \n" + attributes)
+				return
+			} else {
+				attributes := h.GetFormattedAttributes(message[1])
+				s.ChannelMessageSend(m.ChannelID, ":large_blue_diamond: Attributes: \n" + attributes)
+				return
+			}
+		} else {
+			attributes := h.GetFormattedAttributes(m.Author.ID)
+			s.ChannelMessageSend(m.ChannelID, ":large_blue_diamond: Attributes: \n" + attributes)
+			return
+		}
 	}
 
 	return
@@ -373,4 +398,24 @@ func (h *UserHandler) FormatRoles(roles []string) (formatted string) {
 
 	formatted = formatted + "\n```"
 	return formatted
+}
+
+
+func (h *UserHandler) GetFormattedAttributes(userID string) (formatted string) {
+
+	user, err := h.user.GetUserByID(userID)
+	if err != nil {
+		return formatted
+	}
+
+	attributes := "```\n"
+	attributes = attributes + "Strength: " + strconv.Itoa(user.Strength) +"\n"
+	attributes = attributes + "Dexterity: " + strconv.Itoa(user.Dexterity) +"\n"
+	attributes = attributes + "Constitution: " + strconv.Itoa(user.Constitution) +"\n"
+	attributes = attributes + "Intelligence: " + strconv.Itoa(user.Intelligence) +"\n"
+	attributes = attributes + "Wisdom: " + strconv.Itoa(user.Wisdom) +"\n"
+	attributes = attributes + "Charism: " + strconv.Itoa(user.Charisma) +"\n"
+	attributes = attributes + "```\n"
+
+	return attributes
 }

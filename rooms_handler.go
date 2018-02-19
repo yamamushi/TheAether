@@ -845,7 +845,7 @@ func (h *RoomsHandler) Read(s *discordgo.Session, m *discordgo.MessageCreate) {
 
 	user, err := h.db.GetUser(m.Author.ID)
 	if err != nil {
-		fmt.Println("Error finding user")
+		//fmt.Println("Error finding user")
 		return
 	}
 	if !user.CheckRole("builder") {
@@ -1019,12 +1019,10 @@ func (h *RoomsHandler) SetupNewServer(s *discordgo.Session, m *discordgo.Message
 	if err != nil {
 		return err
 	}
-
 	err = h.CreateOOCChannels(guildID, s)
 	if err != nil {
 		return err
 	}
-
 	err = h.guilds.RegisterGuild(guildID, s)
 	if err != nil {
 		return err

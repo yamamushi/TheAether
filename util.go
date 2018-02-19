@@ -7,7 +7,9 @@ import (
 	"github.com/bwmarrin/discordgo"
 	"strings"
 	"time"
-	"github.com/pkg/errors"
+	"errors"
+	"math/rand"
+	"strconv"
 )
 
 // minDuration and maxDuration const for rounding
@@ -82,6 +84,13 @@ func SplitPayload(input []string) (command string, message []string) {
 func RemoveFromString(s []string, i int) []string {
 	s[len(s)-1], s[i] = s[i], s[len(s)-1]
 	return s[:len(s)-1]
+}
+
+func SliceToString(s []string, seperator string)(formatted string){
+	for _, element := range s {
+		formatted = formatted + element + seperator
+	}
+	return formatted
 }
 
 // CleanChannel function
@@ -405,4 +414,67 @@ func FlushMessages(s *discordgo.Session, channelID string, count int) (err error
 	}
 
 	return nil
+}
+
+
+func RollDiceString(faces int, count int) (rolls []string){
+
+	// Always 1 or higher!
+	if faces == 0 {
+		faces = 1
+	}
+	if count == 0 {
+		count = 1
+	}
+	// We're not terribly concerned with the randomness here as these aren't secrets
+	source := rand.NewSource(time.Now().UnixNano())
+	randomGen := rand.New(source)
+
+	for i := 0; i < count; i++ {
+		roll := randomGen.Intn(faces)
+		rolls = append(rolls, strconv.Itoa(roll))
+	}
+
+	return rolls
+}
+
+func RollDice(faces int, count int) (rolls []int){
+
+	// Always 1 or higher!
+	if faces == 0 {
+		faces = 1
+	}
+	if count == 0 {
+		count = 1
+	}
+	// We're not terribly concerned with the randomness here as these aren't secrets
+	source := rand.NewSource(time.Now().UnixNano())
+	randomGen := rand.New(source)
+
+	for i := 0; i < count; i++ {
+		roll := randomGen.Intn(faces)
+		rolls = append(rolls,roll)
+	}
+
+	return rolls
+}
+
+func RollDiceAndAdd(faces int, count int) (total int){
+	// Always 1 or higher!
+	if faces == 0 {
+		faces = 1
+	}
+	if count == 0 {
+		count = 1
+	}
+	// We're not terribly concerned with the randomness here as these aren't secrets
+	source := rand.NewSource(time.Now().UnixNano())
+	randomGen := rand.New(source)
+
+	for i := 0; i < count; i++ {
+		roll := randomGen.Intn(faces)
+		total = total + roll
+	}
+
+	return total
 }

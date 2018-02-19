@@ -13,37 +13,38 @@ type UserManager struct {
 }
 // User struct
 type User struct {
-	ID string `storm:"id"` // primary key
+	ID 						string `storm:"id"` // primary key
 
-	Perms 		[]uint64 // Internal Permissions - NOT Discord Roles
-	Roles		[]string
+	Perms 					[]uint64 // Internal Permissions - NOT Discord Roles
+	Roles					[]string
 
 	// Profile stuff
-	Name		string
-	SkinTone	string
-	Gender		string
-	HairColor	string
-	HairStyle	string
-	Height		string
+	Name					string
+	SkinTone				string
+	Race					string
+	Gender					string
+	HairColor				string
+	HairStyle				string
+	Height					string
 
-	Statuses 	[]string
+	Statuses 				[]string
 
 	// Body Parts Can Have Individual States
-	REye		string
-	LEye 		string
-	Mouth 		string
-	RHand		string
-	LHand		string
-	RArm		string
-	LArm 		string
-	Head 		string
-	Torso 		string
-	RLeg		string
-	RFoot		string
-	LLeg		string
-	LFoot		string
+	REye					string
+	LEye 					string
+	Mouth 					string
+	RHand					string
+	LHand					string
+	RArm					string
+	LArm 					string
+	Head 					string
+	Torso 					string
+	RLeg					string
+	RFoot					string
+	LLeg					string
+	LFoot					string
 
-	Email 		string
+	Email 					string
 
 
 	Registered				string
@@ -52,71 +53,71 @@ type User struct {
 
 
 	// Related to tracking taveling
-	GuildID		string `storm:"index"` // GuildID of the users current guild
-	RoomID    	string `storm:"index"` // ChannelID of the users current room
+	GuildID					string `storm:"index"` // GuildID of the users current guild
+	RoomID    				string `storm:"index"` // ChannelID of the users current room
 
 
-	ItemsMap	[]string	// An ID pointing to the item in the database
+	ItemsMap				[]string	// An ID pointing to the item in the database
 
-	Strength	float64
-	Dexterity	float64
-	Constitution	float64
-	Intelligence	float64
-	Wisdom		float64
-	Charisma	float64
+	Strength				int
+	Dexterity				int
+	Constitution			int
+	Intelligence			int
+	Wisdom					int
+	Charisma				int
 
-	InitiativeMod	float64
+	InitiativeMod			float64
 
-	HitPoints	float64
+	HitPoints				int64
 	ExperiencePoints		int64
 
 
-	Acrobatics float64
-	Appraise	float64
-	Bluff	float64
-	Climb	float64
-	CraftOneType	float64
-	CraftOne	float64
-	CraftTwoType	float64
-	CraftTwo	float64
-	CraftThreeType	float64
-	CraftThree	float64
-	Diplomacy	float64
-	DisableDevice	float64
-	Disguise	float64
-	EscapeArtist	float64
-	Fly	float64
-	HandleAnimal	float64
-	Heal	float64
-	Intimidate	float64
-	KnowledgeArcana	float64
-	KnowledgeDungeoneering	float64
-	KnowledgeEngineering	float64
-	KnowledgeGeography	float64
-	KnowledgeHistory	float64
-	KnowledgeLocal	float64
-	KnowledgeNature	float64
-	KnowledgeNobility	float64
-	KnowledgePlains	float64
-	KnowledgeReligion	float64
-	Linguistics	float64
-	Perception	float64
+	Acrobatics 				int64
+	Appraise				int64
+	Bluff					int64
+	Climb					int64
+	CraftOneType			int64
+	CraftOne				int64
+	CraftTwoType			int64
+	CraftTwo				int64
+	CraftThreeType			int64
+	CraftThree				int64
+	Diplomacy				int64
+	DisableDevice			int64
+	Disguise				int64
+	EscapeArtist			int64
+	Fly						int64
+	HandleAnimal			int64
+	Heal					int64
+	Intimidate				int64
+	KnowledgeArcana			int64
+	KnowledgeDungeoneering	int64
+	KnowledgeEngineering	int64
+	KnowledgeGeography		int64
+	KnowledgeHistory		int64
+	KnowledgeLocal			int64
+	KnowledgeNature			int64
+	KnowledgeNobility		int64
+	KnowledgePlains			int64
+	KnowledgeReligion		int64
+	Linguistics				int64
+	Perception				int64
 	PerformOneType			string
-	PerformOne	float64
+	PerformOne				int64
 	PerformTwoType			string
-	PerformTwo	float64
-	ProfessionOneType	float64
-	ProfessionOne	float64
-	ProfessionTwoType	float64
-	ProfessionTwo	float64
-	Ride	float64
-	SenseMotive	float64
-	SleightOfHand	float64
-	Spellcraft	float64
-	Stealth	float64
-	Survival	float64
-	Swim	float64
-	UseMagicDevice	float64
+	PerformTwo				int64
+	ProfessionOneType		int64
+	ProfessionOne			int64
+	ProfessionTwoType		int64
+	ProfessionTwo			int64
+	Ride					int64
+	SenseMotive				int64
+	SleightOfHand			int64
+	Spellcraft				int64
+	Stealth					int64
+	Survival				int64
+	Swim					int64
+	UseMagicDevice			int64
 
 	Spellbook				string // An ID of the spellbook in the database
 

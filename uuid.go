@@ -15,3 +15,9 @@ func GetUUID() (id string, err error) {
 	return formattedid.String(), nil
 
 }
+
+// Ignore Errors with this
+func GetUUIDv2() (id string){
+	id, _ = GetUUID()
+	return id
+}
