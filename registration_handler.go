@@ -1,5 +1,14 @@
 package main
 
+/*
+
+This handler is responsible for player registration, which includes character creation.
+
+Once a player has created a profile and is ready to enter the world, this handler will
+assign the registered role and drop them into the #Crossroads room.
+
+ */
+
 import (
 	"github.com/bwmarrin/discordgo"
 	"strings"

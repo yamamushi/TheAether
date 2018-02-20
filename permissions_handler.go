@@ -74,6 +74,18 @@ func (h *PermissionsHandler) Read(s *discordgo.Session, m *discordgo.MessageCrea
 		}
 
 		if command[1] == "addrole"{
+			// Get the authors user object from the database
+			user, err := h.db.GetUser(m.Author.ID)
+			if err != nil {
+				s.ChannelMessageSend(m.ChannelID, "syncserverroles error: " + err.Error())
+				return
+			}
+
+			if !user.CheckRole("moderator") {
+				s.ChannelMessageSend(m.ChannelID, "You do not have permission to use this command.")
+				return
+			}
+
 			if len(command) != 4 {
 				s.ChannelMessageSend(m.ChannelID, "<addrole> expects two argument - <role name> <user mention>.")
 				return
@@ -84,7 +96,15 @@ func (h *PermissionsHandler) Read(s *discordgo.Session, m *discordgo.MessageCrea
 				return
 			}
 
-			err := h.AddRoleToUser( command[2], m.Mentions[0].ID, s, m)
+			testrole := strings.ToLower(command[2])
+			if testrole == "admin" {
+				if !user.CheckRole("admin") {
+					s.ChannelMessageSend(m.ChannelID, "You do not have permission to use this command.")
+					return
+				}
+			}
+
+			err = h.AddRoleToUser( command[2], m.Mentions[0].ID, s, m)
 			if err != nil{
 				s.ChannelMessageSend(m.ChannelID, "Error adding role: " + err.Error())
 				return
@@ -94,6 +114,18 @@ func (h *PermissionsHandler) Read(s *discordgo.Session, m *discordgo.MessageCrea
 			return
 		}
 		if command[1] == "removerole"{
+			// Get the authors user object from the database
+			user, err := h.db.GetUser(m.Author.ID)
+			if err != nil {
+				s.ChannelMessageSend(m.ChannelID, "syncserverroles error: " + err.Error())
+				return
+			}
+
+			if !user.CheckRole("moderator") {
+				s.ChannelMessageSend(m.ChannelID, "You do not have permission to use this command.")
+				return
+			}
+
 			if len(command) < 4{
 				s.ChannelMessageSend(m.ChannelID, "<removerole> expects two argument - <role name> <user mention>.")
 				return
@@ -104,7 +136,15 @@ func (h *PermissionsHandler) Read(s *discordgo.Session, m *discordgo.MessageCrea
 				return
 			}
 
-			err := h.RemoveRoleFromUser( command[2], m.Mentions[0].ID, s, m)
+			testrole := strings.ToLower(command[2])
+			if testrole == "admin" {
+				if !user.CheckRole("admin") {
+					s.ChannelMessageSend(m.ChannelID, "You do not have permission to use this command.")
+					return
+				}
+			}
+
+			err = h.RemoveRoleFromUser( command[2], m.Mentions[0].ID, s, m)
 			if err != nil {
 				s.ChannelMessageSend(m.ChannelID, "Error removing role: " + err.Error())
 				return
@@ -114,6 +154,19 @@ func (h *PermissionsHandler) Read(s *discordgo.Session, m *discordgo.MessageCrea
 		}
 
 		if command[1] == "createrole"{
+
+			// Get the authors user object from the database
+			user, err := h.db.GetUser(m.Author.ID)
+			if err != nil {
+				s.ChannelMessageSend(m.ChannelID, "syncserverroles error: " + err.Error())
+				return
+			}
+
+			if !user.CheckRole("admin") {
+				s.ChannelMessageSend(m.ChannelID, "You do not have permission to use this command.")
+				return
+			}
+
 			if len(command) < 6 {
 				s.ChannelMessageSend(m.ChannelID, "<create> expects 4 arguments - <role name> <hoist> <mentionable> <color int>")
 				return
@@ -140,7 +193,7 @@ func (h *PermissionsHandler) Read(s *discordgo.Session, m *discordgo.MessageCrea
 			}
 
 			color := 0
-			color, err := strconv.Atoi(command[5])
+			color, err = strconv.Atoi(command[5])
 			if err != nil {
 				s.ChannelMessageSend(m.ChannelID, "<color> must be an integer)")
 				return
@@ -156,6 +209,19 @@ func (h *PermissionsHandler) Read(s *discordgo.Session, m *discordgo.MessageCrea
 			return
 		}
 		if command[1] == "viewrole" {
+
+			// Get the authors user object from the database
+			user, err := h.db.GetUser(m.Author.ID)
+			if err != nil {
+				s.ChannelMessageSend(m.ChannelID, "syncserverroles error: " + err.Error())
+				return
+			}
+
+			if !user.CheckRole("moderator") {
+				s.ChannelMessageSend(m.ChannelID, "You do not have permission to use this command.")
+				return
+			}
+
 			if len(command) < 3 {
 				s.ChannelMessageSend(m.ChannelID, "<create> expects an argument - <role name> or <role id>")
 				return
@@ -166,15 +232,94 @@ func (h *PermissionsHandler) Read(s *discordgo.Session, m *discordgo.MessageCrea
 		}
 
 		if command[1] == "promote" {
+
+			// Get the authors user object from the database
+			user, err := h.db.GetUser(m.Author.ID)
+			if err != nil {
+				s.ChannelMessageSend(m.ChannelID, "syncserverroles error: " + err.Error())
+				return
+			}
+
+			if !user.CheckRole("moderator") {
+				s.ChannelMessageSend(m.ChannelID, "You do not have permission to use this command.")
+				return
+			}
+
 			// Run our promote command function
 			command = RemoveStringFromSlice(command, command[0])
 			h.ReadPromote(command, s, m)
 			return
 		}
 		if command[1] == "demote" {
+
+			// Get the authors user object from the database
+			user, err := h.db.GetUser(m.Author.ID)
+			if err != nil {
+				s.ChannelMessageSend(m.ChannelID, "syncserverroles error: " + err.Error())
+				return
+			}
+
+			if !user.CheckRole("moderator") {
+				s.ChannelMessageSend(m.ChannelID, "You do not have permission to use this command.")
+				return
+			}
+
 			// Run our promote command function
 			command = RemoveStringFromSlice(command, command[0])
 			h.ReadDemote(command, s, m)
+			return
+		}
+
+		if command[1] == "syncserverroles" {
+
+			// Get the authors user object from the database
+			user, err := h.db.GetUser(m.Author.ID)
+			if err != nil {
+				s.ChannelMessageSend(m.ChannelID, "syncserverroles error: " + err.Error())
+				return
+			}
+
+			if !user.CheckRole("admin") {
+				s.ChannelMessageSend(m.ChannelID, "You do not have permission to use this command.")
+				return
+			}
+
+			if len(m.Mentions) < 1 {
+				s.ChannelMessageSend(m.ChannelID, "syncserverroles expects a user mention!")
+				return
+			} else {
+				err = h.SyncServerRoles(m.Mentions[0].ID, m.ChannelID, s)
+				if err != nil {
+					s.ChannelMessageSend(m.ChannelID, "syncserverroles error: " + err.Error())
+					return
+				}
+			}
+			return
+		}
+		if command[1] == "syncrolesdb" {
+
+			// Get the authors user object from the database
+			user, err := h.db.GetUser(m.Author.ID)
+			if err != nil {
+				s.ChannelMessageSend(m.ChannelID, "syncserverroles error: " + err.Error())
+				return
+			}
+
+			if !user.CheckRole("admin") {
+				s.ChannelMessageSend(m.ChannelID, "You do not have permission to use this command.")
+				return
+			}
+
+			if len(m.Mentions) < 1 {
+				s.ChannelMessageSend(m.ChannelID, "syncrolesdb expects a user mention!")
+				return
+			} else {
+				err = h.SyncRolesDB(m.Mentions[0].ID, guildID, m.ChannelID, s)
+				if err != nil {
+					s.ChannelMessageSend(m.ChannelID, "syncserverroles error: " + err.Error())
+					return
+				}
+			}
 			return
 		}
 	}
@@ -772,9 +917,6 @@ func (h *PermissionsHandler) CreateRole(name string, guildID string, hoist bool,
 }
 
 
-
-
-
 func (h *PermissionsHandler) AddRoleToUser(rolename string, userID string, s *discordgo.Session, m *discordgo.MessageCreate) (err error) {
 
 	// Capitalize roles
@@ -862,6 +1004,45 @@ func (h *PermissionsHandler) RemoveRoleFromUser(rolename string, userID string, 
 	return nil
 }
 
+
+func (h *PermissionsHandler) SyncRolesDB( userID string, guildID string, channelID string, s *discordgo.Session) (err error){
+
+	// Get user from the database using the userid
+	user, err := h.user.GetUser(userID, s, channelID)
+	if err != nil {
+		return err
+	}
+
+	userroles := user.Roles
+
+	member, err := s.GuildMember(guildID, userID)
+	if err != nil {
+		return err
+	}
+
+
+	guildroles, err := s.GuildRoles(guildID)
+	if err != nil {
+		return err
+	}
+
+	for _, guildrole := range guildroles {
+		for _, memberrole := range member.Roles {
+			if memberrole == guildrole.ID {
+				addtorolelist := true
+				for _, userrole := range userroles {
+					if userrole == guildrole.Name {
+						addtorolelist = false
+					}
+				}
+				if (addtorolelist){
+					userroles = append(userroles, guildrole.Name)
+				}
+			}
+		}
+	}
+	return nil
+}
 
 func (h *PermissionsHandler) SyncServerRoles( userID string, channelID string, s *discordgo.Session) (err error){
 
