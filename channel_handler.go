@@ -3,7 +3,6 @@ package main
 import (
 	"github.com/bwmarrin/discordgo"
 	"strconv"
-	"fmt"
 	"time"
 )
 
@@ -75,7 +74,7 @@ func (h *ChannelHandler) ReadCommand(message []string, s *discordgo.Session, m *
 		h.ReadGroup(payload, s, m)
 		return
 	}
-	if command == "flush" {
+	if command == "flush" || command == "prune" {
 		if len(payload) < 1 {
 			s.ChannelMessageSend(m.ChannelID, ":rotating_light: Expected a value for flushchannel!")
 			return
@@ -109,9 +108,7 @@ func (h* ChannelHandler) FlushChannel(payload []string, s *discordgo.Session, m 
 		return
 	}
 
-	fmt.Print("Flushing Messages")
-
-	err = FlushMessages(s, channelID, count)
+	err = FlushMessages(s, channelID, count+1) // +1 to account for the flush command itself
 	if err != nil {
 		s.ChannelMessageSend(m.ChannelID, ":rotating_light: Error flushing channel: " + err.Error())
 		return

@@ -797,9 +797,6 @@ func (h *PermissionsHandler) ReadDemote(commands []string, s *discordgo.Session,
 
 }
 
-// Set the given role on a user, and remove all promotions above the group
-// If it is the lowest tier of group, that group is removed from the user
-
 // Demote function
 func (h *PermissionsHandler) Demote(userid string, group string) (err error) {
 
@@ -847,6 +844,7 @@ func (h *PermissionsHandler) Demote(userid string, group string) (err error) {
 
 	return nil
 }
+
 
 
 func (h *PermissionsHandler) CreatePermissionOverwrite(roleid string, permtype string, allow bool) (overwrite discordgo.PermissionOverwrite, err error) {

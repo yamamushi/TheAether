@@ -112,6 +112,10 @@ func (h *RegistrationHandler) Read(s *discordgo.Session, m *discordgo.MessageCre
 		h.PickRace(s, m)
 		return
 	}
+	if strings.HasPrefix(m.Content, cp+"raceinfo") {
+		h.RaceInfo(s, m)
+		return
+	}
 }
 
 
@@ -186,9 +190,19 @@ func (h *RegistrationHandler) SetRegistrationStep(status string, userID string) 
 
 	switch status {
 		case "attributes":
-			break;
+			break
+		case "race":
+			break
+		case "class":
+			break
 		case "complete":
-			break;
+			break
+		case "skills":
+			break
+		case "feats":
+			break
+		case "equipment":
+			break
 		default:
 			return errors.New("Invalid registration status update")
 	}
@@ -286,13 +300,6 @@ func (h *RegistrationHandler) ConfirmAttributes(command string, s *discordgo.Ses
 		return
 	}
 
-	// A poor way of checking the validity of the RSS url for now
-	if m.Content == "" {
-		s.ChannelMessageSend(m.ChannelID, "Invalid Command Received, would you like to keep this roll?")
-		h.callback.Watch(h.ConfirmAttributes, GetUUIDv2(), command, s, m)
-		return
-	}
-
 	m.Content = strings.ToLower(m.Content)
 	if m.Content == "y" || m.Content == "yes" {
 
@@ -357,34 +364,136 @@ func (h *RegistrationHandler) ConfirmAttributes(command string, s *discordgo.Ses
 
 
 // Race
-func (h *RegistrationHandler) PickRace(s *discordgo.Session, m *discordgo.MessageCreate){
 
+func (h *RegistrationHandler) RaceInfo(s *discordgo.Session, m *discordgo.MessageCreate){
 
 	_, payload := SplitPayload(strings.Split(m.Content, " "))
 	if len(payload) < 1{
 
-		racelist := "\n```" +
-			":bulb: Tip - Use the raceinfo command for more information about a given race \n\n" +
-			"-Catfolk\n" +
-			"-Clockwork\n" +
-			"-Dwarf\n" +
-			"-Elf\n " +
-			"-Halfing\n " +
-			"-Half-Elf\n " +
-			"-Half-Orc\n" +
-			"-Human\n" +
-			"-Kobold\n" +
-			"-Gnome\n" +
-			"-Orc\n" +
-			"-Ratfolk\n" +
-			"-Saurian\n" +
-			"-Skinwalker\n" +
-			"```\n"
-		s.ChannelMessageSend(m.ChannelID, ":sparkles: You may pick from one of the following races: " + racelist)
+		racelist := GetRaceList()
+		s.ChannelMessageSend(m.ChannelID, ":sparkles: You may pick from one of the following races: \n```" + racelist +"\n```\n" )
+		return
+	} else {
+		raceoption := payload[0]
+		if h.ValidateRaceChoice(raceoption){
+			s.ChannelMessageSend(m.ChannelID, ":construction: -Raceinfo goes here-" )
+			return
+		} else {
+			racelist := GetRaceList()
+			s.ChannelMessageSend(m.ChannelID, ":sparkles: Invalid Race Choice! You may pick from one of the following races: \n```" +
+				racelist +"\n```\n" )
+			return
+		}
 	}
 }
 
-func (h *RegistrationHandler) ConfirmRace(command string, s *discordgo.Session, m *discordgo.MessageCreate){}
+func (h *RegistrationHandler) PickRace(s *discordgo.Session, m *discordgo.MessageCreate){
+
+	_, payload := SplitPayload(strings.Split(m.Content, " "))
+	if len(payload) < 1{
+
+		racelist := "\n```Tip - Use the \"pick-race raceinfo\" command for more information about a given race \n\n" + GetRaceList()
+		racelist = racelist + "\n Use \"pick-race choose <race>\" to assign an option " + "```\n"
+		s.ChannelMessageSend(m.ChannelID, ":sparkles: You may pick from one of the following races: " + racelist)
+		return
+	}
+
+	for _, argument := range payload{
+		argument = strings.ToLower(argument)
+	}
+
+	if len(payload) > 0 {
+		raceoption := payload[0]
+		if h.ValidateRaceChoice(raceoption){
+			s.ChannelMessageSend(m.ChannelID, "You have chosen: " + raceoption +"\nConfirm? (Yes/No)\n")
+			h.callback.Watch(h.ConfirmRace, GetUUIDv2(), raceoption, s, m)
+			return
+		} else {
+			racelist := GetRaceList()
+			s.ChannelMessageSend(m.ChannelID, ":sparkles: Invalid Race Choice! You may pick from one of the following races: \n```" +
+				racelist +"\n```\n" )
+			return
+		}
+	}
+}
+
+func (h *RegistrationHandler) ValidateRaceChoice(race string) (valid bool) {
+
+	race = strings.ToLower(race)
+
+	switch race {
+		case "catfolk":
+			return true
+		case "clockwork":
+			return true
+		case "dwarf":
+			return true
+		case "elf":
+			return true
+		case "half-elf":
+			return true
+		case "half-orc":
+			return true
+		case "human":
+			return true
+		case "kobold":
+			return true
+		case "gnome":
+			return true
+		case "orc":
+			return true
+		case "ratfolk":
+			return true
+		case "saurian":
+			return true
+		case "skinwalker":
+			return true
+		default:
+			return false
+	}
+}
+
+func (h *RegistrationHandler) ConfirmRace(race string, s *discordgo.Session, m *discordgo.MessageCreate){
+
+	// We do this to avoid having duplicate commands overrunning each other
+	cp := h.conf.MainConfig.CP
+	if strings.HasPrefix(m.Content, cp) {
+		s.ChannelMessageSend(m.ChannelID, "Pick Race Command Cancelled")
+		return
+	}
+
+	m.Content = strings.ToLower(m.Content)
+	if m.Content == "y" || m.Content == "yes" {
+
+		user, err := h.db.GetUser(m.Author.ID)
+		if err != nil {
+			s.ChannelMessageSend(m.ChannelID, "Could not retrieve user record: " + err.Error())
+			return
+		}
+
+		user.Race = race
+
+		err = h.user.user.SaveUserToDB(user)
+		if err != nil {
+			s.ChannelMessageSend(m.ChannelID, "Could not complete registration: " + err.Error())
+			return
+		}
+	}
+	if m.Content == "n" || m.Content == "no" {
+		s.ChannelMessageSend(m.ChannelID, "Choice Cancelled.")
+		return
+	}
+
+	err := h.SetRegistrationStep("race", m.Author.ID)
+	if err != nil {
+		s.ChannelMessageSend(m.ChannelID, "Could not complete registration: " + err.Error())
+		return
+	}
+	s.ChannelMessageSend(m.ChannelID, "Race assigned! You may now proceed with your " +
+		"avatar creation by using the "+h.conf.MainConfig.CP+"pick-class command")
+	return
+
+}
 
 
 // Class

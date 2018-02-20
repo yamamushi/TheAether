@@ -346,7 +346,7 @@ func (h *RoomsHandler) ParseCommand(command []string, s *discordgo.Session, m *d
 
 	if command[1] == "linkrole" {
 		if len(command) < 4 {
-			s.ChannelMessageSend(m.ChannelID, "linkrole requires two arguments - <rolename> <room>")
+			s.ChannelMessageSend(m.ChannelID, "linkrole requires two arguments - <rolename> <#room>")
 			return
 		}
 
@@ -355,7 +355,7 @@ func (h *RoomsHandler) ParseCommand(command []string, s *discordgo.Session, m *d
 	}
 	if command[1] == "unlinkrole" {
 		if len(command) < 4 {
-			s.ChannelMessageSend(m.ChannelID, "unlinkrole requires two arguments - <rolename> <room>")
+			s.ChannelMessageSend(m.ChannelID, "unlinkrole requires two arguments - <rolename> <#room>")
 			return
 		}
 
@@ -416,7 +416,7 @@ func (h *RoomsHandler) ParseCommand(command []string, s *discordgo.Session, m *d
 			return
 		}
 		if len(command) < 3 {
-			s.ChannelMessageSend(m.ChannelID, "description requires one or two arguments - <room> <description>")
+			s.ChannelMessageSend(m.ChannelID, "description requires one or two arguments - <#room> <description>")
 			return
 		}
 
@@ -445,7 +445,7 @@ func (h *RoomsHandler) ParseCommand(command []string, s *discordgo.Session, m *d
 			return
 		}
 		if len(command) < 3 {
-			s.ChannelMessageSend(m.ChannelID, "guildinvite requires one or two arguments - <room> <invite>")
+			s.ChannelMessageSend(m.ChannelID, "guildinvite requires one or two arguments - <#room> <invite>")
 			return
 		}
 
@@ -456,7 +456,7 @@ func (h *RoomsHandler) ParseCommand(command []string, s *discordgo.Session, m *d
 	// list roles for a room
 	if command[1] == "roles" {
 		if len(command) < 3 {
-			s.ChannelMessageSend(m.ChannelID, "roles requires an argument - <room>")
+			s.ChannelMessageSend(m.ChannelID, "roles requires an argument - <#room>")
 			return
 		}
 
@@ -483,7 +483,7 @@ func (h *RoomsHandler) ParseCommand(command []string, s *discordgo.Session, m *d
 			s.ChannelMessageSend(m.ChannelID, "Room travel role set.")
 			return
 		} else {
-			s.ChannelMessageSend(m.ChannelID, "travelroleclear requires two arguments - <room> <rolename>")
+			s.ChannelMessageSend(m.ChannelID, "travelroleclear requires two arguments - <#room> <rolename>")
 			return
 		}
 		return
@@ -498,12 +498,43 @@ func (h *RoomsHandler) ParseCommand(command []string, s *discordgo.Session, m *d
 			s.ChannelMessageSend(m.ChannelID, "Room travel role cleared.")
 			return
 		} else {
-			s.ChannelMessageSend(m.ChannelID, "travelroleclear requires an argument - <room>")
+			s.ChannelMessageSend(m.ChannelID, "travelroleclear requires an argument - <#room>")
 			return
 		}
 		return
 	}
 
+	// Set and unset transfer role
+	if command[1] == "transferrole" {
+		if len(command) > 3 {
+			err := h.SetRoomTransferRoleID(command[2], command[3], s)
+			if err != nil {
+				s.ChannelMessageSend(m.ChannelID, "Error setting transfer role: " + err.Error())
+				return
+			}
+			s.ChannelMessageSend(m.ChannelID, "Room transfer role set.")
+			return
+		} else {
+			s.ChannelMessageSend(m.ChannelID, "transferrole requires two arguments - <#room> <roleID>")
+			return
+		}
+		return
+	}
+	if command[1] == "transferroleclear" {
+		if len(command) > 2 {
+			err := h.RemoveRoomTransferRoleID(command[2])
+			if err != nil {
+				s.ChannelMessageSend(m.ChannelID, "Error clearing transfer role: " + err.Error())
+				return
+			}
+			s.ChannelMessageSend(m.ChannelID, "Room transfer role cleared.")
+			return
+		} else {
+			s.ChannelMessageSend(m.ChannelID, "transferroleclear requires an argument - <#room>")
+			return
+		}
+		return
+	}
 
 }
 
@@ -1950,6 +1981,44 @@ func (h *RoomsHandler) RemoveRoomTravelRole(roomID string) (err error) {
 	}
 
 	room.TravelRoleID = ""
+
+	return h.rooms.SaveRoomToDB(room)
+
+}
+
+
+func (h *RoomsHandler) SetRoomTransferRoleID(roleID string, roomID string, s *discordgo.Session) (err error) {
+
+	roomID = CleanChannel(roomID)
+
+	room, err := h.rooms.GetRoomByID(roomID)
+	if err != nil {
+		return err
+	}
+
+	_, err = s.Channel(roleID)
+	if err != nil {
+		return errors.New("Could not find target transfer room: " + err.Error())
+	}
+
+
+	room.TravelRoleID = roleID
+
+	return h.rooms.SaveRoomToDB(room)
+}
+
+
+
+func (h *RoomsHandler) RemoveRoomTransferRoleID(roomID string) (err error) {
+
+	roomID = CleanChannel(roomID)
+
+	room, err := h.rooms.GetRoomByID(roomID)
+	if err != nil {
+		return err
+	}
+
+	room.TransferRoomID = ""
 
 	return h.rooms.SaveRoomToDB(room)
 
