@@ -206,10 +206,13 @@ func (h *TransferHandler) TransferToChannel(userID string, targetGuildID string,
 	if err != nil {
 		return err
 	}
-
 	err = h.perms.RemoveRoleFromUser(fromRoleName, userID, s, m)
 	if err != nil {
 		return err
+	}
+	h.rooms.RemoveUserIDFromRoomRecord(userID, fromChannelID)
+	if err != nil {
+		return errors.New("Error removing user record from room: " + err.Error())
 	}
 
 
@@ -235,6 +238,11 @@ func (h *TransferHandler) TransferToChannel(userID string, targetGuildID string,
 	if err != nil {
 		return err
 	}
+	h.rooms.AddUserIDToRoomRecord(userID, toroom.ID, toroom.GuildID, s)
+	if err != nil {
+		return errors.New("Error updating user record into room: " + err.Error())
+	}
+
 
 	// Add registered role here
 	err = h.perms.AddRoleToUser("registered", userID, s, m)

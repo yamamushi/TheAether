@@ -20,6 +20,7 @@ type Room struct {
 
 	TravelRoleID		string
 	RoleIDs				[]string
+	UserIDs				[]string
 	/*
 	These are likely to change, but here's generally what is needed in the roleID slice
 	0 - Default Travel ID

@@ -302,5 +302,16 @@ func (h *TravelHandler) Travel(direction string, s *discordgo.Session, m *discor
 		return errors.New("Error updating user record into database!")
 	}
 
+	h.room.AddUserIDToRoomRecord(user.ID, guildID, targetroom.ID, s)
+	if err != nil {
+		return errors.New("Error updating user record into room: " + err.Error())
+	}
+
+
+	h.room.RemoveUserIDFromRoomRecord(user.ID, targetroom.ID)
+	if err != nil {
+		return errors.New("Error removing user record from room: " + err.Error())
+	}
+
 	return nil
 }
