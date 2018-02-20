@@ -206,6 +206,12 @@ func (h* RoomsHandler) InitRooms(s *discordgo.Session, channelID string) (err er
 		return err
 	}
 
+	fmt.Println("Reordering Roles")
+	err = h.perm.GuildReorderRoles(guildID, s)
+	if err != nil {
+		return err
+	}
+
 	return nil
 }
 
@@ -279,7 +285,8 @@ func (h *RoomsHandler) ParseCommand(command []string, s *discordgo.Session, m *d
 	if command[1] == "add" {
 		if len(command) < 3 {
 			s.ChannelMessageSend(m.ChannelID, "add requires at least one argument: <name> "+
-				"<color (optional)> <guildInviteLink> <transferRoomID>")
+				"<color (optional)>\nIf you would like to add a transfer room, the " +
+					"syntax is: \n<name> <guildInviteLink> <transferRoomID> <color (optional)>" )
 			return
 		}
 
@@ -296,19 +303,23 @@ func (h *RoomsHandler) ParseCommand(command []string, s *discordgo.Session, m *d
 		}
 		if len(command) == 5 {
 			s.ChannelMessageSend(m.ChannelID, "adding a transfer room requires three argument: <name> " +
-				"<color (optional)> <guildInviteLink> <transferRoomID>")
+				"<guildInviteLink> <transferRoomID> <color (optional)> ")
 			return
 		}
 		if len(command) == 6 {
-			color, err = strconv.Atoi(command[3])
+			transferID = command[3]
+			transferRoomID = command[4]
+			color, err = strconv.Atoi(command[5])
 			if err != nil {
 				s.ChannelMessageSend(m.ChannelID, "Invalid color choice (must be integer)")
 				return
 			}
-			transferID = command[4]
-			transferRoomID = command[5]
 		}
-
+		if len(command) > 6 {
+			s.ChannelMessageSend(m.ChannelID, "adding a transfer room requires three argument: <name> " +
+				"<guildInviteLink> <transferRoomID> <color (optional)> ")
+			return
+		}
 		channel, err := h.AddRoom(s, command[2], guildID, parentname, transferID, transferRoomID, color, false)
 		if err != nil {
 			s.ChannelMessageSend(m.ChannelID, "Error adding channel: " + err.Error())
@@ -838,7 +849,6 @@ func (h *RoomsHandler) CreateDefaultRoles(guildID string, s *discordgo.Session) 
 		return err
 	}
 
-
 	return nil
 }
 
@@ -1208,7 +1218,7 @@ func (h *RoomsHandler) AddRoom(s *discordgo.Session, name string, guildID string
 
 		// Create default role here
 		if !overriderole {
-			createdrole, err := h.perm.CreateRole(name, guildID, false, false, color, 0, s)
+			createdrole, err := h.perm.CreateRole(name, guildID, true, false, color, 0, s)
 			newroleID := ""
 			if err != nil {
 				if !strings.Contains(err.Error(), "already exists"){
@@ -1381,6 +1391,11 @@ func (h *RoomsHandler) SetupNewServer(s *discordgo.Session, m *discordgo.Message
 	}
 	*/
 	err = h.guilds.RegisterGuild(guildID, s)
+	if err != nil {
+		return err
+	}
+
+	err = h.perm.GuildReorderRoles(guildID, s)
 	if err != nil {
 		return err
 	}

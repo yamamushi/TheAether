@@ -1162,3 +1162,48 @@ func (h *PermissionsHandler) TranslateRoleID(roleID string, guildID string, s *d
 
 	return rolename, nil
 }
+
+
+func (h *PermissionsHandler) GuildReorderRoles(guildID string, s *discordgo.Session) (err error) {
+
+	guildroles, err := s.GuildRoles(guildID)
+
+	total := len(guildroles)
+	for i, role := range guildroles {
+		if role.Name != "Admin" && role.Name != "Builder" && role.Name != "Moderator" &&
+			role.Name != "Writer" && role.Name != "Spoilers" && role.Name != "Registered" &&
+			role.Name != "Developer" && role.Name != "@everyone" && role.Name != "TheAether"{
+				if i < 8 {
+					guildroles[i].Position = total-1-i
+				} else {
+					guildroles[i].Position = i
+				}
+		}
+		if role.Name == "Admin" {
+			guildroles[i].Position = 7
+		} else if role.Name == "Moderator" {
+			guildroles[i].Position = 6
+		} else if role.Name == "Builder" {
+			guildroles[i].Position = 5
+		} else if role.Name == "Writer" {
+			guildroles[i].Position = 4
+		}  else if role.Name == "Developer" {
+			guildroles[i].Position = 3
+		} else if role.Name == "Spoilers" {
+			guildroles[i].Position = 2
+		} else if role.Name == "Registered" {
+			guildroles[i].Position = 1
+		} else if role.Name == "@everyone" {
+			guildroles[i].Position = 0
+		} else if role.Name == "TheAether" {
+			guildroles[i].Position = total-1
+		}
+	}
+
+	_, err = s.GuildRoleReorder(guildID, guildroles)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
