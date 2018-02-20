@@ -343,6 +343,7 @@ func (h *RoomsHandler) ParseCommand(command []string, s *discordgo.Session, m *d
 		s.ChannelMessageSend(m.ChannelID, "Channel " + roomname + " removed.")
 		return
 	}
+
 	if command[1] == "linkrole" {
 		if len(command) < 4 {
 			s.ChannelMessageSend(m.ChannelID, "linkrole requires two arguments - <rolename> <room>")
@@ -386,6 +387,7 @@ func (h *RoomsHandler) ParseCommand(command []string, s *discordgo.Session, m *d
 		}
 
 	}
+
 	if command[1] == "description" {
 		if len(command) == 3 {
 			description, err := h.GetRoomDescription(command[2])
@@ -450,6 +452,58 @@ func (h *RoomsHandler) ParseCommand(command []string, s *discordgo.Session, m *d
 		h.LinkRole(command[2], command[3], s, m)
 		return
 	}
+
+	// list roles for a room
+	if command[1] == "roles" {
+		if len(command) < 3 {
+			s.ChannelMessageSend(m.ChannelID, "roles requires an argument - <room>")
+			return
+		}
+
+		roomID := CleanChannel(command[2])
+
+		roles, err := h.GetRoomRoles(roomID, guildID, s)
+		if err != nil {
+			s.ChannelMessageSend(m.ChannelID, "Could not retrieve roles for room: " + err.Error())
+			return
+		}
+
+		s.ChannelMessageSend(m.ChannelID, "Roles for " + command[2] + " : " + roles )
+		return
+	}
+
+	// Set and unset travel role
+	if command[1] == "travelrole" {
+		if len(command) > 3 {
+			err := h.SetRoomTravelRole(command[3], command[2], guildID, s)
+			if err != nil {
+				s.ChannelMessageSend(m.ChannelID, "Error setting description: " + err.Error())
+				return
+			}
+			s.ChannelMessageSend(m.ChannelID, "Room travel role set.")
+			return
+		} else {
+			s.ChannelMessageSend(m.ChannelID, "travelroleclear requires two arguments - <room> <rolename>")
+			return
+		}
+		return
+	}
+	if command[1] == "travelroleclear" {
+		if len(command) > 2 {
+			err := h.RemoveRoomTravelRole(command[2])
+			if err != nil {
+				s.ChannelMessageSend(m.ChannelID, "Error clearing travel role: " + err.Error())
+				return
+			}
+			s.ChannelMessageSend(m.ChannelID, "Room travel role cleared.")
+			return
+		} else {
+			s.ChannelMessageSend(m.ChannelID, "travelroleclear requires an argument - <room>")
+			return
+		}
+		return
+	}
+
 
 }
 
@@ -694,6 +748,43 @@ func (h *RoomsHandler) CreateDefaultRoles(guildID string, s *discordgo.Session) 
 			return err
 		}
 	}
+
+
+	// The default Welcome Channel -> To be setup correctly a server NEEDS this channel and name as the default channel
+	fmt.Println("Creating Lobby Rooms")
+	welcomeChannelID, err := getGuildChannelIDByName(s, guildID, "welcome")
+	if err != nil {
+		return err
+	}
+	err = h.MoveRoom(s, welcomeChannelID, guildID, "Lobby")
+	if err != nil {
+		if !strings.Contains(err.Error(), "No record found"){
+			return err // We don't care about no record being found in the Lobby because it is our default room
+		}
+	}
+
+	everyoneID, err := getGuildEveryoneRoleID(s, guildID)
+	if err != nil {
+		return err
+	}
+	denyeveryoneperms := h.perm.CreatePermissionInt(RolePermissions{SEND_MESSAGES: true})
+	alloweveryoneperms := h.perm.CreatePermissionInt(RolePermissions{READ_MESSAGE_HISTORY:true, VIEW_CHANNEL: true})
+	err = s.ChannelPermissionSet( welcomeChannelID, everyoneID, "role", alloweveryoneperms, denyeveryoneperms)
+	if err != nil {
+		return err
+	}
+
+	registeredroleID, err := getRoleIDByName(s, guildID, "Registered")
+	if err != nil {
+		return err
+	}
+	denyregisteredperms := h.perm.CreatePermissionInt(RolePermissions{VIEW_CHANNEL: true})
+	allowregisteredperms := h.perm.CreatePermissionInt(RolePermissions{})
+	err = s.ChannelPermissionSet( welcomeChannelID, registeredroleID, "role", allowregisteredperms, denyregisteredperms)
+	if err != nil {
+		return err
+	}
+
 
 	return nil
 }
@@ -1182,6 +1273,10 @@ func (h *RoomsHandler) SetupNewServer(s *discordgo.Session, m *discordgo.Message
 		return
 	}
 
+	if guildID == h.conf.MainConfig.CentralGuildID {
+		return errors.New("This cannot be run on the central guild!")
+	}
+
 	err = h.CreateDefaultRoles( guildID, s )
 	if err != nil {
 		return err
@@ -1254,6 +1349,8 @@ func (h *RoomsHandler) SetTravelRole(rolename string, roomID string, s *discordg
 	return nil
 }
 
+
+// Linking Roles
 
 func (h *RoomsHandler) LinkRole(rolename string, roomID string, s *discordgo.Session, m *discordgo.MessageCreate) {
 
@@ -1352,6 +1449,7 @@ func (h *RoomsHandler) UnLinkRole(rolename string, roomID string, s *discordgo.S
 }
 
 
+// Room Info
 func (h *RoomsHandler) FormatRoomInfo(roomID string) (formatted string, err error) {
 
 	roomID = CleanChannel(roomID)
@@ -1362,8 +1460,8 @@ func (h *RoomsHandler) FormatRoomInfo(roomID string) (formatted string, err erro
 	}
 
 	output := "\n```\n"
-	output = output + "ID: " +  room.ID + "\n"
 	output = output + "Name: " + room.Name + "\n"
+	output = output + "ID: " +  room.ID + "\n"
 	output = output + "Guild: " + room.GuildID + "\n\n"
 	output = output + "GuildTransferInvite: " + room.GuildTransferInvite + "\n"
 	output = output + "TransferRoomID: " + room.TransferRoomID + "\n\n"
@@ -1536,7 +1634,6 @@ func (h *RoomsHandler) FormatRoomInfo(roomID string) (formatted string, err erro
 	return output, nil
 }
 
-
 func (h *RoomsHandler) ViewRoom(roomID string, s *discordgo.Session, m *discordgo.MessageCreate) {
 
 	fmt.Println("RoomID ViewRoom: " + roomID )
@@ -1551,6 +1648,7 @@ func (h *RoomsHandler) ViewRoom(roomID string, s *discordgo.Session, m *discordg
 }
 
 
+// Directional Commands
 func (h *RoomsHandler) LinkDirection(direction string, fromroomID string, toroomID string, s *discordgo.Session, m *discordgo.MessageCreate) {
 
 	guildID, err := getGuildID(s, m.ChannelID)
@@ -1725,6 +1823,9 @@ func (h *RoomsHandler) LinkDirection(direction string, fromroomID string, toroom
 	return
 }
 
+
+// Get Set for various room details
+
 func (h *RoomsHandler) GetRoomDescription(roomID string) (formatted string, err error) {
 
 	roomID = CleanChannel(roomID)
@@ -1794,3 +1895,62 @@ func (h *RoomsHandler) SetRoomTransferInvite(roomID string, invite string, s *di
 	return nil
 }
 
+
+func (h *RoomsHandler) GetRoomRoles(roomID string, guildID string, s *discordgo.Session) (formatted string, err error) {
+
+	roomID = CleanChannel(roomID)
+
+	room, err := h.rooms.GetRoomByID(roomID)
+	if err != nil {
+		return "", err
+	}
+
+	formatted = "```\nTravelRoleID: "+room.TravelRoleID+"\n\nRole List: \n"
+
+	for _, roleID := range room.RoleIDs {
+
+		rolename, err := getRoleNameByID(roleID, guildID, s)
+		if err != nil {
+			return "", err
+		}
+		formatted = formatted + rolename + ": " + roleID + "\n"
+	}
+
+	formatted = formatted + "```\n"
+	return formatted, nil
+}
+
+
+func (h *RoomsHandler) SetRoomTravelRole(rolename string, roomID string, guildID string, s *discordgo.Session) (err error) {
+
+	roomID = CleanChannel(roomID)
+
+	room, err := h.rooms.GetRoomByID(roomID)
+	if err != nil {
+		return err
+	}
+
+	roleID, err := getRoleIDByName(s, guildID, rolename)
+	if err != nil {
+		return err
+	}
+
+	room.TravelRoleID = roleID
+
+	return h.rooms.SaveRoomToDB(room)
+}
+
+func (h *RoomsHandler) RemoveRoomTravelRole(roomID string) (err error) {
+
+	roomID = CleanChannel(roomID)
+
+	room, err := h.rooms.GetRoomByID(roomID)
+	if err != nil {
+		return err
+	}
+
+	room.TravelRoleID = ""
+
+	return h.rooms.SaveRoomToDB(room)
+
+}

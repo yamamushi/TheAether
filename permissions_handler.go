@@ -17,6 +17,7 @@ type PermissionsHandler struct {
 	callback *CallbackHandler
 	user     *UserHandler
 	logchan  chan string
+	room     *RoomsHandler
 }
 
 // Read function
@@ -168,7 +169,7 @@ func (h *PermissionsHandler) Read(s *discordgo.Session, m *discordgo.MessageCrea
 			}
 
 			if len(command) < 6 {
-				s.ChannelMessageSend(m.ChannelID, "<create> expects 4 arguments - <role name> <hoist> <mentionable> <color int>")
+				s.ChannelMessageSend(m.ChannelID, "<createrole> expects 4 arguments - <role name> <hoist> <mentionable> <color int>")
 				return
 			}
 
@@ -208,6 +209,41 @@ func (h *PermissionsHandler) Read(s *discordgo.Session, m *discordgo.MessageCrea
 			s.ChannelMessageSend(m.ChannelID, "Role " + createdrole.Name + " created: " + createdrole.ID)
 			return
 		}
+		if command[1] == "deleterole" {
+			// Get the authors user object from the database
+			user, err := h.db.GetUser(m.Author.ID)
+			if err != nil {
+				s.ChannelMessageSend(m.ChannelID, "syncserverroles error: " + err.Error())
+				return
+			}
+
+			if !user.CheckRole("admin") {
+				s.ChannelMessageSend(m.ChannelID, "You do not have permission to use this command.")
+				return
+			}
+
+			if len(command) < 3 {
+				s.ChannelMessageSend(m.ChannelID, "<deleterole> expects an argument - <role name>")
+				return
+			}
+
+			rolename := command[2]
+			roleID, err := getRoleIDByName(s, guildID, rolename)
+			if err != nil{
+				s.ChannelMessageSend(m.ChannelID, "Could not delete role: " + err.Error())
+				return
+			}
+
+			err = h.DeleteRoleOnGuild(roleID, guildID, s)
+			if err != nil{
+				s.ChannelMessageSend(m.ChannelID, "Could not delete role: " + err.Error())
+				return
+			}
+
+			s.ChannelMessageSend(m.ChannelID, "Role deleted on server!")
+			return
+		}
+
 		if command[1] == "viewrole" {
 
 			// Get the authors user object from the database
@@ -319,6 +355,37 @@ func (h *PermissionsHandler) Read(s *discordgo.Session, m *discordgo.MessageCrea
 					s.ChannelMessageSend(m.ChannelID, "syncserverroles error: " + err.Error())
 					return
 				}
+			}
+			return
+		}
+
+		if command[1] == "translaterole" {
+
+			// Get the authors user object from the database
+			user, err := h.db.GetUser(m.Author.ID)
+			if err != nil {
+				s.ChannelMessageSend(m.ChannelID, "translaterole error: " + err.Error())
+				return
+			}
+
+			if !user.CheckRole("moderator") {
+				s.ChannelMessageSend(m.ChannelID, "You do not have permission to use this command.")
+				return
+			}
+
+			if len(command) < 3 {
+				s.ChannelMessageSend(m.ChannelID, "translaterole expects an argument: roleID")
+				return
+			} else {
+				rolename, err := h.TranslateRoleID(command[2], guildID, s)
+				if err != nil {
+					s.ChannelMessageSend(m.ChannelID, "syncserverroles error: " + err.Error())
+					return
+				}
+				output := "RoleID Translation: ```\nRoleID: "+ command[2] + "\nRole Name: " + rolename + "\n```\n"
+
+				s.ChannelMessageSend(m.ChannelID, output )
+				return
 			}
 			return
 		}
@@ -1058,4 +1125,42 @@ func (h *PermissionsHandler) SyncServerRoles( userID string, channelID string, s
 	}
 
 	return nil
+}
+
+
+func (h *PermissionsHandler) DeleteRoleOnGuild(roleID string, guildID string, s *discordgo.Session) (err error){
+
+	rooms, err := h.room.rooms.GetAllRooms()
+
+	inUse := ""
+	for _, room := range rooms {
+		if room.TravelRoleID == roleID{
+			inUse = inUse + room.ID + " - " + room.Name +"\n"
+		} else {
+			room.RoleIDs = RemoveStringFromSlice(room.RoleIDs, roleID)
+			err = h.room.rooms.SaveRoomToDB(room)
+			if err != nil {
+				return err
+			}
+		}
+	}
+
+
+	if inUse != "" {
+		return errors.New("Cannot delete role configured as travel ID, it is currently in " +
+									"use by the following channels: \n```\n"+inUse+"\n```\n")
+	}
+
+	return s.GuildRoleDelete(guildID, roleID)
+}
+
+
+func (h *PermissionsHandler) TranslateRoleID(roleID string, guildID string, s *discordgo.Session) (rolename string, err error) {
+
+	rolename, err = getRoleNameByID(roleID, guildID, s)
+	if err != nil {
+		return "", err
+	}
+
+	return rolename, nil
 }

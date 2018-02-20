@@ -139,6 +139,7 @@ func main() {
 	roomshandler := RoomsHandler{callback: &callbackhandler, conf: &conf, db: &dbhandler, perm: &permissionshandler,
 	registry: commandhandler.registry, dg: dg, user: &userhandler, ch: &channelhandler, guilds: &guildsmanager}
 	dg.AddHandler(roomshandler.Read)
+	permissionshandler.room = &roomshandler
 	// No rooms handler init here!
 
 	fmt.Println("Adding Registration Handler")
