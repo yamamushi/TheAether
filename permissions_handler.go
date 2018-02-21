@@ -394,6 +394,7 @@ func (h *PermissionsHandler) Read(s *discordgo.Session, m *discordgo.MessageCrea
 	return
 }
 
+// ViewRole function
 func (h *PermissionsHandler) ViewRole(rolename string, guildID string, s *discordgo.Session, m *discordgo.MessageCreate) {
 
 	roles, err := s.GuildRoles(guildID)
@@ -846,7 +847,7 @@ func (h *PermissionsHandler) Demote(userid string, group string) (err error) {
 }
 
 
-
+// CreatePermissionOverwrite function
 func (h *PermissionsHandler) CreatePermissionOverwrite(roleid string, permtype string, allow bool) (overwrite discordgo.PermissionOverwrite, err error) {
 
 	if allow {
@@ -858,6 +859,7 @@ func (h *PermissionsHandler) CreatePermissionOverwrite(roleid string, permtype s
 	return overwrite, nil
 }
 
+// CreatePermissionInt function
 func (h *PermissionsHandler) CreatePermissionInt(roleperms RolePermissions ) (perm int){
 
 	perm = 0
@@ -949,7 +951,7 @@ func (h *PermissionsHandler) CreatePermissionInt(roleperms RolePermissions ) (pe
 	return perm
 }
 
-
+// CreateRole function
 func (h *PermissionsHandler) CreateRole(name string, guildID string, hoist bool, mentionable bool, color int, perm int, s *discordgo.Session) (createdrole *discordgo.Role, err error){
 
 	// Capitalize roles
@@ -981,7 +983,7 @@ func (h *PermissionsHandler) CreateRole(name string, guildID string, hoist bool,
 	return createdrole, nil
 }
 
-
+// AddRoleToUser function
 func (h *PermissionsHandler) AddRoleToUser(role string, userID string, s *discordgo.Session, m *discordgo.MessageCreate, isID bool) (err error) {
 
 	// Get usermanager from the database using the userid
@@ -1028,6 +1030,7 @@ func (h *PermissionsHandler) AddRoleToUser(role string, userID string, s *discor
 	return nil
 }
 
+// RemoveRoleFromUser function
 func (h *PermissionsHandler) RemoveRoleFromUser(role string, userID string, s *discordgo.Session, m *discordgo.MessageCreate, isID bool) (err error){
 
 	// Get usermanager from the database using the userid
@@ -1077,7 +1080,7 @@ func (h *PermissionsHandler) RemoveRoleFromUser(role string, userID string, s *d
 
 
 
-
+// SyncRolesDB function
 func (h *PermissionsHandler) SyncRolesDB( userID string, guildID string, channelID string, s *discordgo.Session) (err error){
 
 	// Get usermanager from the database using the userid
@@ -1117,6 +1120,7 @@ func (h *PermissionsHandler) SyncRolesDB( userID string, guildID string, channel
 	return nil
 }
 
+// SyncServerRoles function
 func (h *PermissionsHandler) SyncServerRoles( userID string, channelID string, s *discordgo.Session) (err error){
 
 	// Get user from the database using the userid
@@ -1134,7 +1138,7 @@ func (h *PermissionsHandler) SyncServerRoles( userID string, channelID string, s
 	return nil
 }
 
-
+// DeleteRoleOnGuild function
 func (h *PermissionsHandler) DeleteRoleOnGuild(roleID string, guildID string, s *discordgo.Session) (err error){
 
 	rooms, err := h.room.rooms.GetAllRooms()
@@ -1161,7 +1165,7 @@ func (h *PermissionsHandler) DeleteRoleOnGuild(roleID string, guildID string, s 
 	return s.GuildRoleDelete(guildID, roleID)
 }
 
-
+// TranslateRoleID function
 func (h *PermissionsHandler) TranslateRoleID(roleID string, guildID string, s *discordgo.Session) (rolename string, err error) {
 
 	rolename, err = getRoleNameByID(roleID, guildID, s)
@@ -1172,7 +1176,7 @@ func (h *PermissionsHandler) TranslateRoleID(roleID string, guildID string, s *d
 	return rolename, nil
 }
 
-
+// GuildReorderRoles function
 func (h *PermissionsHandler) GuildReorderRoles(guildID string, s *discordgo.Session) (err error) {
 
 	guildroles, err := s.GuildRoles(guildID)
@@ -1220,7 +1224,7 @@ func (h *PermissionsHandler) GuildReorderRoles(guildID string, s *discordgo.Sess
 
 
 // Default roles permissions handling
-
+// ApplyModeratorRolePerms function
 func (h *PermissionsHandler) ApplyModeratorRolePerms(roomID string, guildID string, moderatorID string, s *discordgo.Session) (err error) {
 
 	if moderatorID == "" {
@@ -1240,7 +1244,7 @@ func (h *PermissionsHandler) ApplyModeratorRolePerms(roomID string, guildID stri
 	return nil
 }
 
-
+// ApplyAdminRolePerms function
 func (h *PermissionsHandler) ApplyAdminRolePerms(roomID string, guildID string, adminID string, s *discordgo.Session) (err error) {
 
 	if adminID == "" {
@@ -1260,7 +1264,7 @@ func (h *PermissionsHandler) ApplyAdminRolePerms(roomID string, guildID string, 
 	return nil
 }
 
-
+// ApplyBuilderRolePerms function
 func (h *PermissionsHandler) ApplyBuilderRolePerms(roomID string, guildID string, builderID string, s *discordgo.Session) (err error) {
 
 	if builderID == "" {
@@ -1280,7 +1284,7 @@ func (h *PermissionsHandler) ApplyBuilderRolePerms(roomID string, guildID string
 	return nil
 }
 
-
+// ApplyEveryoneRolePerms function
 func (h *PermissionsHandler) ApplyEveryoneRolePerms(roomID string, guildID string, everyoneID string, s *discordgo.Session) (err error) {
 
 	if everyoneID == "" {
@@ -1300,7 +1304,7 @@ func (h *PermissionsHandler) ApplyEveryoneRolePerms(roomID string, guildID strin
 	return nil
 }
 
-
+// ApplyTravelRolePerms function
 func (h *PermissionsHandler) ApplyTravelRolePerms(roomID string, guildID string, s *discordgo.Session) (err error) {
 
 	room, err := h.room.rooms.GetRoomByID(roomID)

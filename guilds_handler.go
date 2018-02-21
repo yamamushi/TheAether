@@ -25,11 +25,13 @@ type GuildsHandler struct {
 }
 
 
+// Init function
 func (h *GuildsHandler) Init() {
 	h.RegisterCommands()
 	h.syncinprogress = false
 }
 
+// RegisterCommands function
 func (h *GuildsHandler) RegisterCommands() (err error){
 
 	h.registry.Register("guilds", "Manage rooms for this server", "sync | list | info | add | remove ")
@@ -38,6 +40,7 @@ func (h *GuildsHandler) RegisterCommands() (err error){
 
 }
 
+// Read function
 func (h *GuildsHandler) Read(s *discordgo.Session, m *discordgo.MessageCreate) {
 
 	cp := h.conf.MainConfig.CP
@@ -74,6 +77,7 @@ func (h *GuildsHandler) Read(s *discordgo.Session, m *discordgo.MessageCreate) {
 	}
 }
 
+// ParseCommand function
 func (h *GuildsHandler) ParseCommand(command []string, s *discordgo.Session, m *discordgo.MessageCreate) {
 
 
@@ -215,6 +219,7 @@ func (h *GuildsHandler) ParseCommand(command []string, s *discordgo.Session, m *
 // This will sync the entire cluster, roles for every room and permissions for all of them
 // This is a very intensive task so it's important that it not be run all the time
 // There are timers throughout it to try and alleviate some of the strain on the api
+// SyncCluster function
 func (h *GuildsHandler) SyncCluster(s *discordgo.Session) (err error){
 
 	guilds, err := h.guildmanager.GetAllGuilds()
@@ -235,6 +240,7 @@ func (h *GuildsHandler) SyncCluster(s *discordgo.Session) (err error){
 // This will resync a specific guild overwriting any settings in the DB for it
 // It will also fix roles for users in that guild
 // It by itself will take a long time to finish
+// SyncGuild function
 func (h *GuildsHandler) SyncGuild(guildID string, s *discordgo.Session) (err error){
 
 	discordguild, err := s.Guild(guildID)
@@ -356,6 +362,7 @@ func (h *GuildsHandler) SyncGuild(guildID string, s *discordgo.Session) (err err
 	return nil
 }
 
+// GuildInfo function
 func (h *GuildsHandler) GuildInfo(guildID string) (formatted string, err error){
 
 	guild, err := h.guildmanager.GetGuildByID(guildID)
@@ -368,10 +375,7 @@ func (h *GuildsHandler) GuildInfo(guildID string) (formatted string, err error){
 	output = "```\n"
 	output = output + "Name: "+ guild.Name + "\n"
 	output = output + "ID: "+ guild.ID + "\n"
-	output = output + "Icon: "+guild.Icon + "\n"
-	output = output + "Region: "+guild.Region + "\n\n"
-	output = output + "AFK Channel: "+guild.AFKChannel + "\n"
-	output = output + "AFK Timeout: "+strconv.Itoa(guild.AFKTimeout)+ "\n\n"
+	output = output + "Icon: "+guild.Icon + "\n\n"
 	output = output + "OwnerID: "+guild.OwnerID + "\n"
 	output = output + "AdminID: "+guild.AdminID + "\n"
 	output = output + "ModeratorID: "+guild.ModeratorID+ "\n"
@@ -384,7 +388,7 @@ func (h *GuildsHandler) GuildInfo(guildID string) (formatted string, err error){
 	return output, nil
 }
 
-
+// ClusterInfo function
 func (h *GuildsHandler) ClusterInfo() (formatted string, err error) {
 
 	guilds, err := h.guildmanager.GetAllGuilds()
