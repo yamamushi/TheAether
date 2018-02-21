@@ -80,7 +80,7 @@ func (h *GuildsManager) GetGuildByID(guildID string) (guild GuildRecord, err err
 	}
 
 	for _, i := range guilds {
-		if i.ID == guildID{
+		if i.ID == guildID {
 			return i, nil
 		}
 	}

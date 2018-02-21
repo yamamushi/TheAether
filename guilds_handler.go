@@ -5,6 +5,8 @@ import (
 	"strings"
 	"fmt"
 	"time"
+	"strconv"
+	"errors"
 )
 
 
@@ -178,7 +180,7 @@ func (h *GuildsHandler) ParseCommand(command []string, s *discordgo.Session, m *
 				s.ChannelMessageSend(m.ChannelID, "Could not retrieve guild information: " + err.Error())
 				return
 			}
-			s.ChannelMessageSend(m.ChannelID, ":satellite: Guild Information: ```\n" + info + "\n```\n")
+			s.ChannelMessageSend(m.ChannelID, ":satellite: Guild Information: " + info )
 			return
 		} else {
 			if h.guildmanager.IsGuildRegistered(command[2]){
@@ -188,13 +190,22 @@ func (h *GuildsHandler) ParseCommand(command []string, s *discordgo.Session, m *
 					s.ChannelMessageSend(m.ChannelID, "Could not retrieve guild information: " + err.Error())
 					return
 				}
-				s.ChannelMessageSend(m.ChannelID, ":satellite: Guild Information: ```\n" + info + "\n```\n")
+				s.ChannelMessageSend(m.ChannelID, ":satellite: Guild Information: " + info)
 				return
 			} else {
 				s.ChannelMessageSend(m.ChannelID, "Error: Supplied guild ID is not registered in the cluster.")
 				return
 			}
 		}
+	}
+	if command[1] == "cluster" {
+		info, err := h.ClusterInfo()
+		if err != nil {
+			s.ChannelMessageSend(m.ChannelID, "Could not retrieve cluster information: " + err.Error())
+			return
+		}
+		s.ChannelMessageSend(m.ChannelID, ":satellite: Cluster Information: " + info )
+		return
 	}
 }
 
@@ -300,7 +311,11 @@ func (h *GuildsHandler) SyncGuild(guildID string, s *discordgo.Session) (err err
 			// Once per room we run syncroom which handles default permission assignments
 			err = h.room.SyncRoom(room.ID, s)
 			if err != nil {
-				return err
+				if strings.Contains(err.Error(), "Unknown Channel"){
+					h.room.rooms.RemoveRoomByID(room.ID)
+				} else {
+					return errors.New("Error syncing room: " + room.ID + ": " + room.Name + " - "+ err.Error())
+				}
 			}
 		}
 	}
@@ -308,14 +323,14 @@ func (h *GuildsHandler) SyncGuild(guildID string, s *discordgo.Session) (err err
 	for _, role := range roles {
 		err = h.guildmanager.AddRoleToGuild(guildID, role.ID)
 		if err != nil {
-			return err
+			return errors.New("Error Adding Role: " + err.Error())
 		}
 	}
 
 	for _, member := range discordguild.Members {
 		err = h.guildmanager.AddUserToGuild(guildID, member.User.ID)
 		if err != nil {
-			return err
+			return errors.New("Error Adding User To Guild: " + err.Error())
 		}
 
 		for _, user := range users {
@@ -329,7 +344,7 @@ func (h *GuildsHandler) SyncGuild(guildID string, s *discordgo.Session) (err err
 							time.Sleep(time.Duration(time.Second*1))
 							err = h.user.RepairUser(user.ID, s, room.ID, user.GuildID)
 							if err != nil {
-								return err
+								return errors.New("Error Repairing User: " + err.Error())
 							}
 						}
 					}
@@ -343,11 +358,50 @@ func (h *GuildsHandler) SyncGuild(guildID string, s *discordgo.Session) (err err
 
 func (h *GuildsHandler) GuildInfo(guildID string) (formatted string, err error){
 
-	_, err = h.guildmanager.GetGuildByID(guildID)
+	guild, err := h.guildmanager.GetGuildByID(guildID)
 	if err != nil {
 		return "", err
 
 	}
-	return "", nil
+
+	output := ""
+	output = "```\n"
+	output = output + "Name: "+ guild.Name + "\n"
+	output = output + "ID: "+ guild.ID + "\n"
+	output = output + "Icon: "+guild.Icon + "\n"
+	output = output + "Region: "+guild.Region + "\n\n"
+	output = output + "AFK Channel: "+guild.AFKChannel + "\n"
+	output = output + "AFK Timeout: "+strconv.Itoa(guild.AFKTimeout)+ "\n\n"
+	output = output + "OwnerID: "+guild.OwnerID + "\n"
+	output = output + "AdminID: "+guild.AdminID + "\n"
+	output = output + "ModeratorID: "+guild.ModeratorID+ "\n"
+	output = output + "EveryoneID: "+guild.EveryoneID + "\n"
+	output = output + "BuilderID: "+guild.BuilderID + "\n\n"
+	output = output + "User Count: "+strconv.Itoa(len(guild.UserIDs)) + "\n"
+	output = output + "Role Count: "+strconv.Itoa(len(guild.RoleIDs)) + "\n"
+	output = output +"\n```\n"
+
+	return output, nil
 }
+
+
+func (h *GuildsHandler) ClusterInfo() (formatted string, err error) {
+
+	guilds, err := h.guildmanager.GetAllGuilds()
+	if err != nil {
+		return "", err
+	}
+
+	output := "\n```\n"
+	output = output + "Guild Count: " + strconv.Itoa(len(guilds)) +"\n\n"
+
+	for _, guild := range guilds {
+
+		output = output + guild.Name + ": " + guild.ID + "\n"
+	}
+
+	output = output + "```\n"
+	return output, nil
+}
+
 

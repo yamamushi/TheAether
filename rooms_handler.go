@@ -1392,9 +1392,14 @@ func (h *RoomsHandler) RemoveRoom(s *discordgo.Session, name string, guildID str
 				if err != nil {
 					return err
 				}
+				err = h.perm.ApplyTravelRolePerms(search.ID, search.GuildID, s)
+				if err != nil {
+					return err
+				}
 			}
 		}
 	}
+
 
 	s.ChannelDelete(existingrecord.ID)
 
@@ -1402,7 +1407,14 @@ func (h *RoomsHandler) RemoveRoom(s *discordgo.Session, name string, guildID str
 	if err != nil {
 		return err
 	}
-	return h.rooms.RemoveRoomFromDB(existingrecord)
+
+
+	err = h.rooms.RemoveRoomFromDB(existingrecord)
+	if err != nil {
+		return err
+	}
+
+	return nil
 }
 
 func (h *RoomsHandler) MoveRoom(s *discordgo.Session, channelID string, guildID string, parentname string) (err error) {
@@ -1562,7 +1574,6 @@ func (h *RoomsHandler) SetTravelRole(rolename string, roomID string, s *discordg
 	if err != nil {
 		return errors.New("Error updating DB: " + err.Error())
 	}
-
 
 	denyrperms := 0
 	allowperms := 0
