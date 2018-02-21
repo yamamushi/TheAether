@@ -41,7 +41,7 @@ func (c *CallbackHandler) Watch(Handler func(string, *discordgo.Session, *discor
 // UnWatch function
 func (c *CallbackHandler) UnWatch(User string, ChannelID string, MessageID string) {
 
-	// Clear user element by iterating
+	// Clear usermanager element by iterating
 	var next *list.Element
 	for e := c.WatchList.Front(); e != nil; e = next {
 		next = e.Next()

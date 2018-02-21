@@ -16,7 +16,7 @@ type User struct {
 	ID 						string `storm:"id"` // primary key
 
 	Perms 					[]uint64 // Internal Permissions - NOT Discord Roles
-	Roles					[]string
+	RoleIDs					[]string
 
 	// Profile stuff
 	Name					string
@@ -254,7 +254,7 @@ func (u *User) SetRole(role string) {
 		ClearRoles(u)
 
 	default:
-		u.JoinRole(role)
+		return
 	}
 }
 
@@ -291,7 +291,7 @@ func (u *User) RemoveRole(role string) {
 		SetBit(&u.Perms, 10)
 
 	default:
-		u.LeaveRole(role)
+		return
 	}
 }
 
@@ -328,35 +328,33 @@ func (u *User) CheckRole(role string) bool {
 		return IsBitSet(&u.Perms, 10)
 
 	default:
-		return u.CheckDiscordRole(role)
+		return u.CheckCurrentRoleList(role)
 	}
 }
 
-func (u *User) CheckDiscordRole(rolename string) bool {
-
-	for _, role := range u.Roles {
-
-		if role == rolename{
+func (u *User) CheckCurrentRoleList(roleID string) bool {
+	for _, currentRole := range u.RoleIDs {
+		if currentRole == roleID{
 			return true
 		}
 	}
 	return false
 }
 
-func (u *User) JoinRole(rolename string) {
-	if u.CheckDiscordRole(rolename){
+func (u *User) JoinRoleID(roleID string) {
+	if u.CheckCurrentRoleList(roleID){
 		return
 	}
 
-	u.Roles = append(u.Roles, rolename)
+	u.RoleIDs = append(u.RoleIDs, roleID)
 
 }
 
 
-func (u *User) LeaveRole(rolename string) {
-	if !u.CheckDiscordRole(rolename){
+func (u *User) LeaveRoleID(roleID string) {
+	if !u.CheckCurrentRoleList(roleID){
 		return
 	}
 
-	u.Roles = RemoveStringFromSlice(u.Roles, rolename)
+	u.RoleIDs = RemoveStringFromSlice(u.RoleIDs, roleID)
 }

@@ -5,22 +5,23 @@ import (
 	"github.com/bwmarrin/discordgo"
 	"strings"
 	"strconv"
+	"time"
 )
 
 // UserHandler struct
 type UserHandler struct {
-	conf    *Config
-	db      *DBHandler
-	cp      string
-	logchan chan string
-	user    *UserManager
+	conf        *Config
+	db          *DBHandler
+	cp          string
+	logchan     chan string
+	usermanager *UserManager
 }
 
 // Init function
 func (h *UserHandler) Init() {
 	h.cp = h.conf.MainConfig.CP
-	h.user = new(UserManager)
-	h.user.db = h.db
+	h.usermanager = new(UserManager)
+	h.usermanager.db = h.db
 }
 
 // Read function
@@ -45,7 +46,7 @@ func (h *UserHandler) Read(s *discordgo.Session, m *discordgo.MessageCreate) {
 
 	user, err := h.db.GetUser(m.Author.ID)
 	if err != nil {
-		//fmt.Println("Error finding user")
+		//fmt.Println("Error finding usermanager")
 		return
 	}
 
@@ -123,20 +124,22 @@ func (h *UserHandler) Read(s *discordgo.Session, m *discordgo.MessageCreate) {
 		if len(message) == 2 {
 			err := h.RepairUser(mentions[0].ID, s, m.ChannelID, "")
 			if err != nil {
-				s.ChannelMessageSend(m.ChannelID, "Error repairing user: "+err.Error())
+				s.ChannelMessageSend(m.ChannelID, "Error repairing usermanager: "+err.Error())
 				h.logchan <- "Bot " + mention + " || " + m.Author.Username + " || " + "repairuser" + "||" + err.Error()
 				return
 			}
+			s.ChannelMessageSend(m.ChannelID, ":construction: User record repaired!")
 			return
 		}
 
 		if len(message) == 3 {
 			err := h.RepairUser(mentions[0].ID, s, m.ChannelID, message[2])
 			if err != nil {
-				s.ChannelMessageSend(m.ChannelID, "Error repairing user: "+err.Error())
+				s.ChannelMessageSend(m.ChannelID, "Error repairing usermanager: "+err.Error())
 				h.logchan <- "Bot " + mention + " || " + m.Author.Username + " || " + "repairuser" + "||" + err.Error()
 				return
 			}
+			s.ChannelMessageSend(m.ChannelID, ":construction: User record repaired!")
 			return
 		}
 
@@ -152,7 +155,7 @@ func (h *UserHandler) Read(s *discordgo.Session, m *discordgo.MessageCreate) {
 		if len(message) == 2 {
 			err := h.DebugUser(mentions[0].ID, s, m.ChannelID)
 			if err != nil {
-				s.ChannelMessageSend(m.ChannelID, "Error repairing user: "+err.Error())
+				s.ChannelMessageSend(m.ChannelID, "Error repairing usermanager: "+err.Error())
 				h.logchan <- "Bot " + mention + " || " + m.Author.Username + " || " + "repairuser" + "||" + err.Error()
 				return
 			}
@@ -162,7 +165,7 @@ func (h *UserHandler) Read(s *discordgo.Session, m *discordgo.MessageCreate) {
 
 	if message[0] == cp+"attributes"{
 		/*
-		if !user.CheckRole("player") || !user.CheckRole("Registered") {
+		if !usermanager.CheckRole("player") || !usermanager.CheckRole("Registered") {
 			s.ChannelMessageSend(m.ChannelID, "You do not have permission to use this command")
 			return
 		}
@@ -191,7 +194,7 @@ func (h *UserHandler) Read(s *discordgo.Session, m *discordgo.MessageCreate) {
 
 func (h *UserHandler) AddItem(itemid string, userid string,  s *discordgo.Session, channelID string) (err error) {
 
-	// Make sure user is in the database before we pull it out!
+	// Make sure usermanager is in the database before we pull it out!
 	user, err := h.GetUser(userid, s, channelID)
 	if err != nil {
 		return err
@@ -204,7 +207,7 @@ func (h *UserHandler) AddItem(itemid string, userid string,  s *discordgo.Sessio
 
 func (h *UserHandler) RemoveItem(itemid string, userid string,  s *discordgo.Session, channelID string) (err error) {
 
-	// Make sure user is in the database before we pull it out!
+	// Make sure usermanager is in the database before we pull it out!
 	user, err := h.GetUser(userid, s, channelID)
 	if err != nil {
 		return err
@@ -217,7 +220,7 @@ func (h *UserHandler) RemoveItem(itemid string, userid string,  s *discordgo.Ses
 
 func (h *UserHandler) RepairUser(userid string, s *discordgo.Session, channelID string, guildID string) (err error) {
 
-	// Make sure user is in the database before we pull it out!
+	// Make sure usermanager is in the database before we pull it out!
 	user, err := h.GetUser(userid, s, channelID)
 	if err != nil {
 		return err
@@ -231,18 +234,24 @@ func (h *UserHandler) RepairUser(userid string, s *discordgo.Session, channelID 
 	}
 	user.GuildID = guildID
 
+	// These are ID's now!
+	for _, roleID := range user.RoleIDs {
+		// Ignore errors if role doesn't exist on the guild
+		time.Sleep(time.Duration(time.Second*1))
+		_ = s.GuildMemberRoleAdd(guildID, user.ID, roleID)
+	}
 
 	db := h.db.rawdb.From("Users")
 
 	err = db.Update(&user)
 	if err != nil {
-		fmt.Println(":rotating_light: Error updating user record into database!")
+		fmt.Println("Error updating usermanager record into database!")
 		return
 	}
 
-	s.ChannelMessageSend(channelID, ":construction: User record repaired!")
 	return nil
 }
+
 
 func (h *UserHandler) DebugUser(userid string, s *discordgo.Session, channelID string) (err error) {
 
@@ -274,7 +283,7 @@ func (h *UserHandler) DebugUser(userid string, s *discordgo.Session, channelID s
 // GetUser function
 func (h *UserHandler) GetUser(userid string, s *discordgo.Session, channelID string) (user User, err error) {
 
-	// Make sure user is in the database before we pull it out!
+	// Make sure usermanager is in the database before we pull it out!
 	h.CheckUser(userid, s, channelID)
 
 	db := h.db.rawdb.From("Users")
@@ -294,11 +303,11 @@ func (h *UserHandler) CheckUser(ID string, s *discordgo.Session, channelID strin
 	var u User
 	err := db.One("ID", ID, &u)
 	if err != nil {
-		//fmt.Println("Adding new user to DB: " + ID)
+		//fmt.Println("Adding new usermanager to DB: " + ID)
 
 		guildID, err := getGuildID(s, channelID)
 		if err != nil {
-			fmt.Println("Error retrieving guildID for user: " + err.Error())
+			fmt.Println("Error retrieving guildID for usermanager: " + err.Error())
 			return
 		}
 
@@ -307,7 +316,7 @@ func (h *UserHandler) CheckUser(ID string, s *discordgo.Session, channelID strin
 
 		err = db.Save(&user)
 		if err != nil {
-			fmt.Println("Error inserting user into Database!")
+			fmt.Println("Error inserting usermanager into Database!")
 			return
 		}
 
@@ -324,7 +333,7 @@ func (h *UserHandler) GetRoles(ID string, s *discordgo.Session, channelID string
 		return roles, err
 	}
 
-	return user.Roles, nil
+	return user.RoleIDs, nil
 }
 
 
@@ -402,7 +411,7 @@ func (h *UserHandler) FormatRoles(roles []string) (formatted string) {
 
 func (h *UserHandler) GetFormattedAttributes(userID string) (formatted string) {
 
-	user, err := h.user.GetUserByID(userID)
+	user, err := h.usermanager.GetUserByID(userID)
 	if err != nil {
 		return formatted
 	}

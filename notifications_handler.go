@@ -45,7 +45,7 @@ func (h *NotificationsHandler) Read(s *discordgo.Session, m *discordgo.MessageCr
 
 	user, err := h.db.GetUser(m.Author.ID)
 	if err != nil {
-		//fmt.Println("Error finding user")
+		//fmt.Println("Error finding usermanager")
 		return
 	}
 
@@ -54,12 +54,12 @@ func (h *NotificationsHandler) Read(s *discordgo.Session, m *discordgo.MessageCr
 
 			command := strings.Fields(m.Content)
 
-			// Grab our sender ID to verify if this user has permission to use this command
+			// Grab our sender ID to verify if this usermanager has permission to use this command
 			db := h.db.rawdb.From("Users")
 			var user User
 			err := db.One("ID", m.Author.ID, &user)
 			if err != nil {
-				fmt.Println("error retrieving user:" + m.Author.ID)
+				fmt.Println("error retrieving usermanager:" + m.Author.ID)
 			}
 
 			if user.CheckRole("moderator") {

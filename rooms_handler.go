@@ -6,6 +6,7 @@ import (
 	"strings"
 	"errors"
 	"strconv"
+	"time"
 )
 
 type RoomsHandler struct {
@@ -33,7 +34,7 @@ func (h* RoomsHandler) InitRooms(s *discordgo.Session, channelID string) (err er
 
 	h.RegisterCommands()
 
-	// Create default registered user role
+	// Create default registered usermanager role
 	registeredperms := h.perm.CreatePermissionInt(RolePermissions{})
 	_, err = h.perm.CreateRole("Registered", guildID, false, false, 16777215, registeredperms, s)
 	if err != nil {
@@ -49,6 +50,19 @@ func (h* RoomsHandler) InitRooms(s *discordgo.Session, channelID string) (err er
 		if !strings.Contains(err.Error(), "already exists"){
 			return err
 		}
+	}
+
+
+	fmt.Println("Creating Management Rooms")
+	err = h.CreateManagementRooms(guildID, s)
+	if err != nil {
+		return err
+	}
+
+	fmt.Println("Creating OOC Rooms")
+	err = h.CreateOOCChannels(guildID, s)
+	if err != nil {
+		return err
 	}
 
 
@@ -194,18 +208,6 @@ func (h* RoomsHandler) InitRooms(s *discordgo.Session, channelID string) (err er
 */
 
 
-	fmt.Println("Creating Management Rooms")
-	err = h.CreateManagementRooms(guildID, s)
-	if err != nil {
-		return err
-	}
-
-	fmt.Println("Creating OOC Rooms")
-	err = h.CreateOOCChannels(guildID, s)
-	if err != nil {
-		return err
-	}
-
 	fmt.Println("Reordering Roles")
 	err = h.perm.GuildReorderRoles(guildID, s)
 	if err != nil {
@@ -235,7 +237,7 @@ func (h *RoomsHandler) Read(s *discordgo.Session, m *discordgo.MessageCreate) {
 
 	user, err := h.db.GetUser(m.Author.ID)
 	if err != nil {
-		//fmt.Println("Error finding user")
+		//fmt.Println("Error finding usermanager")
 		return
 	}
 	if !user.CheckRole("builder") {
@@ -246,12 +248,12 @@ func (h *RoomsHandler) Read(s *discordgo.Session, m *discordgo.MessageCreate) {
 
 			command := strings.Fields(m.Content)
 
-			// Grab our sender ID to verify if this user has permission to use this command
+			// Grab our sender ID to verify if this usermanager has permission to use this command
 			db := h.db.rawdb.From("Users")
 			var user User
 			err := db.One("ID", m.Author.ID, &user)
 			if err != nil {
-				fmt.Println("error retrieving user:" + m.Author.ID)
+				fmt.Println("error retrieving usermanager:" + m.Author.ID)
 			}
 
 			if user.CheckRole("moderator") {
@@ -302,8 +304,8 @@ func (h *RoomsHandler) ParseCommand(command []string, s *discordgo.Session, m *d
 			}
 		}
 		if len(command) == 5 {
-			s.ChannelMessageSend(m.ChannelID, "adding a transfer room requires three argument: <name> " +
-				"<guildInviteLink> <transferRoomID> <color (optional)> ")
+			transferID = command[3]
+			transferRoomID = command[4]
 			return
 		}
 		if len(command) == 6 {
@@ -320,6 +322,7 @@ func (h *RoomsHandler) ParseCommand(command []string, s *discordgo.Session, m *d
 				"<guildInviteLink> <transferRoomID> <color (optional)> ")
 			return
 		}
+
 		channel, err := h.AddRoom(s, command[2], guildID, parentname, transferID, transferRoomID, color, false)
 		if err != nil {
 			s.ChannelMessageSend(m.ChannelID, "Error adding channel: " + err.Error())
@@ -365,6 +368,7 @@ func (h *RoomsHandler) ParseCommand(command []string, s *discordgo.Session, m *d
 				s.ChannelMessageSend(m.ChannelID, "Error removing channel: " + err.Error())
 				return
 			}
+
 		} else {
 			err := h.RemoveRoom(s, roomname, guildID)
 			if err != nil {
@@ -796,7 +800,7 @@ func (h *RoomsHandler) CreateManagementRooms(guildID string, s *discordgo.Sessio
 }
 
 func (h *RoomsHandler) CreateDefaultRoles(guildID string, s *discordgo.Session) (err error){
-	// Create default registered user role
+	// Create default registered usermanager role
 	registeredperms := h.perm.CreatePermissionInt(RolePermissions{})
 	_, err = h.perm.CreateRole("Registered", guildID, false, false, 16777215, registeredperms, s)
 	if err != nil {
@@ -901,7 +905,7 @@ func (h *RoomsHandler) CreateOOCChannels(guildID string, s *discordgo.Session) (
 		return err
 	}
 	denydevperms := h.perm.CreatePermissionInt(RolePermissions{})
-	allowdevperms := h.perm.CreatePermissionInt(RolePermissions{VIEW_CHANNEL:true, SEND_MESSAGES: true, READ_MESSAGE_HISTORY: true})
+	allowdevperms := h.perm.CreatePermissionInt(RolePermissions{VIEW_CHANNEL:true, SEND_MESSAGES: true, READ_MESSAGE_HISTORY: true, USE_EXTERNAL_EMOJIS:true})
 
 
 	moderatorRoleID, err := getRoleIDByName(s, guildID, "Moderator")
@@ -1115,7 +1119,7 @@ func (h *RoomsHandler) AddRoom(s *discordgo.Session, name string, guildID string
 	if err != nil {
 		return createdroom, err
 	}
-	if len(rooms) >= 70 {
+	if len(rooms) >= 80 {
 		return createdroom, errors.New("Maximum supported rooms reached!")
 	}
 
@@ -1233,14 +1237,14 @@ func (h *RoomsHandler) AddRoom(s *discordgo.Session, name string, guildID string
 				newroleID = createdrole.ID
 			}
 
-			record.RoleIDs = append(record.RoleIDs, newroleID)
+			record.AdditionalRoleIDs = append(record.AdditionalRoleIDs, newroleID)
 			record.TravelRoleID = newroleID
 
 			denyrperms := 0
 			allowperms := 0
 			if record.GuildTransferInvite != "" {
 				denyrperms = h.perm.CreatePermissionInt(RolePermissions{SEND_MESSAGES:true, READ_MESSAGE_HISTORY:true})
-				allowperms = h.perm.CreatePermissionInt(RolePermissions{VIEW_CHANNEL:true})
+				allowperms = h.perm.CreatePermissionInt(RolePermissions{VIEW_CHANNEL:true, READ_MESSAGE_HISTORY:true, USE_EXTERNAL_EMOJIS:true})
 			} else {
 				denyrperms = h.perm.CreatePermissionInt(RolePermissions{})
 				allowperms = h.perm.CreatePermissionInt(RolePermissions{VIEW_CHANNEL:true, SEND_MESSAGES: true})
@@ -1249,8 +1253,12 @@ func (h *RoomsHandler) AddRoom(s *discordgo.Session, name string, guildID string
 			if err != nil {
 				return createdroom, err
 			}
-		}
 
+			err = h.perm.GuildReorderRoles(guildID, s)
+			if err != nil {
+				return createdroom, err
+			}
+		}
 
 		h.rooms.SaveRoomToDB(record)
 		return createdroom, nil
@@ -1266,13 +1274,134 @@ func (h *RoomsHandler) RemoveRoom(s *discordgo.Session, name string, guildID str
 		return err
 	}
 
+
+	if existingrecord.DownID != "" {
+		linkedroom, err := h.rooms.GetRoomByID(existingrecord.DownID)
+		if err == nil {
+			linkedroom.UpID = ""
+			err = h.rooms.SaveRoomToDB(linkedroom)
+			if err != nil {
+				return err
+			}
+		}
+	}
+
+	if existingrecord.NorthID != "" {
+		linkedroom, err := h.rooms.GetRoomByID(existingrecord.NorthID)
+		if err == nil {
+			linkedroom.SouthID = ""
+			err = h.rooms.SaveRoomToDB(linkedroom)
+			if err != nil {
+				return err
+			}
+		}
+	}
+
+	if existingrecord.NorthEastID != "" {
+		linkedroom, err := h.rooms.GetRoomByID(existingrecord.NorthEastID)
+		if err == nil {
+			linkedroom.SouthWestID = ""
+			err = h.rooms.SaveRoomToDB(linkedroom)
+			if err != nil {
+				return err
+			}
+		}
+	}
+
+	if existingrecord.EastID != "" {
+		linkedroom, err := h.rooms.GetRoomByID(existingrecord.EastID)
+		if err == nil {
+			linkedroom.WestID = ""
+			err = h.rooms.SaveRoomToDB(linkedroom)
+			if err != nil {
+				return err
+			}
+		}
+	}
+
+	if existingrecord.SouthEastID != "" {
+		linkedroom, err := h.rooms.GetRoomByID(existingrecord.SouthEastID)
+		if err == nil {
+			linkedroom.NorthWestID = ""
+			err = h.rooms.SaveRoomToDB(linkedroom)
+			if err != nil {
+				return err
+			}
+		}
+	}
+
+	if existingrecord.SouthID != "" {
+		linkedroom, err := h.rooms.GetRoomByID(existingrecord.SouthID)
+		if err == nil {
+			linkedroom.NorthID = ""
+			err = h.rooms.SaveRoomToDB(linkedroom)
+			if err != nil {
+				return err
+			}
+		}
+	}
+
+	if existingrecord.SouthWestID != "" {
+		linkedroom, err := h.rooms.GetRoomByID(existingrecord.SouthWestID)
+		if err == nil {
+			linkedroom.NorthEastID = ""
+			err = h.rooms.SaveRoomToDB(linkedroom)
+			if err != nil {
+				return err
+			}
+		}
+	}
+
+	if existingrecord.WestID != "" {
+		linkedroom, err := h.rooms.GetRoomByID(existingrecord.WestID)
+		if err == nil {
+			linkedroom.EastID = ""
+			err = h.rooms.SaveRoomToDB(linkedroom)
+			if err != nil {
+				return err
+			}
+		}
+	}
+
+	if existingrecord.NorthWestID != "" {
+		linkedroom, err := h.rooms.GetRoomByID(existingrecord.NorthWestID)
+		if err == nil {
+			linkedroom.SouthEastID = ""
+			err = h.rooms.SaveRoomToDB(linkedroom)
+			if err != nil {
+				return err
+			}
+		}
+	}
+
+	// Now clean up travel records
+	rooms, err := h.rooms.GetAllRooms()
+	if err != nil{
+		return err
+	}
+
+	for _, search := range rooms {
+		if search.TransferRoomID != "" {
+			// If the search transfer room ID points to this room
+			// update the search record so that it is not anymore
+			if search.TransferRoomID == existingrecord.ID {
+				search.TransferRoomID = ""
+				search.GuildTransferInvite = ""
+
+				err = h.rooms.SaveRoomToDB(search)
+				if err != nil {
+					return err
+				}
+			}
+		}
+	}
+
 	s.ChannelDelete(existingrecord.ID)
 
 	err = h.registry.RemoveChannel("travel", existingrecord.ID)
 	if err != nil {
 		return err
 	}
-
 	return h.rooms.RemoveRoomFromDB(existingrecord)
 }
 
@@ -1332,7 +1461,8 @@ func (h *RoomsHandler) AddUserIDToRoomRecord(userID string, roomID string, guild
 
 	for _, roomUserID := range room.UserIDs {
 		if userID == roomUserID {
-			return errors.New("User already in room record")
+			fmt.Println("User already in room!: " + userID + " size of rooms: " + strconv.Itoa(len(room.UserIDs)))
+			return nil // already in record
 		}
 	}
 
@@ -1342,7 +1472,7 @@ func (h *RoomsHandler) AddUserIDToRoomRecord(userID string, roomID string, guild
 	if err != nil {
 		return err
 	}
-
+	//fmt.Println("Added userid to record: " + userID + " size of rooms: " + strconv.Itoa(len(room.UserIDs)))
 	return nil
 }
 
@@ -1453,6 +1583,11 @@ func (h *RoomsHandler) SetTravelRole(rolename string, roomID string, s *discordg
 	return nil
 }
 
+func (h *RoomsHandler) SyncRolePermissions(roomID string) (err error) {
+
+	return nil
+}
+
 
 // Linking Roles
 
@@ -1477,13 +1612,13 @@ func (h *RoomsHandler) LinkRole(rolename string, roomID string, s *discordgo.Ses
 		return
 	}
 
-	for _, roleid := range room.RoleIDs {
-		if roleid == roleID {
+	for _, additionalID := range room.AdditionalRoleIDs {
+		if additionalID == roleID {
 			s.ChannelMessageSend(m.ChannelID, "Room is already linked to role!")
 			return
 		}
 	}
-	room.RoleIDs = append(room.RoleIDs, roleID)
+	room.AdditionalRoleIDs = append(room.AdditionalRoleIDs, roleID)
 
 	err = h.rooms.SaveRoomToDB(room)
 	if err != nil {
@@ -1532,7 +1667,7 @@ func (h *RoomsHandler) UnLinkRole(rolename string, roomID string, s *discordgo.S
 		return
 	}
 
-	room.RoleIDs = RemoveStringFromSlice(room.RoleIDs, roleID)
+	room.AdditionalRoleIDs = RemoveStringFromSlice(room.AdditionalRoleIDs, roleID)
 
 	err = h.rooms.SaveRoomToDB(room)
 	if err != nil {
@@ -1572,12 +1707,13 @@ func (h *RoomsHandler) FormatRoomInfo(roomID string) (formatted string, err erro
 	output = output + "ParentID: " + room.ParentID + "\n"
 	output = output + "ParentName: " + room.ParentName + "\n\n"
 	output = output + "TravelRoleID: " + room.TravelRoleID + "\n"
+	output = output + "Current User Count: " + strconv.Itoa(len(room.UserIDs)) + "\n"
 	roles := ""
-	for i, role := range room.RoleIDs {
+	for i, additionalrole := range room.AdditionalRoleIDs {
 		if i > 0 {
-			roles = ", " + role
+			roles = ", " + additionalrole
 		} else {
-			roles = role
+			roles = additionalrole
 		}
 	}
 	output = output + "RoleID: " + roles + "\n\n"
@@ -1739,8 +1875,6 @@ func (h *RoomsHandler) FormatRoomInfo(roomID string) (formatted string, err erro
 }
 
 func (h *RoomsHandler) ViewRoom(roomID string, s *discordgo.Session, m *discordgo.MessageCreate) {
-
-	fmt.Println("RoomID ViewRoom: " + roomID )
 	formatted, err := h.FormatRoomInfo(roomID)
 	if err != nil {
 		s.ChannelMessageSend(m.ChannelID, "Error Retrieving Room: " + err.Error())
@@ -2011,7 +2145,7 @@ func (h *RoomsHandler) GetRoomRoles(roomID string, guildID string, s *discordgo.
 
 	formatted = "```\nTravelRoleID: "+room.TravelRoleID+"\n\nRole List: \n"
 
-	for _, roleID := range room.RoleIDs {
+	for _, roleID := range room.AdditionalRoleIDs {
 
 		rolename, err := getRoleNameByID(roleID, guildID, s)
 		if err != nil {
@@ -2080,8 +2214,6 @@ func (h *RoomsHandler) SetRoomTransferRoleID(roleID string, roomID string, s *di
 	return h.rooms.SaveRoomToDB(room)
 }
 
-
-
 func (h *RoomsHandler) RemoveRoomTransferRoleID(roomID string) (err error) {
 
 	roomID = CleanChannel(roomID)
@@ -2095,4 +2227,75 @@ func (h *RoomsHandler) RemoveRoomTransferRoleID(roomID string) (err error) {
 
 	return h.rooms.SaveRoomToDB(room)
 
+}
+
+
+
+
+func (h *RoomsHandler) SyncRoom(roomID string, s *discordgo.Session) (err error){
+
+	room, err := h.rooms.GetRoomByID(roomID)
+	if err != nil {
+		return err
+	}
+
+	time.Sleep(time.Duration(time.Second*2))
+	adminID, err := h.guilds.GetGuildDiscordAdminID(room.GuildID, s)
+	if err != nil {
+		return err
+	}
+
+	time.Sleep(time.Duration(time.Second*2))
+	builderID, err := h.guilds.GetGuildDiscordBuilderID(room.GuildID, s)
+	if err != nil {
+		return err
+	}
+
+	time.Sleep(time.Duration(time.Second*2))
+	moderatorID, err := h.guilds.GetGuildDiscordModeratorID(room.GuildID, s)
+	if err != nil {
+		return err
+	}
+
+	time.Sleep(time.Duration(time.Second*2))
+	everyoneID, err := h.guilds.GetGuildDiscordEveryoneID(room.GuildID, s)
+	if err != nil {
+		return err
+	}
+
+	err = h.perm.ApplyAdminRolePerms(room.ID, room.GuildID, adminID, s)
+	if err != nil {
+		return err
+	}
+
+	err = h.perm.ApplyModeratorRolePerms(room.ID, room.GuildID, moderatorID, s)
+	if err != nil {
+		return err
+	}
+
+	err = h.perm.ApplyBuilderRolePerms(room.ID, room.GuildID, builderID, s)
+	if err != nil {
+		return err
+	}
+
+	err = h.perm.ApplyEveryoneRolePerms(room.ID, room.GuildID, everyoneID, s)
+	if err != nil {
+		return err
+	}
+
+	// For every room we go through its role id list
+	for _, roleID := range room.AdditionalRoleIDs {
+
+		// Wait 3 seconds for each role in the room
+		time.Sleep(time.Duration(time.Second*3))
+		if roleID == room.TravelRoleID {
+			err = h.perm.ApplyTravelRolePerms(room.ID, room.GuildID, s)
+			if err != nil {
+				return err
+			}
+		} else {
+			// We don't have extra tasks for extra roles YET
+		}
+	}
+	return nil
 }

@@ -119,7 +119,7 @@ func (h *CommandHandler) ReadCommand(message []string, s *discordgo.Session, m *
 	}
 	if command == "users" {
 		if len(payload) < 1 {
-			s.ChannelMessageSend(m.ChannelID, "<user> requires at least one argument")
+			s.ChannelMessageSend(m.ChannelID, "<usermanager> requires at least one argument")
 			return
 		}
 		h.ReadUsers(payload, s, m)
@@ -413,7 +413,7 @@ func (h *CommandHandler) ReadUsers(message []string, s *discordgo.Session, m *di
 	// add
 	if command == "add" {
 		if len(payload) < 2 {
-			s.ChannelMessageSend(m.ChannelID, command+" requires two arguments <user> <command>")
+			s.ChannelMessageSend(m.ChannelID, command+" requires two arguments <usermanager> <command>")
 			return
 		}
 		mentions := m.Mentions
@@ -434,7 +434,7 @@ func (h *CommandHandler) ReadUsers(message []string, s *discordgo.Session, m *di
 	// remove
 	if command == "remove" {
 		if len(payload) < 2 {
-			s.ChannelMessageSend(m.ChannelID, command+" requires two arguments <user> <command>")
+			s.ChannelMessageSend(m.ChannelID, command+" requires two arguments <usermanager> <command>")
 			return
 		}
 		mentions := m.Mentions

@@ -57,7 +57,7 @@ func (h *TransferHandler) Read(s *discordgo.Session, m *discordgo.MessageCreate)
 
 	user, err := h.db.GetUser(m.Author.ID)
 	if err != nil {
-		//fmt.Println("Error finding user")
+		//fmt.Println("Error finding usermanager")
 		return
 	}
 
@@ -66,12 +66,12 @@ func (h *TransferHandler) Read(s *discordgo.Session, m *discordgo.MessageCreate)
 
 			command := strings.Fields(m.Content)
 
-			// Grab our sender ID to verify if this user has permission to use this command
+			// Grab our sender ID to verify if this usermanager has permission to use this command
 			db := h.db.rawdb.From("Users")
 			var user User
 			err := db.One("ID", m.Author.ID, &user)
 			if err != nil {
-				fmt.Println("error retrieving user:" + m.Author.ID)
+				fmt.Println("error retrieving usermanager:" + m.Author.ID)
 			}
 
 			if user.CheckRole("moderator") {
@@ -143,14 +143,14 @@ func (h *TransferHandler) HandleTransfers() {
 			for _, transfer := range transfers {
 				time.Sleep(time.Duration(time.Second*5))
 
-				// Verify the user is actually in the guild before proceeding, otherwise
+				// Verify the usermanager is actually in the guild before proceeding, otherwise
 				// They have not accepted the invite yet and we should skip them for now
 				if h.IsUserInGuild(transfer.UserID, transfer.TargetGuildID) {
 
 					// Transfer Channel Roles
 					err = h.TransferToChannel(transfer.UserID, transfer.TargetGuildID, transfer.FromChannelID, transfer.TargetChannelID, h.dg)
 					if err != nil {
-						fmt.Println("Error transferring user: " + err.Error())
+						fmt.Println("Error transferring usermanager: " + err.Error())
 					}
 
 					// Remove record from transfers
@@ -159,7 +159,7 @@ func (h *TransferHandler) HandleTransfers() {
 					// Create output for channels
 					user, err := h.dg.User(transfer.UserID)
 					if err != nil {
-						fmt.Println("Error retrieving user: " + err.Error())
+						fmt.Println("Error retrieving usermanager: " + err.Error())
 					}
 
 					if transfer.FromDirection == "below" || transfer.FromDirection == "above" {
@@ -202,17 +202,13 @@ func (h *TransferHandler) TransferToChannel(userID string, targetGuildID string,
 	m.Message = new(discordgo.Message)
 	m.Message.ChannelID = fromChannelID
 
-	fromRoleName, err := getRoleNameByID(fromRoom.TravelRoleID, fromRoom.GuildID, s)
-	if err != nil {
-		return err
-	}
-	err = h.perms.RemoveRoleFromUser(fromRoleName, userID, s, m)
+	err = h.perms.RemoveRoleFromUser(fromRoom.TravelRoleID, userID, s, m, true)
 	if err != nil {
 		return err
 	}
 	h.rooms.RemoveUserIDFromRoomRecord(userID, fromChannelID)
 	if err != nil {
-		return errors.New("Error removing user record from room: " + err.Error())
+		return errors.New("Error removing usermanager record from room: " + err.Error())
 	}
 
 
@@ -222,7 +218,7 @@ func (h *TransferHandler) TransferToChannel(userID string, targetGuildID string,
 		return err
 	}
 
-	if len(toroom.RoleIDs) < 1 {
+	if len(toroom.AdditionalRoleIDs) < 1 {
 		return errors.New("Target room not configured properly!")
 	}
 
@@ -230,22 +226,18 @@ func (h *TransferHandler) TransferToChannel(userID string, targetGuildID string,
 	m.Message = new(discordgo.Message)
 	m.Message.ChannelID = targetChannelID
 
-	toRoleName, err := getRoleNameByID(toroom.TravelRoleID, toroom.GuildID, s)
-	if err != nil {
-		return err
-	}
-	err = h.perms.AddRoleToUser(toRoleName, userID, s, m)
+	err = h.perms.AddRoleToUser(toroom.TravelRoleID, userID, s, m, true)
 	if err != nil {
 		return err
 	}
 	h.rooms.AddUserIDToRoomRecord(userID, toroom.ID, toroom.GuildID, s)
 	if err != nil {
-		return errors.New("Error updating user record into room: " + err.Error())
+		return errors.New("Error updating usermanager record into room: " + err.Error())
 	}
 
 
 	// Add registered role here
-	err = h.perms.AddRoleToUser("registered", userID, s, m)
+	err = h.perms.AddRoleToUser("registered", userID, s, m, false)
 	if err != nil {
 		return err
 	}
@@ -260,7 +252,7 @@ func (h *TransferHandler) TransferToChannel(userID string, targetGuildID string,
 	db := h.db.rawdb.From("Users")
 	err = db.Update(&user)
 	if err != nil {
-		return errors.New("Error updating user record into database!")
+		return errors.New("Error updating usermanager record into database!")
 	}
 
 	err = h.perms.SyncServerRoles(user.ID, user.RoomID, s)

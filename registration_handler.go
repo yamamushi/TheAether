@@ -59,7 +59,7 @@ func (h *RegistrationHandler) Read(s *discordgo.Session, m *discordgo.MessageCre
 	}
 
 	// This should register all new users, presumably we want this done here because this is the first
-	// command a user should have access to.
+	// command a usermanager should have access to.
 	h.user.CheckUser(m.Author.ID, s, m.ChannelID)
 
 	guildID, err := getGuildID(s, m.ChannelID)
@@ -131,7 +131,7 @@ func (h *RegistrationHandler) StartRegistration(s *discordgo.Session, m *discord
 */
 	user, err := h.db.GetUser(m.Author.ID)
 	if err != nil {
-		s.ChannelMessageSend(m.ChannelID, "Error finding user: " + err.Error())
+		s.ChannelMessageSend(m.ChannelID, "Error finding usermanager: " + err.Error())
 		return
 	}
 
@@ -213,7 +213,7 @@ func (h *RegistrationHandler) SetRegistrationStep(status string, userID string) 
 	}
 
 	user.RegistrationStatus = status
-	err = h.user.user.SaveUserToDB(user)
+	err = h.user.usermanager.SaveUserToDB(user)
 	if err != nil {
 		return err
 	}
@@ -226,23 +226,23 @@ func (h *RegistrationHandler) FinishRegistration(s *discordgo.Session, m *discor
 
 	user, err := h.db.GetUser(m.Author.ID)
 	if err != nil {
-		//fmt.Println("Error finding user")
+		//fmt.Println("Error finding usermanager")
 		return
 	}
 
-	err = h.perm.AddRoleToUser("Registered", user.ID, s, m)
+	err = h.perm.AddRoleToUser("Registered", user.ID, s, m, false)
 	if err != nil {
 		s.ChannelMessageSend(m.ChannelID, "Could not complete registration: " + err.Error())
 		return
 	}
 
-	err = h.perm.AddRoleToUser("Crossroads", user.ID, s, m)
+	err = h.perm.AddRoleToUser("Crossroads", user.ID, s, m, false)
 	if err != nil {
 		s.ChannelMessageSend(m.ChannelID, "Could not complete registration: " + err.Error())
 		return
 	}
 
-	err = h.user.user.SaveUserToDB(user)
+	err = h.user.usermanager.SaveUserToDB(user)
 	if err != nil {
 		s.ChannelMessageSend(m.ChannelID, "Could not complete registration: " + err.Error())
 		return
@@ -305,7 +305,7 @@ func (h *RegistrationHandler) ConfirmAttributes(command string, s *discordgo.Ses
 
 		user, err := h.db.GetUser(m.Author.ID)
 		if err != nil {
-			s.ChannelMessageSend(m.ChannelID, "Could not retrieve user record: " + err.Error())
+			s.ChannelMessageSend(m.ChannelID, "Could not retrieve usermanager record: " + err.Error())
 			return
 		}
 
@@ -340,7 +340,7 @@ func (h *RegistrationHandler) ConfirmAttributes(command string, s *discordgo.Ses
 			return
 		}
 
-		err = h.user.user.SaveUserToDB(user)
+		err = h.user.usermanager.SaveUserToDB(user)
 		if err != nil {
 			s.ChannelMessageSend(m.ChannelID, "Could not complete registration: " + err.Error())
 			return
@@ -467,13 +467,13 @@ func (h *RegistrationHandler) ConfirmRace(race string, s *discordgo.Session, m *
 
 		user, err := h.db.GetUser(m.Author.ID)
 		if err != nil {
-			s.ChannelMessageSend(m.ChannelID, "Could not retrieve user record: " + err.Error())
+			s.ChannelMessageSend(m.ChannelID, "Could not retrieve usermanager record: " + err.Error())
 			return
 		}
 
 		user.Race = race
 
-		err = h.user.user.SaveUserToDB(user)
+		err = h.user.usermanager.SaveUserToDB(user)
 		if err != nil {
 			s.ChannelMessageSend(m.ChannelID, "Could not complete registration: " + err.Error())
 			return

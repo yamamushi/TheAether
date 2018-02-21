@@ -15,11 +15,13 @@ type Room struct {
 	ID string `storm:"id"` // primary key
 
 	Name 				string
+	GuildID						string
+
 	ParentID			string
 	ParentName			string
 
 	TravelRoleID		string
-	RoleIDs				[]string
+	AdditionalRoleIDs	[]string
 	UserIDs				[]string
 	/*
 	These are likely to change, but here's generally what is needed in the roleID slice
@@ -31,7 +33,6 @@ type Room struct {
 	5 - Override Role ID
 	 */
 
-	GuildID						string
 	GuildTransferInvite			string
 	TransferRoomID				string
 
@@ -114,14 +115,15 @@ func (h *Rooms) GetRoomByID(roomID string) (room Room, err error) {
 		return room, err
 	}
 
-	for _, i := range rooms {
-		if i.ID == roomID{
-			return i, nil
+	for _, record := range rooms {
+
+		if roomID == record.ID {
+			return record, nil
 		}
 	}
-
 	return room, errors.New("No record found")
 }
+
 
 func (h *Rooms) GetRoomByName(roomname string, guildID string) (room Room, err error) {
 

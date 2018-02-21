@@ -94,7 +94,7 @@ func (h *SetupProcess) SetupOwnerPermissions(s *discordgo.Session, channelID str
 
 		err = db.Save(&owner)
 		if err != nil {
-			fmt.Println("Error inserting user into Database!")
+			fmt.Println("Error inserting usermanager into Database!")
 			return err
 		}
 		fmt.Println("Owner ID: " + ownerID)

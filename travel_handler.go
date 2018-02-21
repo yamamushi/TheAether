@@ -48,7 +48,7 @@ func (h *TravelHandler) Read(s *discordgo.Session, m *discordgo.MessageCreate) {
 
 	user, err := h.db.GetUser(m.Author.ID)
 	if err != nil {
-		//fmt.Println("Error finding user")
+		//fmt.Println("Error finding usermanager")
 		return
 	}
 
@@ -57,12 +57,12 @@ func (h *TravelHandler) Read(s *discordgo.Session, m *discordgo.MessageCreate) {
 
 			command := strings.Fields(m.Content)
 
-			// Grab our sender ID to verify if this user has permission to use this command
+			// Grab our sender ID to verify if this usermanager has permission to use this command
 			db := h.db.rawdb.From("Users")
 			var user User
 			err := db.One("ID", m.Author.ID, &user)
 			if err != nil {
-				fmt.Println("error retrieving user:" + m.Author.ID)
+				fmt.Println("error retrieving usermanager:" + m.Author.ID)
 			}
 
 			if user.CheckRole("player") {
@@ -89,7 +89,7 @@ func (h *TravelHandler) ParseCommand(command []string, s *discordgo.Session, m *
 
 	user, err := h.user.GetUser(m.Author.ID, s, m.ChannelID)
 	if err != nil {
-		s.ChannelMessageSend(user.RoomID, "Error retrieving user: " + err.Error())
+		s.ChannelMessageSend(user.RoomID, "Error retrieving usermanager: " + err.Error())
 		return
 	}
 
@@ -131,17 +131,17 @@ func (h *TravelHandler) ParseCommand(command []string, s *discordgo.Session, m *
 		}
 	}
 
-	// Notify channel that user has left
+	// Notify channel that usermanager has left
 	discorduser, err := s.User(user.ID)
 	if err != nil{
-		s.ChannelMessageSend(m.ChannelID, "Error retrieving user: " + err.Error())
+		s.ChannelMessageSend(m.ChannelID, "Error retrieving usermanager: " + err.Error())
 		return
 	}
 	leaveoutout := discorduser.Username + " has left traveling " + command[1]
 	s.ChannelMessageSend(m.ChannelID, leaveoutout)
 
 
-	// If we're not leaving the server, we want to notify the channel that the user has arrived
+	// If we're not leaving the server, we want to notify the channel that the usermanager has arrived
 	if travelfrom == "below" || travelfrom == "above" {
 		s.ChannelMessageSend(user.RoomID, discorduser.Mention() + " has arrived from " + travelfrom + ".")
 
@@ -165,7 +165,7 @@ func (h *TravelHandler) ParseCommand(command []string, s *discordgo.Session, m *
 func (h *TravelHandler) HandleServerTransfer(user User, travelfromID string, transerToID string, targetGuildID string, fromroom Room, fromDirection string,
 												s *discordgo.Session, m *discordgo.MessageCreate) {
 
-	// We create a private message to send to the user
+	// We create a private message to send to the usermanager
 
 	privateInviteMessage := ":satellite: You are now traveling through The Aether, please " +
 		"click the invite link below to complete your journey. The materialization process may take a few " +
@@ -251,11 +251,11 @@ func (h *TravelHandler) Travel(direction string, s *discordgo.Session, m *discor
 		return err
 	}
 
-	if len(targetroom.RoleIDs) < 1 {
+	if len(targetroom.AdditionalRoleIDs) < 1 {
 		return errors.New("Target room is not configured properly: " + toroom )
 	}
 
-	if len(fromroom.RoleIDs) < 1 {
+	if len(fromroom.AdditionalRoleIDs) < 1 {
 		return errors.New("From room is not configured properly: " + toroom )
 	}
 
@@ -269,22 +269,12 @@ func (h *TravelHandler) Travel(direction string, s *discordgo.Session, m *discor
 		return err
 	}
 
-
-	addrolename, err := getRoleNameByID(targetroom.TravelRoleID, guildID, s)
-	if err != nil {
-		return err
-	}
-	removerolename, err := getRoleNameByID(fromroom.TravelRoleID, guildID, s)
-	if err != nil {
-		return err
-	}
-
-	err = h.perms.AddRoleToUser(addrolename, user.ID, s, m)
+	err = h.perms.AddRoleToUser(targetroom.TravelRoleID, user.ID, s, m, true)
 	if err != nil{
 		return err
 	}
 
-	err = h.perms.RemoveRoleFromUser(removerolename, user.ID, s, m)
+	err = h.perms.RemoveRoleFromUser(fromroom.TravelRoleID, user.ID, s, m, true)
 	if err != nil{
 		return err
 	}
@@ -296,19 +286,19 @@ func (h *TravelHandler) Travel(direction string, s *discordgo.Session, m *discor
 
 	user.RoomID = targetroom.ID
 	user.GuildID = guildID
+
 	db := h.db.rawdb.From("Users")
 	err = db.Update(&user)
 	if err != nil {
 		return errors.New("Error updating user record into database!")
 	}
 
-	h.room.AddUserIDToRoomRecord(user.ID, guildID, targetroom.ID, s)
+	err = h.room.AddUserIDToRoomRecord(user.ID, targetroom.ID, guildID,  s)
 	if err != nil {
 		return errors.New("Error updating user record into room: " + err.Error())
 	}
 
-
-	h.room.RemoveUserIDFromRoomRecord(user.ID, targetroom.ID)
+	err = h.room.RemoveUserIDFromRoomRecord(user.ID, fromroom.ID)
 	if err != nil {
 		return errors.New("Error removing user record from room: " + err.Error())
 	}

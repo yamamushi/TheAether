@@ -12,6 +12,11 @@ import (
 	"strconv"
 )
 
+const (
+	// See http://golang.org/pkg/time/#Parse
+	globalTimeFormat = "2006-01-02 15:04 MST"
+)
+
 // minDuration and maxDuration const for rounding
 const (
 	minTimeDuration time.Duration = -1 << 63
@@ -117,7 +122,7 @@ func CheckPermissions(command string, channelid string, user *User, s *discordgo
 
 	usergroups, err := com.user.GetGroups(user.ID, s, channelid)
 	if err != nil {
-		//fmt.Println("Error Retrieving User Groups for " + user.ID)
+		//fmt.Println("Error Retrieving User Groups for " + usermanager.ID)
 		return false
 	}
 
@@ -157,14 +162,14 @@ func CheckPermissions(command string, channelid string, user *User, s *discordgo
 		return false
 	}
 
-	// Look to see if our user ID is in the users list for the command.
+	// Look to see if our usermanager ID is in the users list for the command.
 	for _, commanduser := range commandusers {
 		if commanduser == user.ID {
 			return true
 		}
 	}
 
-	// Finally we want to try to check the user group list
+	// Finally we want to try to check the usermanager group list
 	for _, usergroup := range usergroups {
 		for _, commandgroup := range commandgroups {
 			if usergroup == commandgroup {
@@ -178,22 +183,22 @@ func CheckPermissions(command string, channelid string, user *User, s *discordgo
 /*
 // MentionOwner function
 func MentionOwner(conf *Config, s *discordgo.Session, m *discordgo.MessageCreate) (mention string, err error) {
-	user, err := s.User(conf.MainConfig.AdminID)
+	usermanager, err := s.User(conf.MainConfig.AdminID)
 	if err != nil {
 		return mention, err
 	}
 
-	return user.Mention(), nil
+	return usermanager.Mention(), nil
 }
 
 // OwnerName function
 func OwnerName(conf *Config, s *discordgo.Session, m *discordgo.MessageCreate) (name string, err error) {
-	user, err := s.User(conf.DiscordConfig.AdminID)
+	usermanager, err := s.User(conf.DiscordConfig.AdminID)
 	if err != nil {
 		return name, err
 	}
 
-	return user.Username, nil
+	return usermanager.Username, nil
 }
 
 */

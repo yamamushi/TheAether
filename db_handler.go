@@ -14,16 +14,16 @@ type DBHandler struct {
 // FirstTimeSetup function
 func (h *DBHandler) FirstTimeSetup() error {
 
-//	user.ID = h.conf.DiscordConfig.AdminID
+//	usermanager.ID = h.conf.DiscordConfig.AdminID
 
 	//_ := h.rawdb.From("Users")
 
-/*	err := db.One("ID", h.conf.DiscordConfig.AdminID, &user)
+/*	err := db.One("ID", h.conf.DiscordConfig.AdminID, &usermanager)
 	if err != nil {
 		fmt.Println("Running first time db config")
 		walletdb := db.From("Wallets")
-		user.SetRole("owner")
-		err := db.Save(&user)
+		usermanager.SetRole("owner")
+		err := db.Save(&usermanager)
 		if err != nil {
 			fmt.Println("error saving owner")
 			return err
@@ -36,13 +36,13 @@ func (h *DBHandler) FirstTimeSetup() error {
 			return err
 		}
 
-		if user.Owner {
-			err = db.One("ID", h.conf.DiscordConfig.AdminID, &user)
+		if usermanager.Owner {
+			err = db.One("ID", h.conf.DiscordConfig.AdminID, &usermanager)
 			if err != nil {
 				fmt.Println("Could not retrieve data from the database, something went wrong!")
 				return err
 			}
-			fmt.Println("Owner ID: " + user.ID)
+			fmt.Println("Owner ID: " + usermanager.ID)
 			fmt.Println("Database has been configured")
 			return nil
 		}

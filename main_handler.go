@@ -34,11 +34,11 @@ func (h *MainHandler) Init() (err error) {
 	// Add new handlers below this line //
 /*
 	fmt.Println("Adding Utilities Handler")
-	utilities := UtilitiesHandler{db: h.db, conf: h.conf, user: h.user, registry: h.command.registry, logchan: h.logchan, callback: h.callback}
+	utilities := UtilitiesHandler{db: h.db, conf: h.conf, usermanager: h.usermanager, registry: h.command.registry, logchan: h.logchan, callback: h.callback}
 	h.dg.AddHandler(utilities.Read)
 
 	fmt.Println("Adding Tutorial Handler")
-	tutorials := TutorialHandler{db: h.db, conf: h.conf, user: h.user, registry: h.command.registry}
+	tutorials := TutorialHandler{db: h.db, conf: h.conf, usermanager: h.usermanager, registry: h.command.registry}
 	h.dg.AddHandler(tutorials.Read)
 */
 	fmt.Println("Adding Notifications Handler")
@@ -106,7 +106,7 @@ func (h *MainHandler) Read(s *discordgo.Session, m *discordgo.MessageCreate) {
 
 	user, err := h.db.GetUser(m.Author.ID)
 	if err != nil {
-		//fmt.Println("Error finding user")
+		//fmt.Println("Error finding usermanager")
 		return
 	}
 

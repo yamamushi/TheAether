@@ -103,7 +103,7 @@ func main() {
 	callbackhandler := CallbackHandler{dg: dg, logger: &logger}
 	dg.AddHandler(callbackhandler.Read)
 
-	// Create our user handler
+	// Create our usermanager handler
 	fmt.Println("Adding User Handler")
 	userhandler := UserHandler{conf: &conf, db: &dbhandler, logchan: logchannel}
 	userhandler.Init()
@@ -166,9 +166,16 @@ func main() {
 
 	// Initialize Welcome Handler
 	fmt.Println("Adding Welcome Handler")
-	Welcomehandler := WelcomeHandler{conf: &conf, user: &userhandler, db: &dbhandler}
-	dg.AddHandler(Welcomehandler.ReadNewMember)
-	dg.AddHandler(Welcomehandler.Read)
+	welcomehandler := WelcomeHandler{conf: &conf, user: &userhandler, db: &dbhandler}
+	dg.AddHandler(welcomehandler.ReadNewMember)
+	dg.AddHandler(welcomehandler.Read)
+
+	// Initialize Guilds Handler
+	fmt.Println("Adding Guilds Handler")
+	guildshandler := GuildsHandler{room: &roomshandler, registry: commandhandler.registry, db: &dbhandler, conf: &conf,
+	perm: &permissionshandler, user: &userhandler, guildmanager: &guildsmanager}
+	guildshandler.Init()
+	dg.AddHandler(guildshandler.Read)
 
 	// Initalize our Logger
 	fmt.Println("Initializing Logger")
