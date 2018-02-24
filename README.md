@@ -117,6 +117,9 @@ While other discord bots control traveling in a 2-dimensional way (you can play 
 | remove |  |  |
 | list |  |  |
 | info |  |  |
+| enable | | |
+| disable | | |
+| listenabled | | |
 
 
 

@@ -14,18 +14,15 @@ type EventsDB struct {
 
 type Event struct {
 
-	ID			string
+	ID			string `json:"id"`
 
-	ChannelID  	string
+	ChannelID  	string `json:"channelid"`
 
-	Type		string
-	TypeFlags	[]string
+	Type		string `json:"type"`
+	TypeFlags	[]string `json:"typeflags"`
 
-	CreatorID 	string // The userID of the creator
-
-	TimeDelay	string // We parse this into a duration
-
-	Data		string
+	CreatorID 	string `json:"creatorid"`// The userID of the creator
+	Data		string `json:"data"`
 
 }
 

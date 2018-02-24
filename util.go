@@ -10,6 +10,7 @@ import (
 	"errors"
 	"math/rand"
 	"strconv"
+	"encoding/json"
 )
 
 const (
@@ -496,6 +497,9 @@ func RollDiceAndAdd(faces int, count int) (total int){
 }
 
 
-
+func IsJSON(str string) bool {
+	var js json.RawMessage
+	return json.Unmarshal([]byte(str), &js) == nil
+}
 
 
