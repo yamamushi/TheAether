@@ -485,49 +485,6 @@ func RollDiceAndAdd(faces int, count int) (total int){
 }
 
 
-func GetRaceList() (list string){
-
-	list = "-Catfolk\n" +
-		"-Clockwork\n" +
-		"-Dwarf\n" +
-		"-Elf\n" +
-		"-Halfing\n" +
-		"-Half-Elf\n" +
-		"-Half-Orc\n" +
-		"-Human\n" +
-		"-Kobold\n" +
-		"-Gnome\n" +
-		"-Orc\n" +
-		"-Ratfolk\n" +
-		"-Saurian\n" +
-		"-Skinwalker\n"
-
-	return list
-
-}
 
 
-func GetClassList() (list string){
 
-	list = "-Bard\n" +
-		"-Claric\n" +
-		"-Druid\n" +
-		"-Elf\n" +
-		"-Enchanter\n" +
-		"-Fighter\n" +
-		"-Monk\n" +
-		"-Necromancer\n" +
-		"-Ninja\n" +
-		"-Paladin\n" +
-		"-Planeswalker\n" +
-		"-Ranger\n" +
-		"-Rogue\n" +
-		"-Shaman\n" +
-		"-Shaolin\n" +
-		"-Smuggler\n" +
-		"-Sorcerer\n" +
-		"-Wizard\n"
-
-	return list
-
-}

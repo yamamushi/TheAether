@@ -1062,7 +1062,7 @@ func (h *PermissionsHandler) RemoveRoleFromUser(role string, userID string, s *d
 		if err != nil {
 			return err
 		}
-		_ = s.GuildMemberRoleAdd(guildID, user.ID, roleID)
+		_ = s.GuildMemberRoleRemove(guildID, user.ID, roleID)
 
 	}
 

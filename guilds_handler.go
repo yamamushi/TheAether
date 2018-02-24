@@ -7,6 +7,7 @@ import (
 	"time"
 	"strconv"
 	"errors"
+	"sync"
 )
 
 
@@ -20,7 +21,9 @@ type GuildsHandler struct {
 	perm			*PermissionsHandler
 	user 			*UserHandler
 
-	syncinprogress	bool
+	guildsynclocker 	sync.RWMutex
+	clustersynclocker	sync.RWMutex
+	syncinprogress		bool
 
 }
 
@@ -221,6 +224,8 @@ func (h *GuildsHandler) ParseCommand(command []string, s *discordgo.Session, m *
 // There are timers throughout it to try and alleviate some of the strain on the api
 // SyncCluster function
 func (h *GuildsHandler) SyncCluster(s *discordgo.Session) (err error){
+	h.clustersynclocker.Lock() // Don't let multiple cluster syncs happen at the same time!
+	defer h.clustersynclocker.Unlock()
 
 	guilds, err := h.guildmanager.GetAllGuilds()
 	if err != nil {
@@ -242,6 +247,8 @@ func (h *GuildsHandler) SyncCluster(s *discordgo.Session) (err error){
 // It by itself will take a long time to finish
 // SyncGuild function
 func (h *GuildsHandler) SyncGuild(guildID string, s *discordgo.Session) (err error){
+	h.guildsynclocker.Lock()	// One guild at a time!
+	defer h.guildsynclocker.Unlock()
 
 	discordguild, err := s.Guild(guildID)
 	if err != nil {
@@ -317,8 +324,87 @@ func (h *GuildsHandler) SyncGuild(guildID string, s *discordgo.Session) (err err
 			// Once per room we run syncroom which handles default permission assignments
 			err = h.room.SyncRoom(room.ID, s)
 			if err != nil {
+
+				// If the channel doesn't exist for this record, we want to repair that
 				if strings.Contains(err.Error(), "Unknown Channel"){
-					h.room.rooms.RemoveRoomByID(room.ID)
+					//h.room.rooms.RemoveRoomByID(room.ID)
+
+					// If channel exists in guild, then check to see if a record exists for that channel
+					channels, err := s.GuildChannels(room.GuildID)
+					if err != nil {
+						return err
+					}
+
+					// If so, then we trash this record and proceed
+					channelmatchesrecord := false
+					for _, channel := range channels {
+						// Once we find the channel that matches the current room name
+						if channel.Name == room.Name {
+							channelmatchesrecord = true
+							// Then we search our rooms and look for a room that matches that channelID
+							foundchannel := false
+							for _, searchroom := range rooms {
+								if searchroom.ID == channel.ID {
+									// Once we find it, then we remove the current room from the db and leave
+									// the search result intact
+									err = h.room.rooms.RemoveRoomByID(room.ID)
+									if err != nil {
+										return err
+									}
+									foundchannel = true
+								}
+							}
+							// Otherwise if no record exists for the channel, then we update this record and resync
+							if !foundchannel {
+								room.ID = channel.ID
+								err = h.room.rooms.SaveRoomToDB(room)
+								if err != nil {
+									return err
+								}
+								// Now that the channel was created and the record was updated, we need to sync it
+								err = h.room.SyncRoom(room.ID, s)
+								if err != nil {
+									return err
+								}
+							}
+						}
+					}
+
+					// If there was no channel in the guild, we create the channel and update this record accordingly
+					if !channelmatchesrecord {
+						parentID := ""
+						for _, channel := range channels {
+							if channel.Name == "The Aether" {
+								parentID = channel.ID // We found the channel ID for the category
+							}
+						}
+
+						// Now we create the channel in the guild with the correct name
+						createdchannel, err := s.GuildChannelCreate(guildID, room.Name, "text")
+						if err != nil {
+							return err
+						}
+
+						// Move the created channel to the "The Aether" category
+						modifyChannel := discordgo.ChannelEdit{Name: createdchannel.Name, ParentID: parentID}
+						createdchannel, err = s.ChannelEditComplex(createdchannel.ID, &modifyChannel)
+						if err != nil {
+							return err
+						}
+
+						// Update the room record and save it to the DB
+						room.ID = createdchannel.ID
+						err = h.room.rooms.SaveRoomToDB(room)
+						if err != nil {
+							return err
+						}
+
+						// Now that the channel was created and the record was updated, we need to sync it
+						err = h.room.SyncRoom(room.ID, s)
+						if err != nil {
+							return err
+						}
+					}
 				} else {
 					return errors.New("Error syncing room: " + room.ID + ": " + room.Name + " - "+ err.Error())
 				}

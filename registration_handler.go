@@ -116,6 +116,19 @@ func (h *RegistrationHandler) Read(s *discordgo.Session, m *discordgo.MessageCre
 		h.RaceInfo(s, m)
 		return
 	}
+	if strings.HasPrefix(m.Content, cp+"pick-class") {
+		if user.Registered != "" {
+			s.ChannelMessageSend(m.ChannelID, "You have already been registered and cannot change your class!")
+			return
+		}
+		h.PickClass(s, m)
+		return
+	}
+	if strings.HasPrefix(m.Content, cp+"classinfo") {
+		h.ClassInfo(s, m)
+		return
+	}
+
 }
 
 
@@ -519,6 +532,35 @@ func (h *RegistrationHandler) ClassInfo(s *discordgo.Session, m *discordgo.Messa
 	}
 }
 
+func (h *RegistrationHandler) PickClass(s *discordgo.Session, m *discordgo.MessageCreate){
+
+	_, payload := SplitPayload(strings.Split(m.Content, " "))
+	if len(payload) < 1{
+
+		classlist := "\n```Tip - Use the \"pick-class classinfo\" command for more information about a given class \n\n" + GetClassList()
+		classlist = classlist + "\n Use \"pick-class choose <class>\" to assign an option " + "```\n"
+		s.ChannelMessageSend(m.ChannelID, ":sparkles: You may pick from one of the following classes: " + classlist)
+		return
+	}
+
+	for _, argument := range payload{
+		argument = strings.ToLower(argument)
+	}
+
+	if len(payload) > 0 {
+		classoption := payload[0]
+		if h.ValidateClassChoice(classoption){
+			s.ChannelMessageSend(m.ChannelID, "You have chosen: " + classoption +"\nConfirm? (Yes/No)\n")
+			h.callback.Watch(h.ConfirmClass, GetUUIDv2(), classoption, s, m)
+			return
+		} else {
+			classlist := GetClassList()
+			s.ChannelMessageSend(m.ChannelID, ":sparkles: Invalid Class Choice! You may pick from one of the following classes: \n```" +
+				classlist +"\n```\n" )
+			return
+		}
+	}
+}
 
 func (h *RegistrationHandler) ChooseClass(s *discordgo.Session, m *discordgo.MessageCreate){
 
@@ -577,6 +619,9 @@ func (h *RegistrationHandler) ValidateClassChoice(class string) (valid bool) {
 		return true
 	case "paladin":
 		return true
+	case "plaguedoctor":
+		return true
+
 	case "planeswalker":
 		return true
 	case "ranger":
@@ -663,3 +708,9 @@ func (h *RegistrationHandler) ConfirmStarterGear(command string, s *discordgo.Se
 func (h *RegistrationHandler) ChangeMisc(s *discordgo.Session, m *discordgo.MessageCreate){}
 
 func (h *RegistrationHandler) ConfirmMisc(command string, s *discordgo.Session, m *discordgo.MessageCreate){}
+
+
+// Bio
+func (h *RegistrationHandler) ChangeBio(s *discordgo.Session, m *discordgo.MessageCreate){}
+
+func (h *RegistrationHandler) ConfirmBio(command string, s *discordgo.Session, m *discordgo.MessageCreate){}

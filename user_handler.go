@@ -177,13 +177,49 @@ func (h *UserHandler) Read(s *discordgo.Session, m *discordgo.MessageCreate) {
 				s.ChannelMessageSend(m.ChannelID, ":large_blue_diamond: Attributes: \n" + attributes)
 				return
 			} else {
-				attributes := h.GetFormattedAttributes(message[1])
+
+				mentionlist := m.Mentions
+				if len(mentionlist) < 1 {
+					s.ChannelMessageSend(m.ChannelID, ":exclamation: Invalid user mention!")
+					return
+				}
+
+				attributes := h.GetFormattedAttributes(mentionlist[0].ID)
 				s.ChannelMessageSend(m.ChannelID, ":large_blue_diamond: Attributes: \n" + attributes)
 				return
 			}
 		} else {
 			attributes := h.GetFormattedAttributes(m.Author.ID)
 			s.ChannelMessageSend(m.ChannelID, ":large_blue_diamond: Attributes: \n" + attributes)
+			return
+		}
+	}
+	if message[0] == cp+"stats"{
+		/*
+		if !usermanager.CheckRole("player") || !usermanager.CheckRole("Registered") {
+			s.ChannelMessageSend(m.ChannelID, "You do not have permission to use this command")
+			return
+		}
+		*/
+		if len(message) > 1 {
+			if !user.CheckRole("moderator")  {
+
+				stats := h.GetFormattedStats(m.Author.ID)
+				s.ChannelMessageSend(m.ChannelID, ":large_blue_diamond: Stats: \n" + stats)
+				return
+			} else {
+				mentionlist := m.Mentions
+				if len(mentionlist) < 1 {
+					s.ChannelMessageSend(m.ChannelID, ":exclamation: Invalid user mention!")
+					return
+				}
+				stats := h.GetFormattedStats(mentionlist[0].ID)
+				s.ChannelMessageSend(m.ChannelID, ":large_blue_diamond: Stats: \n" + stats)
+				return
+			}
+		} else {
+			stats := h.GetFormattedStats(m.Author.ID)
+			s.ChannelMessageSend(m.ChannelID, ":large_blue_diamond: Stats: \n" + stats)
 			return
 		}
 	}
@@ -413,7 +449,7 @@ func (h *UserHandler) GetFormattedAttributes(userID string) (formatted string) {
 
 	user, err := h.usermanager.GetUserByID(userID)
 	if err != nil {
-		return formatted
+		return "No user record found!"
 	}
 
 	attributes := "```\n"
@@ -426,4 +462,16 @@ func (h *UserHandler) GetFormattedAttributes(userID string) (formatted string) {
 	attributes = attributes + "```\n"
 
 	return attributes
+}
+
+func (h *UserHandler) GetFormattedStats(userID string) (formatted string) {
+
+	_, err := h.usermanager.GetUserByID(userID)
+	if err != nil {
+		return "No user record found!"
+	}
+
+	stats := "not implemented yet!"
+
+	return stats
 }

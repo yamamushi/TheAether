@@ -7,6 +7,7 @@ import (
 	"errors"
 	"strconv"
 	"time"
+	"sync"
 )
 
 type RoomsHandler struct {
@@ -21,6 +22,8 @@ type RoomsHandler struct {
 	ch       *ChannelHandler
 	rooms	 *Rooms
 	guilds 	 *GuildsManager
+
+	roomsynclocker sync.RWMutex
 
 }
 
@@ -2244,6 +2247,8 @@ func (h *RoomsHandler) RemoveRoomTransferRoleID(roomID string) (err error) {
 
 
 func (h *RoomsHandler) SyncRoom(roomID string, s *discordgo.Session) (err error){
+	h.roomsynclocker.Lock() // One room at a time!
+	defer h.roomsynclocker.Unlock()
 
 	room, err := h.rooms.GetRoomByID(roomID)
 	if err != nil {

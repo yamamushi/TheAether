@@ -16,6 +16,7 @@ type Room struct {
 
 	Name 				string
 	GuildID						string
+	Type 				string
 
 	ParentID			string
 	ParentName			string
