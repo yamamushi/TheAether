@@ -115,6 +115,7 @@ func (h *GuildsHandler) ParseCommand(command []string, s *discordgo.Session, m *
 					if h.syncinprogress {
 						s.ChannelMessageSend(m.ChannelID, "Error syncing cluster: Sync already in progress, " +
 							"please wait until the current one has completed!")
+						return
 					}
 
 					s.ChannelMessageSend(m.ChannelID, "Cluster sync started")
@@ -124,6 +125,7 @@ func (h *GuildsHandler) ParseCommand(command []string, s *discordgo.Session, m *
 					if err != nil {
 						h.syncinprogress = false
 						s.ChannelMessageSend(m.ChannelID, "Error syncing cluster: " + err.Error())
+						return
 					}
 					delta := time.Since(starttime)
 					h.syncinprogress = false
@@ -154,8 +156,10 @@ func (h *GuildsHandler) ParseCommand(command []string, s *discordgo.Session, m *
 						if h.syncinprogress {
 							s.ChannelMessageSend(m.ChannelID, "Error syncing cluster: Sync already in progress, " +
 								"please wait until the current one has completed!")
+							return
 						}
 						h.syncinprogress = true
+						starttime := time.Now()
 						s.ChannelMessageSend(m.ChannelID, "Guild sync started")
 						err := h.SyncGuild(command[3], s)
 						if err != nil {
@@ -163,8 +167,9 @@ func (h *GuildsHandler) ParseCommand(command []string, s *discordgo.Session, m *
 							s.ChannelMessageSend(m.ChannelID, "Error syncing guild: " + err.Error())
 							return
 						}
+						delta := time.Since(starttime)
 						h.syncinprogress = false
-						s.ChannelMessageSend(m.ChannelID, "Guild synced: " + command[3])
+						s.ChannelMessageSend(m.ChannelID, "Guild synced: " + command[3] + " Took:" + delta.String())
 						return
 					} else {
 						s.ChannelMessageSend(m.ChannelID, "Error: Supplied guild ID is not registered in the cluster.")
