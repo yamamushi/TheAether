@@ -497,9 +497,148 @@ func (h *RegistrationHandler) ConfirmRace(race string, s *discordgo.Session, m *
 
 
 // Class
-func (h *RegistrationHandler) ChooseClass(s *discordgo.Session, m *discordgo.MessageCreate){}
+func (h *RegistrationHandler) ClassInfo(s *discordgo.Session, m *discordgo.MessageCreate){
 
-func (h *RegistrationHandler) ConfirmClass(command string, s *discordgo.Session, m *discordgo.MessageCreate){}
+	_, payload := SplitPayload(strings.Split(m.Content, " "))
+	if len(payload) < 1{
+
+		classlist := GetClassList()
+		s.ChannelMessageSend(m.ChannelID, ":sparkles: You may pick from one of the following races: \n```" + classlist +"\n```\n" )
+		return
+	} else {
+		classoption := payload[0]
+		if h.ValidateRaceChoice(classoption){
+			s.ChannelMessageSend(m.ChannelID, ":construction: -Classinfo goes here-" )
+			return
+		} else {
+			classlist := GetClassList()
+			s.ChannelMessageSend(m.ChannelID, ":sparkles: Invalid Class Choice! You may pick from one of the following classes: \n```" +
+				classlist +"\n```\n" )
+			return
+		}
+	}
+}
+
+
+func (h *RegistrationHandler) ChooseClass(s *discordgo.Session, m *discordgo.MessageCreate){
+
+	_, payload := SplitPayload(strings.Split(m.Content, " "))
+	if len(payload) < 1{
+
+		classlist := "\n```Tip - Use the \"pick-class classinfo\" command for more information about a given race \n\n" + GetClassList()
+		classlist = classlist + "\n Use \"pick-race choose <race>\" to assign an option " + "```\n"
+		s.ChannelMessageSend(m.ChannelID, ":sparkles: You may pick from one of the following classes: " + classlist)
+		return
+	}
+
+	for _, argument := range payload{
+		argument = strings.ToLower(argument)
+	}
+
+	if len(payload) > 0 {
+		classoption := payload[0]
+		if h.ValidateRaceChoice(classoption){
+			s.ChannelMessageSend(m.ChannelID, "You have chosen: " + classoption +"\nConfirm? (Yes/No)\n")
+			h.callback.Watch(h.ConfirmClass, GetUUIDv2(), classoption, s, m)
+			return
+		} else {
+			classlist := GetClassList()
+			s.ChannelMessageSend(m.ChannelID, ":sparkles: Invalid Class Choice! You may pick from one of the following classes: \n```" +
+				classlist +"\n```\n" )
+			return
+		}
+	}
+
+}
+
+func (h *RegistrationHandler) ValidateClassChoice(class string) (valid bool) {
+
+	class = strings.ToLower(class)
+
+	switch class {
+
+	case "barbarian":
+		return true
+	case "bard":
+		return true
+	case "cleric":
+		return true
+	case "druid":
+		return true
+	case "enchanter":
+		return true
+	case "fighter":
+		return true
+	case "monk":
+		return true
+	case "necromancer":
+		return true
+	case "ninja":
+		return true
+	case "paladin":
+		return true
+	case "planeswalker":
+		return true
+	case "ranger":
+		return true
+	case "rogue":
+		return true
+	case "shaman":
+		return true
+	case "shaolin":
+		return true
+	case "smuggler":
+		return true
+	case "sorcerer":
+		return true
+	case "wizard":
+		return true
+	default:
+		return false
+	}
+}
+
+func (h *RegistrationHandler) ConfirmClass(class string, s *discordgo.Session, m *discordgo.MessageCreate){
+
+	// We do this to avoid having duplicate commands overrunning each other
+	cp := h.conf.MainConfig.CP
+	if strings.HasPrefix(m.Content, cp) {
+		s.ChannelMessageSend(m.ChannelID, "Pick Class Command Cancelled")
+		return
+	}
+
+	m.Content = strings.ToLower(m.Content)
+	if m.Content == "y" || m.Content == "yes" {
+
+		user, err := h.db.GetUser(m.Author.ID)
+		if err != nil {
+			s.ChannelMessageSend(m.ChannelID, "Could not retrieve usermanager record: " + err.Error())
+			return
+		}
+
+		user.Class = class
+
+		err = h.user.usermanager.SaveUserToDB(user)
+		if err != nil {
+			s.ChannelMessageSend(m.ChannelID, "Could not complete registration: " + err.Error())
+			return
+		}
+	}
+	if m.Content == "n" || m.Content == "no" {
+		s.ChannelMessageSend(m.ChannelID, "Choice Cancelled.")
+		return
+	}
+
+	err := h.SetRegistrationStep("class", m.Author.ID)
+	if err != nil {
+		s.ChannelMessageSend(m.ChannelID, "Could not complete registration: " + err.Error())
+		return
+	}
+	s.ChannelMessageSend(m.ChannelID, "Class assigned! You may now proceed with your " +
+		"avatar creation by using the "+h.conf.MainConfig.CP+"pick-skills command")
+	return
+
+}
 
 
 // Skills

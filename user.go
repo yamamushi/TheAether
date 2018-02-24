@@ -22,6 +22,8 @@ type User struct {
 	Name					string
 	SkinTone				string
 	Race					string
+	Class					string
+	SecondaryClass			string
 	Gender					string
 	HairColor				string
 	HairStyle				string
