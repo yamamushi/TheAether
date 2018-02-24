@@ -29,6 +29,12 @@ type User struct {
 	HairStyle				string
 	Height					string
 
+	Stamina					int64
+	Mana 					int64
+	Sanity					int64
+	Focus 					int64
+
+	QuestFlags				[]string
 	Statuses 				[]string
 
 	// Body Parts Can Have Individual States

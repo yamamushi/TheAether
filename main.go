@@ -182,12 +182,27 @@ func main() {
 	logger.Init(&channelhandler, logchannel, dg)
 
 
+	// Startup setup for channels and roles
 	fmt.Println("\n|| Running Startup Setup ||\n")
 	setup := SetupProcess{db: &dbhandler, conf: &conf, user: &userhandler, rooms: &roomshandler, guilds: &guildsmanager}
 	err = setup.Init(dg, conf.MainConfig.LobbyChannelID)
 	if err != nil {
+		fmt.Println("Error running setupw: " + err.Error())
 		return
 	}
+
+	// Setup our Events Handler now that first rooms are operational
+	fmt.Println("\n|| Standing Up Events Handler ||\n")
+	eventshandler := EventHandler{conf: &conf, registry: commandhandler.registry, callback: &callbackhandler, db: &dbhandler,
+	user: &userhandler, dg: dg, logger: &logger}
+	err = eventshandler.Init()
+	if err != nil {
+		fmt.Println("Error starting events handler: " + err.Error())
+		return
+	}
+	dg.AddHandler(eventshandler.Read)
+	dg.AddHandler(eventshandler.ReadEvents)
+
 
 	// Now we create and initialize our main handler
 	fmt.Println("\n|| Initializing Main Handler ||\n")

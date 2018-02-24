@@ -8,6 +8,8 @@ Table of Contents
          * [Role Management](#role-management-commands)
          * [Room Management](#room-management-commands)
          * [Cluster Management](#cluster-management-commands)
+         * [Notify Command](#notify-command)
+         * [Events Command](#events-command)
       * [Discord](#discord)
    * [Developers Guide](Developers.md)
 
@@ -86,6 +88,36 @@ While other discord bots control traveling in a 2-dimensional way (you can play 
 | guilds sync guild | sync and repair specific guild | |
 | guilds info | display information about a guild | |
 | guilds cluster | display cluster stats | |   
+
+
+### Notify Command
+
+| Command       | Description   | Example Usage  |
+| ------------- | ------------- | ------------- |
+| enable |  | |
+| enable for |  |  |
+| disable  |  |  |
+| disable for |  |  |
+| add |  |  |
+| remove |  |  |
+| list |  |  |
+| view |  |  |
+| channel |  |  |
+| messages |  |  |
+| flush |  |  |
+| linked |  |  |
+
+
+
+### Events Command
+
+| Command       | Description   | Example Usage  |
+| ------------- | ------------- | ------------- |
+| add |  |  |
+| remove |  |  |
+| list |  |  |
+| info |  |  |
+
 
 
 

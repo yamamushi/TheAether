@@ -661,7 +661,8 @@ func (h *RoomsHandler) CreateManagementRooms(guildID string, s *discordgo.Sessio
 		return err
 	}
 	denydevperms := h.perm.CreatePermissionInt(RolePermissions{})
-	allowdevperms := h.perm.CreatePermissionInt(RolePermissions{VIEW_CHANNEL:true})
+	allowdevperms := h.perm.CreatePermissionInt(RolePermissions{VIEW_CHANNEL:true, READ_MESSAGE_HISTORY:true, SEND_MESSAGES:true,
+										USE_EXTERNAL_EMOJIS:true, ATTACH_FILES:true, EMBED_LINKS:true, MENTION_EVERYONE:true})
 	err = s.ChannelPermissionSet( developerChannelID, developerRoleID, "role", allowdevperms, denydevperms)
 	if err != nil {
 		return err
@@ -694,7 +695,8 @@ func (h *RoomsHandler) CreateManagementRooms(guildID string, s *discordgo.Sessio
 		return err
 	}
 	denyadminperms := h.perm.CreatePermissionInt(RolePermissions{})
-	allowadminperms := h.perm.CreatePermissionInt(RolePermissions{VIEW_CHANNEL:true})
+	allowadminperms := h.perm.CreatePermissionInt(RolePermissions{VIEW_CHANNEL:true, SEND_MESSAGES: true,
+		EMBED_LINKS:true, READ_MESSAGE_HISTORY:true, ATTACH_FILES:true, USE_EXTERNAL_EMOJIS:true, MENTION_EVERYONE:true})
 	err = s.ChannelPermissionSet( adminChannelID, adminRoleID, "role", allowadminperms, denyadminperms)
 	if err != nil {
 		return err
@@ -727,7 +729,8 @@ func (h *RoomsHandler) CreateManagementRooms(guildID string, s *discordgo.Sessio
 		return err
 	}
 	denybuilderperms := h.perm.CreatePermissionInt(RolePermissions{})
-	allowbuilderperms := h.perm.CreatePermissionInt(RolePermissions{VIEW_CHANNEL:true})
+	allowbuilderperms := h.perm.CreatePermissionInt(RolePermissions{VIEW_CHANNEL:true, SEND_MESSAGES: true,
+						EMBED_LINKS:true, READ_MESSAGE_HISTORY:true, ATTACH_FILES:true, USE_EXTERNAL_EMOJIS:true, MENTION_EVERYONE:true})
 	err = s.ChannelPermissionSet( builderhannelID, builderRoleID, "role", allowbuilderperms, denybuilderperms)
 	if err != nil {
 		return err
@@ -760,7 +763,8 @@ func (h *RoomsHandler) CreateManagementRooms(guildID string, s *discordgo.Sessio
 		return err
 	}
 	denymoderatorperms := h.perm.CreatePermissionInt(RolePermissions{})
-	allowmoderatorperms := h.perm.CreatePermissionInt(RolePermissions{VIEW_CHANNEL:true})
+	allowmoderatorperms := h.perm.CreatePermissionInt(RolePermissions{VIEW_CHANNEL:true, SEND_MESSAGES: true,
+		EMBED_LINKS:true, READ_MESSAGE_HISTORY:true, ATTACH_FILES:true, USE_EXTERNAL_EMOJIS:true, MENTION_EVERYONE:true})
 	err = s.ChannelPermissionSet( moderatorhannelID, moderatorRoleID, "role", allowmoderatorperms, denymoderatorperms)
 	if err != nil {
 		return err
@@ -793,7 +797,8 @@ func (h *RoomsHandler) CreateManagementRooms(guildID string, s *discordgo.Sessio
 		return err
 	}
 	denywriterperms := h.perm.CreatePermissionInt(RolePermissions{})
-	allowwriterperms := h.perm.CreatePermissionInt(RolePermissions{VIEW_CHANNEL:true})
+	allowwriterperms := h.perm.CreatePermissionInt(RolePermissions{VIEW_CHANNEL:true, SEND_MESSAGES: true,
+		EMBED_LINKS:true, READ_MESSAGE_HISTORY:true, ATTACH_FILES:true, USE_EXTERNAL_EMOJIS:true, MENTION_EVERYONE:true})
 	err = s.ChannelPermissionSet( writerchannelID, writerRoleID, "role", allowwriterperms, denywriterperms)
 	if err != nil {
 		return err
