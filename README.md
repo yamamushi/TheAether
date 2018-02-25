@@ -1,4 +1,4 @@
-[![Travis](https://img.shields.io/travis/yamamushi/TheAether.svg?branch=master)](https://travis-ci.org/yamamushi/TheAether/) [![GitHub issues](https://img.shields.io/github/issues/yamamushi/TheAether.svg)](https://GitHub.com/yamamushi/TheAether/issues/) [![Go Report Card](https://goreportcard.com/badge/github.com/yamamushi/TheAether)](https://goreportcard.com/report/github.com/yamamushi/TheAether?style=plastic) [![Website shields.io](https://img.shields.io/website-up-down-green-red/http/TheAetherGame.com.svg)](http://shields.io/) 
+[![Travis](https://img.shields.io/travis/yamamushi/TheAether.svg?branch=master)](https://travis-ci.org/yamamushi/TheAether/) [![GitHub issues](https://img.shields.io/github/issues/yamamushi/TheAether.svg)](https://GitHub.com/yamamushi/TheAether/issues/) [![Go Report Card](https://goreportcard.com/badge/github.com/yamamushi/TheAether)](https://goreportcard.com/report/github.com/yamamushi/TheAether?style=plastic) [![Website shields.io](https://img.shields.io/website-up-down-green-red/http/TheAetherGame.com.svg)](http://theaethergame.com) 
  
  [![Build history](https://buildstats.info/travisci/chart/yamamushi/TheAether)](https://ci.appveyor.com/project/yamamushi/TheAether/history)
 
@@ -141,6 +141,10 @@ While other discord bots control traveling in a 2-dimensional way (you can play 
 **Development Branch Status**
 
 [![Travis](https://img.shields.io/travis/yamamushi/TheAether.svg?branch=develop)](https://travis-ci.org/yamamushi/TheAether/)
+
+All development should be performed on your own fork and a PR submitted against the "develop" branch of the project. Your builds **must** pass travis checks before a PR will be accepted, except under special circumstances it is expected that the develop branch should be in a passing state.
+
+At the moment development is happening at a quick pace, so many merges from develop will be made to master, however the long term goal is to keep merges at once per week so long as travis builds are passing. 
 
 
 ## Discord
