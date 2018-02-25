@@ -171,6 +171,19 @@ func (h *EventHandler) ParseCommand(input []string, s *discordgo.Session, m *dis
 		s.ChannelMessageSend(m.ChannelID, "Enabled Events for <#"+payload[0]+">: "+formatted)
 		return
 	}
+	if argument == "script" {
+		if len(payload) < 1 {
+			s.ChannelMessageSend(m.ChannelID, "Command 'script' expects an argument: <eventID>")
+			return
+		}
+		script, err := h.EventToScript(payload[0])
+		if err != nil {
+			s.ChannelMessageSend(m.ChannelID, "Error retrieving script: "+err.Error())
+			return
+		}
+		s.ChannelMessageSend(m.ChannelID, "Script for "+payload[0]+": ```\n"+script+"\n```\n")
+		return
+	}
 	if argument == "info" {
 		if len(payload) < 1 {
 			s.ChannelMessageSend(m.ChannelID, "Command 'info' expects an argument")
@@ -197,7 +210,20 @@ func (h *EventHandler) EnableEvent(eventID, userID string, channelID string, s *
 		return errors.New("You do not have permission to enable this event only the creator or a builder are allowed to")
 	}
 	return nil
+}
 
+// EventToScript function
+func (h *EventHandler) EventToScript(eventID string) (script string, err error) {
+	event, err := h.eventsdb.GetEventByID(eventID)
+	if err != nil {
+		return "", err
+	}
+
+	script, err = h.parser.EventToJSON(event)
+	if err != nil {
+		return "", err
+	}
+	return script, nil
 }
 
 // DisableEvent function
@@ -262,8 +288,8 @@ func (h *EventHandler) ListEvents() (formatted string, err error) {
 
 // RegisterEvent function
 func (h *EventHandler) RegisterEvent(payload string, s *discordgo.Session, m *discordgo.MessageCreate) (eventID string, err error) {
-	payload = strings.TrimPrefix(payload, "~events add ")
-	payload = strings.TrimPrefix(payload, "\n")
+	payload = strings.TrimPrefix(payload, "~events add ") // This all will need to be updated later, this is just
+	payload = strings.TrimPrefix(payload, "\n")           // A lazy way of cleaning the command
 	payload = strings.TrimPrefix(payload, "```")
 	payload = strings.TrimPrefix(payload, "\n")
 	payload = strings.TrimSuffix(payload, "\n")
