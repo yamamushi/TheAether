@@ -1,4 +1,4 @@
-[![Travis](https://img.shields.io/travis/yamamushi/TheAether.svg)](https://travis-ci.org/yamamushi/TheAether/) [![GitHub issues](https://img.shields.io/github/issues/yamamushi/TheAether.svg)](https://GitHub.com/yamamushi/TheAether/issues/) [![Go Report Card](https://goreportcard.com/badge/github.com/yamamushi/TheAether)](https://goreportcard.com/report/github.com/yamamushi/TheAether) [![Website shields.io](https://img.shields.io/website-up-down-green-red/http/TheAetherGame.com.svg)](http://shields.io/) 
+[![Travis](https://img.shields.io/travis/yamamushi/TheAether.svg)](https://travis-ci.org/yamamushi/TheAether/) [![GitHub issues](https://img.shields.io/github/issues/yamamushi/TheAether.svg)](https://GitHub.com/yamamushi/TheAether/issues/)  [![Website shields.io](https://img.shields.io/website-up-down-green-red/http/TheAetherGame.com.svg)](http://shields.io/) 
  
  [![Build history](https://buildstats.info/travisci/chart/yamamushi/TheAether)](https://ci.appveyor.com/project/yamamushi/TheAether/history)
 
