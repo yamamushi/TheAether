@@ -770,7 +770,6 @@ func (h *NotificationsHandler) CheckNotifications(s *discordgo.Session) {
 // ParseTimeout function
 func (h *NotificationsHandler) ParseTimeout(timeout string) (hours int64, minutes int64, err error) {
 
-
 	if !strings.Contains(timeout, " ") {
 		return 0, 0, errors.New("Invalid time interval format")
 	}
