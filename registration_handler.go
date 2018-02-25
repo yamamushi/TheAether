@@ -129,6 +129,24 @@ func (h *RegistrationHandler) Read(s *discordgo.Session, m *discordgo.MessageCre
 		return
 	}
 
+	if strings.HasPrefix(m.Content, cp+"pick-skills"){
+		h.PickSkills(s, m)
+		return
+	}
+
+	if strings.HasPrefix(m.Content, cp+"skillinfo"){
+		h.SkillInfo(s, m)
+		return
+	}
+	if strings.HasPrefix(m.Content, cp+"pick-skill") {
+		if user.Registered != "" {
+			s.ChannelMessageSend(m.ChannelID, "You have already been registered and cannot change your skills!")
+			return
+		}
+		h.PickSkills(s, m)
+		return
+	}
+
 }
 
 
@@ -380,63 +398,29 @@ func (h *RegistrationHandler) ConfirmAttributes(command string, s *discordgo.Ses
 
 func (h *RegistrationHandler) RaceInfo(s *discordgo.Session, m *discordgo.MessageCreate){
 
+	racelist := GetRaceList()
+
+	keys := make([]string, 0, len(racelist))
+	for k := range racelist{
+		keys = append(keys, k)
+	}
+
+	listS := strings.Join(keys, "")
+
 	_, payload := SplitPayload(strings.Split(m.Content, " "))
 	if len(payload) < 1{
 
-		racelist := GetRaceList()
-		s.ChannelMessageSend(m.ChannelID, ":sparkles: You may pick from one of the following races: \n```" + racelist +"\n```\n" )
+		s.ChannelMessageSend(m.ChannelID, ":sparkles: You may pick from one of the following races: \n```" + listS +"\n```\n" )
 		return
 	} else {
-		raceinfo := GetRaceInfo()
 		raceoption := payload[0]
+		raceoption = strings.ToLower(raceoption)
 		if h.ValidateRaceChoice(raceoption){
-			if(strings.ToLower(raceoption) == "catfolk") {
-				s.ChannelMessageSend(m.ChannelID, ":construction: "+raceinfo[0])
-				return
-			}else if(strings.ToLower(raceoption) == "clockwork") {
-				s.ChannelMessageSend(m.ChannelID, ":construction: "+raceinfo[1])
-				return
-			}else if(strings.ToLower(raceoption) == "dwarf") {
-				s.ChannelMessageSend(m.ChannelID, ":construction: "+raceinfo[2])
-				return
-			}else if(strings.ToLower(raceoption) == "elf") {
-				s.ChannelMessageSend(m.ChannelID, ":construction: "+raceinfo[3])
-				return
-			}else if(strings.ToLower(raceoption) == "halfing") {
-				s.ChannelMessageSend(m.ChannelID, ":construction: "+raceinfo[4])
-				return
-			}else if(strings.ToLower(raceoption) == "half-elf") {
-				s.ChannelMessageSend(m.ChannelID, ":construction: "+raceinfo[5])
-				return
-			}else if(strings.ToLower(raceoption) == "half-orc") {
-				s.ChannelMessageSend(m.ChannelID, ":construction: "+raceinfo[6])
-				return
-			}else if(strings.ToLower(raceoption) == "human") {
-				s.ChannelMessageSend(m.ChannelID, ":construction: "+raceinfo[7])
-				return
-			}else if(strings.ToLower(raceoption) == "kobold") {
-				s.ChannelMessageSend(m.ChannelID, ":construction: "+raceinfo[8])
-				return
-			}else if(strings.ToLower(raceoption) == "gnome") {
-				s.ChannelMessageSend(m.ChannelID, ":construction: "+raceinfo[9])
-				return
-			}else if(strings.ToLower(raceoption) == "orc") {
-				s.ChannelMessageSend(m.ChannelID, ":construction: "+raceinfo[10])
-				return
-			}else if(strings.ToLower(raceoption) == "ratfolk") {
-				s.ChannelMessageSend(m.ChannelID, ":construction: "+raceinfo[11])
-				return
-			}else if(strings.ToLower(raceoption) == "saurian") {
-				s.ChannelMessageSend(m.ChannelID, ":construction: "+raceinfo[12])
-				return
-			}else if(strings.ToLower(raceoption) == "skinwalker") {
-				s.ChannelMessageSend(m.ChannelID, ":construction: "+raceinfo[13])
-				return
-			}
+			s.ChannelMessageSend(m.ChannelID, ":construction: "+racelist["-"+strings.Title(raceoption) + "\n"])
+			return
 		} else {
-			racelist := GetRaceList()
-			s.ChannelMessageSend(m.ChannelID, ":sparkles: Invalid Race Choice! You may pick from one of the following races: \n```" +
-				racelist +"\n```\n" )
+			s.ChannelMessageSend(m.ChannelID, ":sparkles: Invalid Race Choice! You may pick from one of the following Races: \n```" +
+				listS +"\n```\n" )
 			return
 		}
 	}
@@ -444,12 +428,21 @@ func (h *RegistrationHandler) RaceInfo(s *discordgo.Session, m *discordgo.Messag
 
 func (h *RegistrationHandler) PickRace(s *discordgo.Session, m *discordgo.MessageCreate){
 
+	racelist := GetRaceList()
+
+	keys := make([]string, 0, len(racelist))
+	for k := range racelist{
+		keys = append(keys, k)
+	}
+
+	listS := strings.Join(keys, "")
+
 	_, payload := SplitPayload(strings.Split(m.Content, " "))
 	if len(payload) < 1{
 
-		racelist := "\n```Tip - Use the \"~raceinfo <race>\" command for more information about a given race \n\n" + GetRaceList()
-		racelist = racelist + "\n Use \"pick-race choose <race>\" to assign an option " + "```\n"
-		s.ChannelMessageSend(m.ChannelID, ":sparkles: You may pick from one of the following races: " + racelist)
+		rList := "\n```Tip - Use the \"~raceinfo <race>\" command for more information about a given race \n\n" + listS
+		rList = rList + "\n Use \"pick-race choose <race>\" to assign an option " + "```\n"
+		s.ChannelMessageSend(m.ChannelID, ":sparkles: You may pick from one of the following races: " + rList)
 		return
 	}
 
@@ -464,9 +457,8 @@ func (h *RegistrationHandler) PickRace(s *discordgo.Session, m *discordgo.Messag
 			h.callback.Watch(h.ConfirmRace, GetUUIDv2(), raceoption, s, m)
 			return
 		} else {
-			racelist := GetRaceList()
 			s.ChannelMessageSend(m.ChannelID, ":sparkles: Invalid Race Choice! You may pick from one of the following races: \n```" +
-				racelist +"\n```\n" )
+				listS +"\n```\n" )
 			return
 		}
 	}
@@ -554,78 +546,29 @@ func (h *RegistrationHandler) ConfirmRace(race string, s *discordgo.Session, m *
 // Class
 func (h *RegistrationHandler) ClassInfo(s *discordgo.Session, m *discordgo.MessageCreate){
 
+	classlist := GetClassList()
+
+	keys := make([]string, 0, len(classlist))
+	for k := range classlist{
+		keys = append(keys, k)
+	}
+
+	listS := strings.Join(keys, "")
+
 	_, payload := SplitPayload(strings.Split(m.Content, " "))
 	if len(payload) < 1{
 
-		classlist := GetClassList()
-		s.ChannelMessageSend(m.ChannelID, ":sparkles: You may pick from one of the following races: \n```" + classlist +"\n```\n" )
+		s.ChannelMessageSend(m.ChannelID, ":sparkles: You may pick from one of the following races: \n```" + listS +"\n```\n" )
 		return
 	} else {
-		classinfo := GetClassInfo()
 		classoption := payload[0]
+		classoption = strings.ToLower(classoption)
 		if h.ValidateClassChoice(classoption){
-			if(strings.ToLower(classoption) == "bard") {
-				s.ChannelMessageSend(m.ChannelID, ":construction: "+classinfo[0])
-				return
-			}else if(strings.ToLower(classoption) == "claric") {
-				s.ChannelMessageSend(m.ChannelID, ":construction: "+classinfo[1])
-				return
-			}else if(strings.ToLower(classoption) == "druid") {
-				s.ChannelMessageSend(m.ChannelID, ":construction: "+classinfo[2])
-				return
-			}else if(strings.ToLower(classoption) == "elf") {
-				s.ChannelMessageSend(m.ChannelID, ":construction: "+classinfo[3])
-				return
-			}else if(strings.ToLower(classoption) == "enchanter") {
-				s.ChannelMessageSend(m.ChannelID, ":construction: "+classinfo[4])
-				return
-			}else if(strings.ToLower(classoption) == "fighter") {
-				s.ChannelMessageSend(m.ChannelID, ":construction: "+classinfo[5])
-				return
-			}else if(strings.ToLower(classoption) == "monk") {
-				s.ChannelMessageSend(m.ChannelID, ":construction: "+classinfo[6])
-				return
-			}else if(strings.ToLower(classoption) == "necromancer") {
-				s.ChannelMessageSend(m.ChannelID, ":construction: "+classinfo[7])
-				return
-			}else if(strings.ToLower(classoption) == "ninja") {
-				s.ChannelMessageSend(m.ChannelID, ":construction: "+classinfo[8])
-				return
-			}else if(strings.ToLower(classoption) == "paladin") {
-				s.ChannelMessageSend(m.ChannelID, ":construction: "+classinfo[9])
-				return
-			}else if(strings.ToLower(classoption) == "plaguedoctor") {
-				s.ChannelMessageSend(m.ChannelID, ":construction: "+classinfo[10])
-				return
-			}else if(strings.ToLower(classoption) == "planeswalker") {
-				s.ChannelMessageSend(m.ChannelID, ":construction: "+classinfo[11])
-				return
-			}else if(strings.ToLower(classoption) == "ranger") {
-				s.ChannelMessageSend(m.ChannelID, ":construction: "+classinfo[12])
-				return
-			}else if(strings.ToLower(classoption) == "rogue") {
-				s.ChannelMessageSend(m.ChannelID, ":construction: "+classinfo[13])
-				return
-			}else if(strings.ToLower(classoption) == "shaman") {
-				s.ChannelMessageSend(m.ChannelID, ":construction: "+classinfo[14])
-				return
-			}else if(strings.ToLower(classoption) == "shaolin") {
-				s.ChannelMessageSend(m.ChannelID, ":construction: "+classinfo[15])
-				return
-			}else if(strings.ToLower(classoption) == "smuggler") {
-				s.ChannelMessageSend(m.ChannelID, ":construction: "+classinfo[16])
-				return
-			}else if(strings.ToLower(classoption) == "sorcerer") {
-				s.ChannelMessageSend(m.ChannelID, ":construction: "+classinfo[17])
-				return
-			}else if(strings.ToLower(classoption) == "wizard") {
-				s.ChannelMessageSend(m.ChannelID, ":construction: "+classinfo[18])
-				return
-			}
+			s.ChannelMessageSend(m.ChannelID, ":construction: "+classlist["-"+strings.Title(classoption) + "\n"])
+			return
 		} else {
-			classlist := GetClassList()
 			s.ChannelMessageSend(m.ChannelID, ":sparkles: Invalid Class Choice! You may pick from one of the following classes: \n```" +
-				classlist +"\n```\n" )
+				listS +"\n```\n" )
 			return
 		}
 	}
@@ -633,12 +576,22 @@ func (h *RegistrationHandler) ClassInfo(s *discordgo.Session, m *discordgo.Messa
 
 func (h *RegistrationHandler) PickClass(s *discordgo.Session, m *discordgo.MessageCreate){
 
+	classlist := GetClassList()
+
+
+	keys := make([]string, 0, len(classlist))
+	for k := range classlist{
+		keys = append(keys, k)
+	}
+
+	listS := strings.Join(keys, "")
+
 	_, payload := SplitPayload(strings.Split(m.Content, " "))
 	if len(payload) < 1{
 
-		classlist := "\n```Tip - Use the \"pick-class classinfo\" command for more information about a given class \n\n" + GetClassList()
-		classlist = classlist + "\n Use \"pick-class choose <class>\" to assign an option " + "```\n"
-		s.ChannelMessageSend(m.ChannelID, ":sparkles: You may pick from one of the following classes: " + classlist)
+		cList := "\n```Tip - Use the \"~classinfo <class>\" command for more information about a given class \n\n" + listS
+		cList = cList + "\n Use \"pick-class choose <class>\" to assign an option " + "```\n"
+		s.ChannelMessageSend(m.ChannelID, ":sparkles: You may pick from one of the following classes: " + cList)
 		return
 	}
 
@@ -653,9 +606,8 @@ func (h *RegistrationHandler) PickClass(s *discordgo.Session, m *discordgo.Messa
 			h.callback.Watch(h.ConfirmClass, GetUUIDv2(), classoption, s, m)
 			return
 		} else {
-			classlist := GetClassList()
 			s.ChannelMessageSend(m.ChannelID, ":sparkles: Invalid Class Choice! You may pick from one of the following classes: \n```" +
-				classlist +"\n```\n" )
+				listS +"\n```\n" )
 			return
 		}
 	}
@@ -663,10 +615,19 @@ func (h *RegistrationHandler) PickClass(s *discordgo.Session, m *discordgo.Messa
 
 func (h *RegistrationHandler) ChooseClass(s *discordgo.Session, m *discordgo.MessageCreate){
 
+	classlist := GetClassList()
+
+	keys := make([]string, 0, len(classlist))
+	for k := range classlist{
+		keys = append(keys, k)
+	}
+
+	listS := strings.Join(keys, "")
+
 	_, payload := SplitPayload(strings.Split(m.Content, " "))
 	if len(payload) < 1{
 
-		classlist := "\n```Tip - Use the \"pick-class classinfo\" command for more information about a given race \n\n" + GetClassList()
+		classlist := "\n```Tip - Use the \"pick-class classinfo\" command for more information about a given race \n\n" + listS
 		classlist = classlist + "\n Use \"pick-race choose <race>\" to assign an option " + "```\n"
 		s.ChannelMessageSend(m.ChannelID, ":sparkles: You may pick from one of the following classes: " + classlist)
 		return
@@ -683,9 +644,8 @@ func (h *RegistrationHandler) ChooseClass(s *discordgo.Session, m *discordgo.Mes
 			h.callback.Watch(h.ConfirmClass, GetUUIDv2(), classoption, s, m)
 			return
 		} else {
-			classlist := GetClassList()
 			s.ChannelMessageSend(m.ChannelID, ":sparkles: Invalid Class Choice! You may pick from one of the following classes: \n```" +
-				classlist +"\n```\n" )
+				listS +"\n```\n" )
 			return
 		}
 	}
@@ -720,7 +680,6 @@ func (h *RegistrationHandler) ValidateClassChoice(class string) (valid bool) {
 		return true
 	case "plaguedoctor":
 		return true
-
 	case "planeswalker":
 		return true
 	case "ranger":
@@ -786,7 +745,192 @@ func (h *RegistrationHandler) ConfirmClass(class string, s *discordgo.Session, m
 
 
 // Skills
-func (h *RegistrationHandler) ChooseSkills(s *discordgo.Session, m *discordgo.MessageCreate){}
+func (h *RegistrationHandler) SkillInfo(s *discordgo.Session, m *discordgo.MessageCreate){
+	skilllist := GetSkillList()
+
+	keys := make([]string, 0, len(skilllist))
+	for k := range skilllist{
+		keys = append(keys, k)
+	}
+
+	listS := strings.Join(keys, "")
+
+	_, payload := SplitPayload(strings.Split(m.Content, " "))
+	if len(payload) < 1{
+		s.ChannelMessageSend(m.ChannelID, ":sparkles: You may pick from one of the following races: \n```" + listS +"\n```\n" )
+		return
+	} else {
+		skilloption := payload[0]
+		skilloption = strings.ToLower(skilloption)
+		if h.ValidateSkillChoice(skilloption){
+			s.ChannelMessageSend(m.ChannelID, ":construction: "+skilllist["-"+strings.Title(skilloption) + "\n"])
+			return
+		} else {
+			s.ChannelMessageSend(m.ChannelID, ":sparkles: Invalid Skill Choice! You may pick from one of the following Skills: \n```" +
+				listS +"\n```\n" )
+			return
+		}
+	}
+}
+
+func (h *RegistrationHandler) PickSkills(s *discordgo.Session, m *discordgo.MessageCreate){
+
+	_, payload := SplitPayload(strings.Split(m.Content, " "))
+	if len(payload) < 1{
+
+		skilllist := GetSkillList()
+
+		keys := make([]string, 0, len(skilllist))
+		for k := range skilllist{
+			keys = append(keys, k)
+		}
+
+		listS := strings.Join(keys, "")
+
+		Slist := "\n```Tip - Use the \"~skillinfo <skill>\" command for more information about a given skill \n\n" + listS
+		Slist = Slist + "\n Use \"pick-skill choose <skill>\" to assign an option " + "```\n"
+		s.ChannelMessageSend(m.ChannelID, ":sparkles: You may pick from one of the following classes: " + Slist)
+		return
+	}
+
+	for _, argument := range payload{
+		argument = strings.ToLower(argument)
+	}
+
+	if len(payload) > 0 {
+		skilloption := payload[0]
+		if h.ValidateSkillChoice(skilloption){
+			s.ChannelMessageSend(m.ChannelID, "You have chosen: " + skilloption +"\nConfirm? (Yes/No)\n")
+			h.callback.Watch(h.ConfirmClass, GetUUIDv2(), skilloption, s, m)
+			return
+		} else {
+			//skilllist := GetSkillList()
+			//s.ChannelMessageSend(m.ChannelID, ":sparkles: Invalid Skill Choice! You may pick from one of the following skills: \n```" +
+			//	skilllist +"\n```\n" )
+			return
+		}
+	}
+}
+
+
+func (h *RegistrationHandler) ChooseSkills(s *discordgo.Session, m *discordgo.MessageCreate){
+	_, payload := SplitPayload(strings.Split(m.Content, " "))
+
+	skilllist := GetSkillList()
+
+	keys := make([]string, 0, len(skilllist))
+	for k := range skilllist{
+		keys = append(keys, k)
+	}
+
+	listS := strings.Join(keys, "")
+
+	if len(payload) < 1{
+
+		Slist := "\n```Tip - Use the \"~skillinfo <skill>\" command for more information about a given skill \n\n" + listS
+		Slist = "\n Use \"pick-skill choose <skill>\" to assign an option " + "```\n"
+		s.ChannelMessageSend(m.ChannelID, ":sparkles: You may pick from one of the following classes: " + Slist)
+		return
+	}
+
+	for _, argument := range payload{
+		argument = strings.ToLower(argument)
+	}
+
+	if len(payload) > 0 {
+		skilloption := payload[0]
+		if h.ValidateSkillChoice(skilloption){
+			s.ChannelMessageSend(m.ChannelID, "You have chosen: " + skilloption +"\nConfirm? (Yes/No)\n")
+			h.callback.Watch(h.ConfirmClass, GetUUIDv2(), skilloption, s, m)
+			return
+		} else {
+			s.ChannelMessageSend(m.ChannelID, ":sparkles: Invalid Skill Choice! You may pick from one of the following skills: \n```" +
+				listS +"\n```\n" )
+			return
+		}
+	}
+}
+
+func (h *RegistrationHandler) ValidateSkillChoice(skill string) (valid bool) {
+
+	skill = strings.ToLower(skill)
+
+	switch skill {
+
+	case "acrobatics":
+		return true
+	case "appraise":
+		return true
+	case "bluff":
+		return true
+	case "climb":
+		return true
+	case "craft":
+		return true
+	case "diplomacy":
+		return true
+	case "disable-device":
+		return true
+	case "disguise":
+		return true
+	case "excape-artist":
+		return true
+	case "fly":
+		return true
+	case "handle-animal":
+		return true
+	case "heal":
+		return true
+	case "intimidate":
+		return true
+	case "knowledge-arcana":
+		return true
+	case "knowledge-dungeoneering":
+		return true
+	case "knowledge-engineering":
+		return true
+	case "knowledge-geography":
+		return true
+	case "knowledge-history":
+		return true
+	case "knowledge-locla":
+		return true
+	case "knowledge-nature":
+		return true
+	case "knowledge-nobility":
+		return true
+	case "knowledge-planes":
+		return true
+	case "knowledge-religion":
+		return true
+	case "linguistics":
+		return true
+	case "perception":
+		return true
+	case "perform":
+		return true
+	case "profession":
+		return true
+	case "ride":
+		return true
+	case "sense-motive":
+		return true
+	case "sleight-of-hand":
+		return true
+	case "spellcraft":
+		return true
+	case "stealth":
+		return true
+	case "survival":
+		return true
+	case "swim":
+		return true
+	case "use-magic-device":
+		return true
+	default:
+		return false
+	}
+}
 
 func (h *RegistrationHandler) ConfirmSkills(command string, s *discordgo.Session, m *discordgo.MessageCreate){}
 
