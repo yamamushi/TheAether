@@ -1,6 +1,7 @@
 package main
 
 
+// ItemType struct
 type ItemType struct {
 
 	ID string `storm:"id"` // primary key

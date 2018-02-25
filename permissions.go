@@ -11,35 +11,36 @@ type CommandPermissions struct {
 	groups  []string
 }
 
+// RolePermissions struct
 type RolePermissions struct {
 
-	CREATE_INSTANT_INVITE 		bool
-	KICK_MEMBERS				bool
-	BAN_MEMBERS 				bool
-	ADMINISTRATOR 				bool
-	MANAGE_CHANNELS 			bool
-	MANAGE_GUILD 				bool
-	ADD_REACTIONS				bool
-	VIEW_AUDIT_LOG				bool
-	VIEW_CHANNEL				bool
-	SEND_MESSAGES				bool
-	SEND_TTS_MESSAGES			bool
-	MANAGE_MESSAGES 			bool
-	EMBED_LINKS					bool
-	ATTACH_FILES				bool
-	READ_MESSAGE_HISTORY		bool
-	MENTION_EVERYONE			bool
-	USE_EXTERNAL_EMOJIS			bool
-	CONNECT						bool
-	SPEAK						bool
-	MUTE_MEMBERS				bool
-	DEAFEN_MEMBERS				bool
-	MOVE_MEMBERS				bool
-	USE_VAD						bool
-	CHANGE_NICKNAME				bool
-	MANAGE_NICKNAMES			bool
-	MANAGE_ROLES 				bool
-	MANAGE_WEBHOOKS 			bool
-	MANAGE_EMOJIS 				bool
+	CreateInstantInvite 		bool
+	KickMembers				bool
+	BanMembers 				bool
+	Administrator 				bool
+	ManageChannels 			bool
+	ManageGuild 				bool
+	AddReactions				bool
+	ViewAuditLog				bool
+	ViewChannel				bool
+	SendMessages				bool
+	SendTTSMessages			bool
+	ManageMessages 			bool
+	EmbedLinks					bool
+	AttachFiles				bool
+	ReadMessageHistory		bool
+	MentionEveryone			bool
+	UseExternalEmojis			bool
+	Connect						bool
+	Speak						bool
+	MuteMembers				bool
+	DeafenMEmbers				bool
+	MoveMembers				bool
+	UseVAD						bool
+	ChangeNickname				bool
+	ManageNicknames			bool
+	ManageRoles 				bool
+	ManageWebhooks 			bool
+	ManageEmojis 				bool
 
 }

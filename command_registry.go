@@ -128,7 +128,7 @@ func (h *CommandRegistry) AddGroup(command string, group string) (err error) {
 }
 
 
-// AddGroup function
+// AddRole function
 func (h *CommandRegistry) AddRole(command string, role string) (err error) {
 	role = strings.Title(role)
 
@@ -320,7 +320,7 @@ func (h *CommandRegistry) CheckUserGroups(command string, user User, s *discordg
 	return false
 }
 
-// CheckUserGroups function
+// CheckUserRoles function
 func (h *CommandRegistry) CheckUserRoles(command string, user User, s *discordgo.Session, m *discordgo.MessageCreate) bool {
 
 	roles, err := h.GetRoles(command)

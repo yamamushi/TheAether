@@ -8,6 +8,7 @@ import (
 	"time"
 )
 
+// TravelHandler struct
 type TravelHandler struct {
 
 	conf       *Config
@@ -21,7 +22,7 @@ type TravelHandler struct {
 }
 
 
-// Init TravelHandler
+// Init function
 func (h *TravelHandler) Init() {
 	h.RegisterCommands()
 
@@ -161,7 +162,7 @@ func (h *TravelHandler) ParseCommand(command []string, s *discordgo.Session, m *
 	return
 }
 
-
+// HandleServerTransfer function
 func (h *TravelHandler) HandleServerTransfer(user User, travelfromID string, transerToID string, targetGuildID string, fromroom Room, fromDirection string,
 												s *discordgo.Session, m *discordgo.MessageCreate) {
 
@@ -202,7 +203,7 @@ func (h *TravelHandler) HandleServerTransfer(user User, travelfromID string, tra
 	return
 }
 
-
+// Travel function
 func (h *TravelHandler) Travel(direction string, s *discordgo.Session, m *discordgo.MessageCreate) (err error){
 
 	user, err := h.user.GetUser(m.Author.ID, s, m.ChannelID)
@@ -242,8 +243,7 @@ func (h *TravelHandler) Travel(direction string, s *discordgo.Session, m *discor
 	}
 
 	if toroom == "" {
-		return errors.New("There is nowhere to travel in that direction.")
-
+		return errors.New("There is nowhere to travel in that direction")
 	}
 
 	targetroom, err := h.room.rooms.GetRoomByID(toroom)
@@ -290,7 +290,7 @@ func (h *TravelHandler) Travel(direction string, s *discordgo.Session, m *discor
 	db := h.db.rawdb.From("Users")
 	err = db.Update(&user)
 	if err != nil {
-		return errors.New("Error updating user record into database!")
+		return errors.New("Error updating user record into database")
 	}
 
 	err = h.room.AddUserIDToRoomRecord(user.ID, targetroom.ID, guildID,  s)
@@ -302,6 +302,5 @@ func (h *TravelHandler) Travel(direction string, s *discordgo.Session, m *discor
 	if err != nil {
 		return errors.New("Error removing user record from room: " + err.Error())
 	}
-
 	return nil
 }

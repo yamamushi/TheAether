@@ -84,6 +84,7 @@ func (h *ChannelHandler) ReadCommand(message []string, s *discordgo.Session, m *
 	}
 }
 
+// FlushChannel function
 func (h* ChannelHandler) FlushChannel(payload []string, s *discordgo.Session, m *discordgo.MessageCreate){
 
 	var strcount string

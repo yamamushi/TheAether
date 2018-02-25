@@ -10,6 +10,8 @@ import (
 )
 
 // This handles the discord input interface for registering events and managing them
+
+// EventHandler struct
 type EventHandler struct {
 
 	conf       *Config
@@ -27,14 +29,14 @@ type EventHandler struct {
 
 }
 
-// WatchEvent struct
-type WatchEvent struct {
+// EventCallback struct
+type EventCallback struct {
 	ChannelID string
 	EventID   string
 	Handler   func(string, *discordgo.Session, *discordgo.MessageCreate)
 }
 
-
+// Init function
 func (h *EventHandler) Init() (err error) {
 	fmt.Println("Registering Event Handler Command")
 	h.eventsdb = new(EventsDB)
@@ -50,11 +52,13 @@ func (h *EventHandler) Init() (err error) {
 	return nil
 }
 
+// RegisterCommand command function
 func (h *EventHandler) RegisterCommand() {
 	h.registry.Register("events", "Manage events", "add|remove|list|info|enabled|disable|listenabled")
 	h.registry.AddGroup("events", "builder")
 }
 
+// Read function
 func (h *EventHandler) Read(s *discordgo.Session, m *discordgo.MessageCreate) {
 	cp := h.conf.MainConfig.CP
 
@@ -88,6 +92,7 @@ func (h *EventHandler) Read(s *discordgo.Session, m *discordgo.MessageCreate) {
 	}
 }
 
+// ParseCommand function
 func (h *EventHandler) ParseCommand(input []string, s *discordgo.Session, m *discordgo.MessageCreate) {
 	argument, payload := GetArgumentAndFlags(input)
 
@@ -176,6 +181,7 @@ func (h *EventHandler) ParseCommand(input []string, s *discordgo.Session, m *dis
 	}
 }
 
+// EnableEvent function
 func (h *EventHandler) EnableEvent(eventID, userID string, channelID string, s *discordgo.Session) (err error){
 	user, err := h.user.GetUser(userID, s, channelID)
 	if err != nil {
@@ -190,13 +196,13 @@ func (h *EventHandler) EnableEvent(eventID, userID string, channelID string, s *
 	if user.ID == event.CreatorID || user.CheckRole("builder") {
 		h.LoadEvent(eventID)
 	} else {
-		return errors.New("You do not have permission to enable this event, only the creator or a builder are allowed to.")
+		return errors.New("You do not have permission to enable this event only the creator or a builder are allowed to")
 	}
 	return nil
 
 }
 
-
+// DisableEvent function
 func (h *EventHandler) DisableEvent(eventID string, userID string, s *discordgo.Session) (err error){
 	event, err := h.eventsdb.GetEventByID(eventID)
 	if err != nil {
@@ -211,12 +217,12 @@ func (h *EventHandler) DisableEvent(eventID string, userID string, s *discordgo.
 	if user.ID == event.CreatorID || user.CheckRole("builder") {
 		h.UnWatchEvent(event.ChannelID, event.ID)
 	} else {
-		return errors.New("You do not have permission to disable this event, only the creator or a builder are allowed to.")
+		return errors.New("You do not have permission to disable this event only the creator or a builder are allowed to")
 	}
 	return nil
 }
 
-
+// RemoveEvent function
 func (h *EventHandler) RemoveEvent(eventID string, userID string, s *discordgo.Session, channelID string) (err error){
 	event, err := h.eventsdb.GetEventByID(eventID)
 	if err != nil {
@@ -235,12 +241,12 @@ func (h *EventHandler) RemoveEvent(eventID string, userID string, s *discordgo.S
 		}
 		h.UnWatchEvent(channelID, eventID)
 	} else {
-		return errors.New("You do not have permission to remove this event, only the creator or an admin are allowed to.")
+		return errors.New("You do not have permission to remove this event only the creator or an admin are allowed to")
 	}
 	return nil
 }
 
-
+// ListEvents function
 func (h *EventHandler) ListEvents() (formatted string, err error) {
 	events, err := h.eventsdb.GetAllEvents()
 	if err != nil {
@@ -257,7 +263,7 @@ func (h *EventHandler) ListEvents() (formatted string, err error) {
 }
 
 
-
+// RegisterEvent function
 func (h *EventHandler) RegisterEvent(payload string, s *discordgo.Session, m *discordgo.MessageCreate) (eventID string, err error){
 	payload = strings.TrimPrefix(payload, "~events add ")
 	payload = strings.TrimPrefix(payload, "\n")
@@ -284,7 +290,7 @@ func (h *EventHandler) RegisterEvent(payload string, s *discordgo.Session, m *di
 }
 
 
-
+// LoadEvents function
 func (h *EventHandler) LoadEvents() (err error){
 	events, err := h.eventsdb.GetAllEvents()
 	if err != nil {
@@ -300,7 +306,7 @@ func (h *EventHandler) LoadEvents() (err error){
 	return nil
 }
 
-
+// LoadEvent function
 func (h *EventHandler) LoadEvent(eventID string) (err error){
 	event, err := h.eventsdb.GetEventByID(eventID)
 	if err != nil {
@@ -323,10 +329,8 @@ func (h *EventHandler) LoadEvent(eventID string) (err error){
 
 
 
-// Watch function
-func (h *EventHandler) WatchEvent(Handler func(string, *discordgo.Session, *discordgo.MessageCreate),
-	EventID string, ChannelID string) {
-		
+// WatchEvent function
+func (h *EventHandler) WatchEvent(Handler func(string, *discordgo.Session, *discordgo.MessageCreate), EventID string, ChannelID string) {
 	for e := h.WatchList.Front(); e != nil; e = e.Next() {
 		r := reflect.ValueOf(e.Value)
 		eventID := reflect.Indirect(r).FieldByName("EventID")
@@ -335,11 +339,11 @@ func (h *EventHandler) WatchEvent(Handler func(string, *discordgo.Session, *disc
 			return
 		}
 	}
-	item := WatchEvent{ChannelID: ChannelID, EventID: EventID, Handler: Handler}
+	item := EventCallback{ChannelID: ChannelID, EventID: EventID, Handler: Handler}
 	h.WatchList.PushBack(item)
 }
 
-// UnWatch function
+// UnWatchEvent function
 func (h *EventHandler) UnWatchEvent(ChannelID string, EventID string) {
 	// Clear usermanager element by iterating
 	for e := h.WatchList.Front(); e != nil; e = e.Next() {
@@ -353,7 +357,7 @@ func (h *EventHandler) UnWatchEvent(ChannelID string, EventID string) {
 	}
 }
 
-
+// ListEnabled function
 func (h *EventHandler) ListEnabled(channelID string) (formatted string, err error){
 	formatted = "```\n"
 	for e := h.WatchList.Front(); e != nil; e = e.Next() {
@@ -370,7 +374,7 @@ func (h *EventHandler) ListEnabled(channelID string) (formatted string, err erro
 
 
 
-// Read function
+// ReadEvents function
 func (h *EventHandler) ReadEvents(s *discordgo.Session, m *discordgo.MessageCreate) {
 	for e := h.WatchList.Front(); e != nil; e = e.Next() {
 		r := reflect.ValueOf(e.Value)
@@ -400,7 +404,7 @@ func (h *EventHandler) ReadEvents(s *discordgo.Session, m *discordgo.MessageCrea
 	}
 }
 
-
+// UnfoldReadMessageEvent function
 func (h *EventHandler) UnfoldReadMessageEvent(eventID string, s *discordgo.Session, m *discordgo.MessageCreate) {
 	// Ignore all messages created by the bot itself
 	if m.Author.ID == s.State.User.ID {

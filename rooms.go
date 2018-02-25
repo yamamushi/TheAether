@@ -5,11 +5,13 @@ import (
 	"errors"
 )
 
+// Rooms struct
 type Rooms struct {
 	db          *DBHandler
 	querylocker sync.RWMutex
 }
 
+// Room struct
 type Room struct {
 
 	ID string `storm:"id"` // primary key
@@ -75,7 +77,7 @@ type Room struct {
 }
 
 
-
+// SaveRoomToDB function
 func (h *Rooms) SaveRoomToDB(room Room) (err error) {
 	h.querylocker.Lock()
 	defer h.querylocker.Unlock()
@@ -85,6 +87,7 @@ func (h *Rooms) SaveRoomToDB(room Room) (err error) {
 	return err
 }
 
+// RemoveRoomFromDB function
 func (h *Rooms) RemoveRoomFromDB(room Room) (err error) {
 	h.querylocker.Lock()
 	defer h.querylocker.Unlock()
@@ -94,6 +97,7 @@ func (h *Rooms) RemoveRoomFromDB(room Room) (err error) {
 	return err
 }
 
+// RemoveRoomByID function
 func (h *Rooms) RemoveRoomByID(roomID string) (err error) {
 
 	room, err := h.GetRoomByID(roomID)
@@ -109,6 +113,7 @@ func (h *Rooms) RemoveRoomByID(roomID string) (err error) {
 	return nil
 }
 
+// GetRoomByID function
 func (h *Rooms) GetRoomByID(roomID string) (room Room, err error) {
 
 	rooms, err := h.GetAllRooms()
@@ -125,7 +130,7 @@ func (h *Rooms) GetRoomByID(roomID string) (room Room, err error) {
 	return room, errors.New("No record found")
 }
 
-
+// GetRoomByName function
 func (h *Rooms) GetRoomByName(roomname string, guildID string) (room Room, err error) {
 
 	rooms, err := h.GetAllRooms()
@@ -157,14 +162,13 @@ func (h *Rooms) GetAllRooms() (roomlist []Room, err error) {
 	return roomlist, nil
 }
 
-
+// IsRoomLinkedTo function
 func (h *Rooms) IsRoomLinkedTo(roomID string, checklink string) (linked bool, err error) {
 
 	room, err := h.GetRoomByID(roomID)
 	if err != nil {
 		return false, err
 	}
-
 	if room.NorthID == checklink {
 		return true, nil
 	}
@@ -195,6 +199,5 @@ func (h *Rooms) IsRoomLinkedTo(roomID string, checklink string) (linked bool, er
 	if room.DownID == checklink {
 		return true, nil
 	}
-
 	return false, nil
 }

@@ -6,12 +6,13 @@ import (
 	"errors"
 )
 
-
+// EventsDB struct
 type EventsDB struct {
 	db          *DBHandler
 	querylocker sync.RWMutex
 }
 
+// Event struct
 type Event struct {
 
 	ID			string `json:"id"`
@@ -27,7 +28,7 @@ type Event struct {
 }
 
 
-
+// SaveEventToDB function
 func (h *EventsDB) SaveEventToDB(Event Event) (err error) {
 	h.querylocker.Lock()
 	defer h.querylocker.Unlock()
@@ -37,6 +38,7 @@ func (h *EventsDB) SaveEventToDB(Event Event) (err error) {
 	return err
 }
 
+// RemoveEventFromDB function
 func (h *EventsDB) RemoveEventFromDB(Event Event) (err error) {
 	h.querylocker.Lock()
 	defer h.querylocker.Unlock()
@@ -46,6 +48,7 @@ func (h *EventsDB) RemoveEventFromDB(Event Event) (err error) {
 	return err
 }
 
+// RemoveEventByID function
 func (h *EventsDB) RemoveEventByID(EventID string) (err error) {
 
 	Event, err := h.GetEventByID(EventID)
@@ -61,6 +64,7 @@ func (h *EventsDB) RemoveEventByID(EventID string) (err error) {
 	return nil
 }
 
+// GetEventByID function
 func (h *EventsDB) GetEventByID(EventID string) (Event Event, err error) {
 
 	Events, err := h.GetAllEvents()

@@ -17,6 +17,7 @@ import (
 	"strconv"
 )
 
+// RegistrationHandler function
 type RegistrationHandler struct {
 
 	callback *CallbackHandler
@@ -32,13 +33,14 @@ type RegistrationHandler struct {
 
 }
 
-
+// Init function
 func (h *RegistrationHandler) Init() {
 
 	h.RegisterCommands()
 
 }
 
+// RegisterCommands function
 func (h *RegistrationHandler) RegisterCommands() (err error) {
 
 	h.registry.Register("register", "Register a new account", "")
@@ -267,7 +269,7 @@ func (h *RegistrationHandler) FinishRegistration(s *discordgo.Session, m *discor
 
 
 
-// Attributes
+// RollAttributes function
 func (h *RegistrationHandler) RollAttributes(s *discordgo.Session, m *discordgo.MessageCreate){
 
 	strengthroll := RollDiceAndAdd(6, 3)
@@ -302,6 +304,7 @@ func (h *RegistrationHandler) RollAttributes(s *discordgo.Session, m *discordgo.
 	return
 }
 
+// ConfirmAttributes function
 func (h *RegistrationHandler) ConfirmAttributes(command string, s *discordgo.Session, m *discordgo.MessageCreate) {
 	// In this handler we don't do anything with the command string, instead we grab the response from m.Content
 
@@ -378,6 +381,7 @@ func (h *RegistrationHandler) ConfirmAttributes(command string, s *discordgo.Ses
 
 // Race
 
+// RaceInfo function
 func (h *RegistrationHandler) RaceInfo(s *discordgo.Session, m *discordgo.MessageCreate){
 
 	_, payload := SplitPayload(strings.Split(m.Content, " "))
@@ -386,25 +390,23 @@ func (h *RegistrationHandler) RaceInfo(s *discordgo.Session, m *discordgo.Messag
 		racelist := GetRaceList()
 		s.ChannelMessageSend(m.ChannelID, ":sparkles: You may pick from one of the following races: \n```" + racelist +"\n```\n" )
 		return
-	} else {
-		raceoption := payload[0]
-		if h.ValidateRaceChoice(raceoption){
-			s.ChannelMessageSend(m.ChannelID, ":construction: -Raceinfo goes here-" )
-			return
-		} else {
-			racelist := GetRaceList()
-			s.ChannelMessageSend(m.ChannelID, ":sparkles: Invalid Race Choice! You may pick from one of the following races: \n```" +
-				racelist +"\n```\n" )
-			return
-		}
 	}
+	raceoption := payload[0]
+	if h.ValidateRaceChoice(raceoption){
+		s.ChannelMessageSend(m.ChannelID, ":construction: -Raceinfo goes here-" )
+		return
+	}
+	racelist := GetRaceList()
+	s.ChannelMessageSend(m.ChannelID, ":sparkles: Invalid Race Choice! You may pick from one of the following races: \n```" +
+		racelist +"\n```\n" )
+	return
 }
 
+// PickRace function
 func (h *RegistrationHandler) PickRace(s *discordgo.Session, m *discordgo.MessageCreate){
 
 	_, payload := SplitPayload(strings.Split(m.Content, " "))
 	if len(payload) < 1{
-
 		racelist := "\n```Tip - Use the \"pick-race raceinfo\" command for more information about a given race \n\n" + GetRaceList()
 		racelist = racelist + "\n Use \"pick-race choose <race>\" to assign an option " + "```\n"
 		s.ChannelMessageSend(m.ChannelID, ":sparkles: You may pick from one of the following races: " + racelist)
@@ -421,15 +423,15 @@ func (h *RegistrationHandler) PickRace(s *discordgo.Session, m *discordgo.Messag
 			s.ChannelMessageSend(m.ChannelID, "You have chosen: " + raceoption +"\nConfirm? (Yes/No)\n")
 			h.callback.Watch(h.ConfirmRace, GetUUIDv2(), raceoption, s, m)
 			return
-		} else {
-			racelist := GetRaceList()
-			s.ChannelMessageSend(m.ChannelID, ":sparkles: Invalid Race Choice! You may pick from one of the following races: \n```" +
-				racelist +"\n```\n" )
-			return
 		}
+		racelist := GetRaceList()
+		s.ChannelMessageSend(m.ChannelID, ":sparkles: Invalid Race Choice! You may pick from one of the following races: \n```" +
+			racelist +"\n```\n" )
+		return
 	}
 }
 
+// ValidateRaceChoice function
 func (h *RegistrationHandler) ValidateRaceChoice(race string) (valid bool) {
 
 	race = strings.ToLower(race)
@@ -466,6 +468,7 @@ func (h *RegistrationHandler) ValidateRaceChoice(race string) (valid bool) {
 	}
 }
 
+// ConfirmRace function
 func (h *RegistrationHandler) ConfirmRace(race string, s *discordgo.Session, m *discordgo.MessageCreate){
 
 	// We do this to avoid having duplicate commands overrunning each other
@@ -509,7 +512,7 @@ func (h *RegistrationHandler) ConfirmRace(race string, s *discordgo.Session, m *
 }
 
 
-// Class
+// ClassInfo function
 func (h *RegistrationHandler) ClassInfo(s *discordgo.Session, m *discordgo.MessageCreate){
 
 	_, payload := SplitPayload(strings.Split(m.Content, " "))
@@ -518,20 +521,19 @@ func (h *RegistrationHandler) ClassInfo(s *discordgo.Session, m *discordgo.Messa
 		classlist := GetClassList()
 		s.ChannelMessageSend(m.ChannelID, ":sparkles: You may pick from one of the following races: \n```" + classlist +"\n```\n" )
 		return
-	} else {
-		classoption := payload[0]
-		if h.ValidateRaceChoice(classoption){
-			s.ChannelMessageSend(m.ChannelID, ":construction: -Classinfo goes here-" )
-			return
-		} else {
-			classlist := GetClassList()
-			s.ChannelMessageSend(m.ChannelID, ":sparkles: Invalid Class Choice! You may pick from one of the following classes: \n```" +
-				classlist +"\n```\n" )
-			return
-		}
 	}
+	classoption := payload[0]
+	if h.ValidateRaceChoice(classoption){
+		s.ChannelMessageSend(m.ChannelID, ":construction: -Classinfo goes here-" )
+		return
+	}
+	classlist := GetClassList()
+	s.ChannelMessageSend(m.ChannelID, ":sparkles: Invalid Class Choice! You may pick from one of the following classes: \n```" +
+		classlist +"\n```\n" )
+	return
 }
 
+// PickClass function
 func (h *RegistrationHandler) PickClass(s *discordgo.Session, m *discordgo.MessageCreate){
 
 	_, payload := SplitPayload(strings.Split(m.Content, " "))
@@ -553,15 +555,15 @@ func (h *RegistrationHandler) PickClass(s *discordgo.Session, m *discordgo.Messa
 			s.ChannelMessageSend(m.ChannelID, "You have chosen: " + classoption +"\nConfirm? (Yes/No)\n")
 			h.callback.Watch(h.ConfirmClass, GetUUIDv2(), classoption, s, m)
 			return
-		} else {
-			classlist := GetClassList()
-			s.ChannelMessageSend(m.ChannelID, ":sparkles: Invalid Class Choice! You may pick from one of the following classes: \n```" +
-				classlist +"\n```\n" )
-			return
 		}
+		classlist := GetClassList()
+		s.ChannelMessageSend(m.ChannelID, ":sparkles: Invalid Class Choice! You may pick from one of the following classes: \n```" +
+			classlist +"\n```\n" )
+		return
 	}
 }
 
+// ChooseClass function
 func (h *RegistrationHandler) ChooseClass(s *discordgo.Session, m *discordgo.MessageCreate){
 
 	_, payload := SplitPayload(strings.Split(m.Content, " "))
@@ -583,22 +585,20 @@ func (h *RegistrationHandler) ChooseClass(s *discordgo.Session, m *discordgo.Mes
 			s.ChannelMessageSend(m.ChannelID, "You have chosen: " + classoption +"\nConfirm? (Yes/No)\n")
 			h.callback.Watch(h.ConfirmClass, GetUUIDv2(), classoption, s, m)
 			return
-		} else {
-			classlist := GetClassList()
-			s.ChannelMessageSend(m.ChannelID, ":sparkles: Invalid Class Choice! You may pick from one of the following classes: \n```" +
-				classlist +"\n```\n" )
-			return
 		}
+		classlist := GetClassList()
+		s.ChannelMessageSend(m.ChannelID, ":sparkles: Invalid Class Choice! You may pick from one of the following classes: \n```" +
+			classlist +"\n```\n" )
+		return
 	}
-
 }
 
+// ValidateClassChoice function
 func (h *RegistrationHandler) ValidateClassChoice(class string) (valid bool) {
 
 	class = strings.ToLower(class)
 
 	switch class {
-
 	case "barbarian":
 		return true
 	case "bard":
@@ -621,7 +621,6 @@ func (h *RegistrationHandler) ValidateClassChoice(class string) (valid bool) {
 		return true
 	case "plaguedoctor":
 		return true
-
 	case "planeswalker":
 		return true
 	case "ranger":
@@ -643,6 +642,7 @@ func (h *RegistrationHandler) ValidateClassChoice(class string) (valid bool) {
 	}
 }
 
+// ConfirmClass function
 func (h *RegistrationHandler) ConfirmClass(class string, s *discordgo.Session, m *discordgo.MessageCreate){
 
 	// We do this to avoid having duplicate commands overrunning each other
@@ -686,31 +686,36 @@ func (h *RegistrationHandler) ConfirmClass(class string, s *discordgo.Session, m
 }
 
 
-// Skills
+// ChooseSkills function
 func (h *RegistrationHandler) ChooseSkills(s *discordgo.Session, m *discordgo.MessageCreate){}
 
+// ConfirmSkills function
 func (h *RegistrationHandler) ConfirmSkills(command string, s *discordgo.Session, m *discordgo.MessageCreate){}
 
 
-// Feats
+// ChooseFeats function
 func (h *RegistrationHandler) ChooseFeats(s *discordgo.Session, m *discordgo.MessageCreate){}
 
+// ConfirmFeats function
 func (h *RegistrationHandler) ConfirmFeats(command string, s *discordgo.Session, m *discordgo.MessageCreate){}
 
 
-// Starter Gear
+// ChooseStarterGear function
 func (h *RegistrationHandler) ChooseStarterGear(s *discordgo.Session, m *discordgo.MessageCreate){}
 
+// ConfirmStarterGear function
 func (h *RegistrationHandler) ConfirmStarterGear(command string, s *discordgo.Session, m *discordgo.MessageCreate){}
 
 
-// Misc
+// ChangeMisc function
 func (h *RegistrationHandler) ChangeMisc(s *discordgo.Session, m *discordgo.MessageCreate){}
 
+// ConfirmMisc function
 func (h *RegistrationHandler) ConfirmMisc(command string, s *discordgo.Session, m *discordgo.MessageCreate){}
 
 
-// Bio
+// ChangeBio function
 func (h *RegistrationHandler) ChangeBio(s *discordgo.Session, m *discordgo.MessageCreate){}
 
+// ConfirmBio function
 func (h *RegistrationHandler) ConfirmBio(command string, s *discordgo.Session, m *discordgo.MessageCreate){}

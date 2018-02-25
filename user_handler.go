@@ -176,23 +176,20 @@ func (h *UserHandler) Read(s *discordgo.Session, m *discordgo.MessageCreate) {
 				attributes := h.GetFormattedAttributes(m.Author.ID)
 				s.ChannelMessageSend(m.ChannelID, ":large_blue_diamond: Attributes: \n" + attributes)
 				return
-			} else {
-
-				mentionlist := m.Mentions
-				if len(mentionlist) < 1 {
-					s.ChannelMessageSend(m.ChannelID, ":exclamation: Invalid user mention!")
-					return
-				}
-
-				attributes := h.GetFormattedAttributes(mentionlist[0].ID)
-				s.ChannelMessageSend(m.ChannelID, ":large_blue_diamond: Attributes: \n" + attributes)
+			}
+			mentionlist := m.Mentions
+			if len(mentionlist) < 1 {
+				s.ChannelMessageSend(m.ChannelID, ":exclamation: Invalid user mention!")
 				return
 			}
-		} else {
-			attributes := h.GetFormattedAttributes(m.Author.ID)
+
+			attributes := h.GetFormattedAttributes(mentionlist[0].ID)
 			s.ChannelMessageSend(m.ChannelID, ":large_blue_diamond: Attributes: \n" + attributes)
 			return
 		}
+		attributes := h.GetFormattedAttributes(m.Author.ID)
+		s.ChannelMessageSend(m.ChannelID, ":large_blue_diamond: Attributes: \n" + attributes)
+		return
 	}
 	if message[0] == cp+"stats"{
 		/*
@@ -207,55 +204,47 @@ func (h *UserHandler) Read(s *discordgo.Session, m *discordgo.MessageCreate) {
 				stats := h.GetFormattedStats(m.Author.ID)
 				s.ChannelMessageSend(m.ChannelID, ":large_blue_diamond: Stats: \n" + stats)
 				return
-			} else {
-				mentionlist := m.Mentions
-				if len(mentionlist) < 1 {
-					s.ChannelMessageSend(m.ChannelID, ":exclamation: Invalid user mention!")
-					return
-				}
-				stats := h.GetFormattedStats(mentionlist[0].ID)
-				s.ChannelMessageSend(m.ChannelID, ":large_blue_diamond: Stats: \n" + stats)
+			}
+			mentionlist := m.Mentions
+			if len(mentionlist) < 1 {
+				s.ChannelMessageSend(m.ChannelID, ":exclamation: Invalid user mention!")
 				return
 			}
-		} else {
-			stats := h.GetFormattedStats(m.Author.ID)
+			stats := h.GetFormattedStats(mentionlist[0].ID)
 			s.ChannelMessageSend(m.ChannelID, ":large_blue_diamond: Stats: \n" + stats)
 			return
 		}
+		stats := h.GetFormattedStats(m.Author.ID)
+		s.ChannelMessageSend(m.ChannelID, ":large_blue_diamond: Stats: \n" + stats)
+		return
 	}
-
 	return
 }
 
-
+// AddItem function
 func (h *UserHandler) AddItem(itemid string, userid string,  s *discordgo.Session, channelID string) (err error) {
-
 	// Make sure usermanager is in the database before we pull it out!
 	user, err := h.GetUser(userid, s, channelID)
 	if err != nil {
 		return err
 	}
-
 	user.ItemsMap = append(user.ItemsMap, itemid)
 	return nil
 }
 
-
+// RemoveItem function
 func (h *UserHandler) RemoveItem(itemid string, userid string,  s *discordgo.Session, channelID string) (err error) {
-
 	// Make sure usermanager is in the database before we pull it out!
 	user, err := h.GetUser(userid, s, channelID)
 	if err != nil {
 		return err
 	}
-
 	user.ItemsMap = RemoveStringFromSlice(user.ItemsMap, itemid)
 	return nil
 }
 
-
+// RepairUser function
 func (h *UserHandler) RepairUser(userid string, s *discordgo.Session, channelID string, guildID string) (err error) {
-
 	// Make sure usermanager is in the database before we pull it out!
 	user, err := h.GetUser(userid, s, channelID)
 	if err != nil {
@@ -284,11 +273,10 @@ func (h *UserHandler) RepairUser(userid string, s *discordgo.Session, channelID 
 		fmt.Println("Error updating usermanager record into database!")
 		return
 	}
-
 	return nil
 }
 
-
+// DebugUser function
 func (h *UserHandler) DebugUser(userid string, s *discordgo.Session, channelID string) (err error) {
 
 	user, err := h.GetUser(userid, s, channelID)
@@ -300,7 +288,6 @@ func (h *UserHandler) DebugUser(userid string, s *discordgo.Session, channelID s
 	if err != nil{
 		return err
 	}
-
 
 	userRecord := "```\n"
 	userRecord = userRecord + "Username: " + discordUser.Username + "\n"
@@ -360,7 +347,7 @@ func (h *UserHandler) CheckUser(ID string, s *discordgo.Session, channelID strin
 	}
 }
 
-
+// GetRoles function
 func (h *UserHandler) GetRoles(ID string, s *discordgo.Session, channelID string) (roles []string, err error) {
 
 	h.CheckUser(ID, s, channelID)
@@ -368,7 +355,6 @@ func (h *UserHandler) GetRoles(ID string, s *discordgo.Session, channelID string
 	if err != nil {
 		return roles, err
 	}
-
 	return user.RoleIDs, nil
 }
 
@@ -444,7 +430,7 @@ func (h *UserHandler) FormatRoles(roles []string) (formatted string) {
 	return formatted
 }
 
-
+// GetFormattedAttributes function
 func (h *UserHandler) GetFormattedAttributes(userID string) (formatted string) {
 
 	user, err := h.usermanager.GetUserByID(userID)
@@ -464,6 +450,7 @@ func (h *UserHandler) GetFormattedAttributes(userID string) (formatted string) {
 	return attributes
 }
 
+// GetFormattedStats function
 func (h *UserHandler) GetFormattedStats(userID string) (formatted string) {
 
 	_, err := h.usermanager.GetUserByID(userID)
@@ -472,6 +459,5 @@ func (h *UserHandler) GetFormattedStats(userID string) (formatted string) {
 	}
 
 	stats := "not implemented yet!"
-
 	return stats
 }

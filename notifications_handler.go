@@ -476,7 +476,7 @@ func (h *NotificationsHandler) DisableChannelNotification(notificationid string,
 
 // Channel Specific Functions
 
-// GetAllChannelNotifications function
+// GetAllChannelNotificationsFor function
 func (h *NotificationsHandler) GetAllChannelNotificationsFor(channelname string, page string, s *discordgo.Session, m *discordgo.MessageCreate) {
 
 	channelname = strings.TrimPrefix(channelname, "<#")
@@ -714,7 +714,7 @@ func (h *NotificationsHandler) ViewNotificationMessageID(notificationid string, 
 }
 
 
-// ViewNotificationMessageID function
+// GetAllLinkedChannels function
 func (h *NotificationsHandler) GetAllLinkedChannels(notificationid string, s *discordgo.Session, m *discordgo.MessageCreate) {
 
 	notificationsdb := Notifications{db: h.db}

@@ -307,7 +307,6 @@ func (h *PermissionsHandler) Read(s *discordgo.Session, m *discordgo.MessageCrea
 		}
 
 		if command[1] == "syncserverroles" {
-
 			// Get the authors usermanager object from the database
 			user, err := h.db.GetUser(m.Author.ID)
 			if err != nil {
@@ -323,17 +322,15 @@ func (h *PermissionsHandler) Read(s *discordgo.Session, m *discordgo.MessageCrea
 			if len(m.Mentions) < 1 {
 				s.ChannelMessageSend(m.ChannelID, "syncserverroles expects a usermanager mention!")
 				return
-			} else {
-				err = h.SyncServerRoles(m.Mentions[0].ID, m.ChannelID, s)
-				if err != nil {
-					s.ChannelMessageSend(m.ChannelID, "syncserverroles error: " + err.Error())
-					return
-				}
+			}
+			err = h.SyncServerRoles(m.Mentions[0].ID, m.ChannelID, s)
+			if err != nil {
+				s.ChannelMessageSend(m.ChannelID, "syncserverroles error: " + err.Error())
+				return
 			}
 			return
 		}
 		if command[1] == "syncrolesdb" {
-
 			// Get the authors usermanager object from the database
 			user, err := h.db.GetUser(m.Author.ID)
 			if err != nil {
@@ -349,13 +346,14 @@ func (h *PermissionsHandler) Read(s *discordgo.Session, m *discordgo.MessageCrea
 			if len(m.Mentions) < 1 {
 				s.ChannelMessageSend(m.ChannelID, "syncrolesdb expects a usermanager mention!")
 				return
-			} else {
-				err = h.SyncRolesDB(m.Mentions[0].ID, guildID, m.ChannelID, s)
-				if err != nil {
-					s.ChannelMessageSend(m.ChannelID, "syncserverroles error: " + err.Error())
-					return
-				}
 			}
+			err = h.SyncRolesDB(m.Mentions[0].ID, guildID, m.ChannelID, s)
+			if err != nil {
+				s.ChannelMessageSend(m.ChannelID, "syncserverroles error: " + err.Error())
+				return
+			}
+			s.ChannelMessageSend(m.ChannelID, "rolesDB synchronized")
+			return
 			return
 		}
 
@@ -376,21 +374,17 @@ func (h *PermissionsHandler) Read(s *discordgo.Session, m *discordgo.MessageCrea
 			if len(command) < 3 {
 				s.ChannelMessageSend(m.ChannelID, "translaterole expects an argument: roleID")
 				return
-			} else {
-				rolename, err := h.TranslateRoleID(command[2], guildID, s)
-				if err != nil {
-					s.ChannelMessageSend(m.ChannelID, "syncserverroles error: " + err.Error())
-					return
-				}
-				output := "RoleID Translation: ```\nRoleID: "+ command[2] + "\nRole Name: " + rolename + "\n```\n"
-
-				s.ChannelMessageSend(m.ChannelID, output )
+			}
+			rolename, err := h.TranslateRoleID(command[2], guildID, s)
+			if err != nil {
+				s.ChannelMessageSend(m.ChannelID, "syncserverroles error: " + err.Error())
 				return
 			}
+			output := "RoleID Translation: ```\nRoleID: "+ command[2] + "\nRole Name: " + rolename + "\n```\n"
+			s.ChannelMessageSend(m.ChannelID, output )
 			return
 		}
 	}
-
 	return
 }
 
@@ -863,88 +857,88 @@ func (h *PermissionsHandler) CreatePermissionOverwrite(roleid string, permtype s
 func (h *PermissionsHandler) CreatePermissionInt(roleperms RolePermissions ) (perm int){
 
 	perm = 0
-	if roleperms.CREATE_INSTANT_INVITE {
+	if roleperms.CreateInstantInvite {
 		perm = perm | 0x00000001
 	}
-	if roleperms.KICK_MEMBERS {
+	if roleperms.KickMembers {
 		perm = perm | 0x00000002
 	}
-	if roleperms.BAN_MEMBERS {
+	if roleperms.BanMembers {
 		perm = perm | 0x00000004
 	}
-	if roleperms.ADMINISTRATOR {
+	if roleperms.Administrator {
 		perm = perm | 0x00000008
 	}
-	if roleperms.MANAGE_CHANNELS {
+	if roleperms.ManageChannels {
 		perm = perm | 0x00000010
 	}
-	if roleperms.MANAGE_GUILD {
+	if roleperms.ManageGuild {
 		perm = perm | 0x00000020
 	}
-	if roleperms.ADD_REACTIONS {
+	if roleperms.AddReactions {
 		perm = perm | 0x00000040
 	}
-	if roleperms.VIEW_AUDIT_LOG {
+	if roleperms.ViewAuditLog {
 		perm = perm | 0x00000080
 	}
-	if roleperms.VIEW_CHANNEL {
+	if roleperms.ViewChannel {
 		perm = perm | 0x00000400
 	}
-	if roleperms.SEND_MESSAGES {
+	if roleperms.SendMessages {
 		perm = perm | 0x00000800
 	}
-	if roleperms.SEND_TTS_MESSAGES {
+	if roleperms.SendTTSMessages {
 		perm = perm | 0x00001000
 	}
-	if roleperms.MANAGE_MESSAGES {
+	if roleperms.ManageMessages {
 		perm = perm | 0x00002000
 	}
-	if roleperms.EMBED_LINKS {
+	if roleperms.EmbedLinks {
 		perm = perm | 0x00004000
 	}
-	if roleperms.ATTACH_FILES {
+	if roleperms.AttachFiles {
 		perm = perm | 0x00008000
 	}
-	if roleperms.READ_MESSAGE_HISTORY {
+	if roleperms.ReadMessageHistory {
 		perm = perm | 0x00010000
 	}
-	if roleperms.MENTION_EVERYONE {
+	if roleperms.MentionEveryone {
 		perm = perm | 0x00020000
 	}
-	if roleperms.USE_EXTERNAL_EMOJIS {
+	if roleperms.UseExternalEmojis {
 		perm = perm | 0x00040000
 	}
-	if roleperms.CONNECT {
+	if roleperms.Connect {
 		perm = perm | 0x00100000
 	}
-	if roleperms.SPEAK {
+	if roleperms.Speak {
 		perm = perm | 0x00200000
 	}
-	if roleperms.MUTE_MEMBERS {
+	if roleperms.MuteMembers {
 		perm = perm | 0x00400000
 	}
-	if roleperms.DEAFEN_MEMBERS {
+	if roleperms.DeafenMEmbers {
 		perm = perm | 0x00800000
 	}
-	if roleperms.MOVE_MEMBERS {
+	if roleperms.MoveMembers {
 		perm = perm | 0x01000000
 	}
-	if roleperms.USE_VAD {
+	if roleperms.UseVAD {
 		perm = perm | 0x02000000
 	}
-	if roleperms.CHANGE_NICKNAME {
+	if roleperms.ChangeNickname {
 		perm = perm | 0x04000000
 	}
-	if roleperms.MANAGE_NICKNAMES {
+	if roleperms.ManageNicknames {
 		perm = perm | 0x08000000
 	}
-	if roleperms.MANAGE_ROLES {
+	if roleperms.ManageRoles {
 		perm = perm | 0x10000000
 	}
-	if roleperms.MANAGE_WEBHOOKS {
+	if roleperms.ManageWebhooks {
 		perm = perm | 0x20000000
 	}
-	if roleperms.MANAGE_EMOJIS {
+	if roleperms.ManageEmojis {
 		perm = perm | 0x40000000
 	}
 
@@ -963,7 +957,7 @@ func (h *PermissionsHandler) CreateRole(name string, guildID string, hoist bool,
 	}
 
 	if len(roles) >= 90 {
-		return createdrole, errors.New("Maximum supported roles reached!")
+		return createdrole, errors.New("Maximum supported roles reached")
 	}
 
 	for _, role := range roles {
@@ -1222,9 +1216,8 @@ func (h *PermissionsHandler) GuildReorderRoles(guildID string, s *discordgo.Sess
 }
 
 
-
-// Default roles permissions handling
 // ApplyModeratorRolePerms function
+// Default roles permissions handling
 func (h *PermissionsHandler) ApplyModeratorRolePerms(roomID string, guildID string, moderatorID string, s *discordgo.Session) (err error) {
 
 	if moderatorID == "" {
@@ -1235,8 +1228,8 @@ func (h *PermissionsHandler) ApplyModeratorRolePerms(roomID string, guildID stri
 	}
 
 	denymoderator := h.CreatePermissionInt(RolePermissions{})
-	allowmoderator := h.CreatePermissionInt(RolePermissions{VIEW_CHANNEL: true, SEND_MESSAGES: true,
-		READ_MESSAGE_HISTORY: true, MANAGE_MESSAGES: true, KICK_MEMBERS: true, BAN_MEMBERS: true})
+	allowmoderator := h.CreatePermissionInt(RolePermissions{ViewChannel: true, SendMessages: true,
+		ReadMessageHistory: true, ManageMessages: true, KickMembers: true, BanMembers: true})
 	err = s.ChannelPermissionSet( roomID, moderatorID, "role", allowmoderator, denymoderator)
 	if err != nil {
 		return err
@@ -1255,8 +1248,8 @@ func (h *PermissionsHandler) ApplyAdminRolePerms(roomID string, guildID string, 
 	}
 
 	denyadmin := h.CreatePermissionInt(RolePermissions{})
-	allowadmin := h.CreatePermissionInt(RolePermissions{VIEW_CHANNEL: true, SEND_MESSAGES: true,
-		READ_MESSAGE_HISTORY: true, MANAGE_MESSAGES: true, KICK_MEMBERS: true, BAN_MEMBERS: true})
+	allowadmin := h.CreatePermissionInt(RolePermissions{ViewChannel: true, SendMessages: true,
+		ReadMessageHistory: true, ManageMessages: true, KickMembers: true, BanMembers: true})
 	err = s.ChannelPermissionSet( roomID, adminID, "role", allowadmin, denyadmin)
 	if err != nil {
 		return err
@@ -1275,7 +1268,7 @@ func (h *PermissionsHandler) ApplyBuilderRolePerms(roomID string, guildID string
 	}
 
 	denybuilder := h.CreatePermissionInt(RolePermissions{})
-	allowbuilder := h.CreatePermissionInt(RolePermissions{VIEW_CHANNEL: true, SEND_MESSAGES: true})
+	allowbuilder := h.CreatePermissionInt(RolePermissions{ViewChannel: true, SendMessages: true})
 	err = s.ChannelPermissionSet( roomID, builderID, "role", allowbuilder, denybuilder)
 	if err != nil {
 		return err
@@ -1295,7 +1288,7 @@ func (h *PermissionsHandler) ApplyEveryoneRolePerms(roomID string, guildID strin
 		}
 	}
 
-	denyeveryoneperms := h.CreatePermissionInt(RolePermissions{VIEW_CHANNEL: true})
+	denyeveryoneperms := h.CreatePermissionInt(RolePermissions{ViewChannel: true})
 	alloweveryoneperms := h.CreatePermissionInt(RolePermissions{})
 	err = s.ChannelPermissionSet( roomID, everyoneID, "role", alloweveryoneperms, denyeveryoneperms)
 	if err != nil {
@@ -1316,11 +1309,11 @@ func (h *PermissionsHandler) ApplyTravelRolePerms(roomID string, guildID string,
 	denyperms := 0
 	allowperms := 0
 	if room.GuildTransferInvite != "" {
-		denyperms = h.CreatePermissionInt(RolePermissions{SEND_MESSAGES:true, READ_MESSAGE_HISTORY:true})
-		allowperms = h.CreatePermissionInt(RolePermissions{VIEW_CHANNEL:true, READ_MESSAGE_HISTORY:true, USE_EXTERNAL_EMOJIS:true})
+		denyperms = h.CreatePermissionInt(RolePermissions{SendMessages:true, ReadMessageHistory:true})
+		allowperms = h.CreatePermissionInt(RolePermissions{ViewChannel:true, ReadMessageHistory:true, UseExternalEmojis:true})
 	} else {
 		denyperms = h.CreatePermissionInt(RolePermissions{})
-		allowperms = h.CreatePermissionInt(RolePermissions{VIEW_CHANNEL:true, SEND_MESSAGES: true})
+		allowperms = h.CreatePermissionInt(RolePermissions{ViewChannel:true, SendMessages: true})
 	}
 	err = s.ChannelPermissionSet( room.ID, room.TravelRoleID, "role", allowperms, denyperms)
 	if err != nil{

@@ -13,12 +13,13 @@ type Notifications struct {
 	querylocker sync.RWMutex
 }
 
-// RSSFeed struct
+// Notification struct
 type Notification struct {
 	ID          string `storm:"id"`
 	Message     string
 }
 
+// ChannelNotification struct
 type ChannelNotification struct {
 
 	ID          	string `storm:"id"`
@@ -150,6 +151,7 @@ func (h *Notifications) RemoveChannelNotificationFromDB(channelnotification Chan
 	return err
 }
 
+// UpdateChannelNotification function
 func (h *Notifications) UpdateChannelNotification(channelnotification ChannelNotification) (err error) {
 	h.querylocker.Lock()
 	defer h.querylocker.Unlock()
@@ -166,7 +168,7 @@ func (h *Notifications) UpdateChannelNotification(channelnotification ChannelNot
 
 
 
-// RemoveNotificationFromDBByID function
+// RemoveChannelNotificationFromDBByID function
 func (h *Notifications) RemoveChannelNotificationFromDBByID(channelnotificationid string, channelid string) (err error) {
 
 	channelnotification, err := h.GetChannelNotificationFromDB(channelnotificationid, channelid)
@@ -183,7 +185,7 @@ func (h *Notifications) RemoveChannelNotificationFromDBByID(channelnotificationi
 }
 
 
-// GetNotificationFromDB function
+// GetChannelNotificationFromDB function
 func (h *Notifications) GetChannelNotificationFromDB(channelnotificationid string, channelid string) (channelnotification ChannelNotification, err error) {
 
 	channelnotifications, err := h.GetAllChannelNotifications()
@@ -217,7 +219,7 @@ func (h *Notifications) GetAllChannelNotifications() (channelnotificationlist []
 	return channelnotificationlist, nil
 }
 
-
+// FlushChannelNotifications function
 func (h *Notifications) FlushChannelNotifications(channelid string) (err error){
 
 	channelnotifications, err := h.GetAllChannelNotifications()
@@ -235,7 +237,7 @@ func (h *Notifications) FlushChannelNotifications(channelid string) (err error){
 	return nil
 }
 
-
+// CreateChannelNotification function
 func (h *Notifications) CreateChannelNotification(id string, notificationid string, channelid string, timeout string) (err error){
 
 	_, err = h.GetNotificationFromDB(notificationid)
@@ -272,7 +274,7 @@ func (h *Notifications) CreateChannelNotification(id string, notificationid stri
 	return nil
 }
 
-
+// GetNotificationLinkedChannels function
 func (h *Notifications) GetNotificationLinkedChannels(messageid string, s *discordgo.Session) (channels string, err error){
 
 	notification, err := h.GetNotificationFromDB(messageid)
@@ -305,7 +307,6 @@ func (h *Notifications) GetNotificationLinkedChannels(messageid string, s *disco
 	}
 	if (found) {
 		return channelsinuse, nil
-	} else {
-		return channels, nil
 	}
+	return channels, nil
 }

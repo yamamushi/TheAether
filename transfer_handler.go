@@ -9,7 +9,7 @@ import (
 	"errors"
 )
 
-
+// TransferHandler struct
 type TransferHandler struct {
 
 	db          *DBHandler
@@ -26,7 +26,7 @@ type TransferHandler struct {
 }
 
 
-
+// Init function
 func (h *TransferHandler) Init() {
 
 	h.transferdb = new(Transfers)
@@ -46,7 +46,7 @@ func (h *TransferHandler) RegisterCommands() (err error) {
 }
 
 
-
+// Read function
 func (h *TransferHandler) Read(s *discordgo.Session, m *discordgo.MessageCreate){
 
 	cp := h.conf.MainConfig.CP
@@ -81,7 +81,7 @@ func (h *TransferHandler) Read(s *discordgo.Session, m *discordgo.MessageCreate)
 	}
 }
 
-
+// AddTransfer function
 func  (h *TransferHandler) AddTransfer(userID string, fromChannelID string, toChannelID string, targetGuildID string, fromDirection string) (err error){
 
 	uuid, err := GetUUID()
@@ -101,10 +101,9 @@ func  (h *TransferHandler) AddTransfer(userID string, fromChannelID string, toCh
 	//fmt.Println(transfer.ID + " " + transfer.UserID + " " + transfer.FromChannelID + " " + transfer.TargetChannelID + " " +
 	//				transfer.TargetGuildID + " " + transfer.FromDirection)
 	return h.transferdb.SaveTransferToDB(*transfer)
-
 }
 
-
+// ParseCommand function
 func (h *TransferHandler) ParseCommand(input []string, s *discordgo.Session, m *discordgo.MessageCreate) {
 
 	_, payload := SplitPayload(input)
@@ -130,7 +129,7 @@ func (h *TransferHandler) ParseCommand(input []string, s *discordgo.Session, m *
 
 }
 
-
+// HandleTransfers function
 func (h *TransferHandler) HandleTransfers() {
 	// Get all transfers and parse them every 3 minutes
 	for true {
@@ -177,7 +176,7 @@ func (h *TransferHandler) HandleTransfers() {
 	}
 }
 
-
+// IsUserInGuild function
 func (h *TransferHandler) IsUserInGuild(userID string, guildID string) (ispresent bool) {
 
 	_, err := h.dg.GuildMember(guildID, userID)
@@ -188,7 +187,7 @@ func (h *TransferHandler) IsUserInGuild(userID string, guildID string) (ispresen
 	return true
 }
 
-
+// TransferToChannel function
 func (h *TransferHandler) TransferToChannel(userID string, targetGuildID string, fromChannelID string,
 	targetChannelID string, s *discordgo.Session) (err error){
 
@@ -219,7 +218,7 @@ func (h *TransferHandler) TransferToChannel(userID string, targetGuildID string,
 	}
 
 	if len(toroom.AdditionalRoleIDs) < 1 {
-		return errors.New("Target room not configured properly!")
+		return errors.New("Target room not configured properly")
 	}
 
 	m = new(discordgo.MessageCreate)
@@ -252,13 +251,12 @@ func (h *TransferHandler) TransferToChannel(userID string, targetGuildID string,
 	db := h.db.rawdb.From("Users")
 	err = db.Update(&user)
 	if err != nil {
-		return errors.New("Error updating usermanager record into database!")
+		return errors.New("Error updating usermanager record into database")
 	}
 
 	err = h.perms.SyncServerRoles(user.ID, user.RoomID, s)
 	if err != nil {
 		return err
 	}
-
 	return nil
 }

@@ -8,6 +8,7 @@ import (
 	"strings"
 )
 
+// GuildsManager struct
 type GuildsManager struct {
 
 	db          *DBHandler
@@ -15,7 +16,7 @@ type GuildsManager struct {
 
 }
 
-
+// GuildRecord struct
 type GuildRecord struct {
 
 	ID 			string `storm:"id"` // primary key
@@ -38,7 +39,7 @@ type GuildRecord struct {
 }
 
 
-
+// SaveGuildToDB function
 func (h *GuildsManager) SaveGuildToDB(guild GuildRecord) (err error) {
 	h.querylocker.Lock()
 	defer h.querylocker.Unlock()
@@ -48,6 +49,7 @@ func (h *GuildsManager) SaveGuildToDB(guild GuildRecord) (err error) {
 	return err
 }
 
+// RemoveGuildFromDB function
 func (h *GuildsManager) RemoveGuildFromDB(guild GuildRecord) (err error) {
 	h.querylocker.Lock()
 	defer h.querylocker.Unlock()
@@ -57,6 +59,7 @@ func (h *GuildsManager) RemoveGuildFromDB(guild GuildRecord) (err error) {
 	return err
 }
 
+// RemoveGuildByID function
 func (h *GuildsManager) RemoveGuildByID(guildID string) (err error) {
 
 	guild, err := h.GetGuildByID(guildID)
@@ -72,6 +75,7 @@ func (h *GuildsManager) RemoveGuildByID(guildID string) (err error) {
 	return nil
 }
 
+// GetGuildByID function
 func (h *GuildsManager) GetGuildByID(guildID string) (guild GuildRecord, err error) {
 
 	guilds, err := h.GetAllGuilds()
@@ -88,6 +92,7 @@ func (h *GuildsManager) GetGuildByID(guildID string) (guild GuildRecord, err err
 	return guild, errors.New("No guild record found")
 }
 
+// GetGuildByName function
 func (h *GuildsManager) GetGuildByName(guildname string, guildID string) (guild GuildRecord, err error) {
 
 	guilds, err := h.GetAllGuilds()
@@ -105,7 +110,7 @@ func (h *GuildsManager) GetGuildByName(guildname string, guildID string) (guild 
 }
 
 
-// GetAllRooms function
+// GetAllGuilds function
 func (h *GuildsManager) GetAllGuilds() (guildlist []GuildRecord, err error) {
 	h.querylocker.Lock()
 	defer h.querylocker.Unlock()
@@ -115,12 +120,11 @@ func (h *GuildsManager) GetAllGuilds() (guildlist []GuildRecord, err error) {
 	if err != nil {
 		return guildlist, err
 	}
-
 	return guildlist, nil
 }
 
 
-
+// AddRoleToGuild function
 func (h *GuildsManager) AddRoleToGuild(guildID string, roleID string) (err error) {
 
 	guild, err := h.GetGuildByID(guildID)
@@ -144,6 +148,7 @@ func (h *GuildsManager) AddRoleToGuild(guildID string, roleID string) (err error
 	return nil
 }
 
+// RemoveRoleFromGuild function
 func (h *GuildsManager) RemoveRoleFromGuild(guildID string, roleID string) (err error) {
 	guild, err := h.GetGuildByID(guildID)
 	if err != nil {
@@ -161,7 +166,7 @@ func (h *GuildsManager) RemoveRoleFromGuild(guildID string, roleID string) (err 
 }
 
 
-
+// IsGuildRegistered function
 func (h *GuildsManager) IsGuildRegistered(guildID string) (valid bool) {
 
 	guildlist, err := h.GetAllGuilds()
@@ -177,6 +182,7 @@ func (h *GuildsManager) IsGuildRegistered(guildID string) (valid bool) {
 	return false
 }
 
+// IsGuildIDValid function
 func (h *GuildsManager) IsGuildIDValid(guildID string, s *discordgo.Session) (valid bool) {
 
 	_, err := s.Guild(guildID)
@@ -187,7 +193,7 @@ func (h *GuildsManager) IsGuildIDValid(guildID string, s *discordgo.Session) (va
 }
 
 
-
+// AddUserToGuild function
 func (h *GuildsManager) AddUserToGuild(guildID string, userID string) (err error) {
 
 	guild, err := h.GetGuildByID(guildID)
@@ -211,6 +217,7 @@ func (h *GuildsManager) AddUserToGuild(guildID string, userID string) (err error
 	return nil
 }
 
+// RemoveUserFromGuild function
 func (h *GuildsManager) RemoveUserFromGuild(guildID string, userID string) (err error) {
 	guild, err := h.GetGuildByID(guildID)
 	if err != nil {
@@ -228,7 +235,7 @@ func (h *GuildsManager) RemoveUserFromGuild(guildID string, userID string) (err 
 }
 
 
-
+// SetAdminID function
 func (h *GuildsManager) SetAdminID(guildID string, adminID string) (err error) {
 
 	guild, err := h.GetGuildByID(guildID)
@@ -244,6 +251,7 @@ func (h *GuildsManager) SetAdminID(guildID string, adminID string) (err error) {
 	return nil
 }
 
+// SetModeratorID function
 func (h *GuildsManager) SetModeratorID(guildID string, moderatorID string) (err error) {
 
 	guild, err := h.GetGuildByID(guildID)
@@ -259,6 +267,7 @@ func (h *GuildsManager) SetModeratorID(guildID string, moderatorID string) (err 
 	return nil
 }
 
+// SetBuilderID function
 func (h *GuildsManager) SetBuilderID(guildID string, builderID string) (err error) {
 
 	guild, err := h.GetGuildByID(guildID)
@@ -274,6 +283,7 @@ func (h *GuildsManager) SetBuilderID(guildID string, builderID string) (err erro
 	return nil
 }
 
+// SetEveryoneID function
 func (h *GuildsManager) SetEveryoneID(guildID string, everyoneID string) (err error) {
 
 	guild, err := h.GetGuildByID(guildID)
@@ -291,7 +301,7 @@ func (h *GuildsManager) SetEveryoneID(guildID string, everyoneID string) (err er
 
 
 
-
+// GetGuildAdminID function
 func (h *GuildsManager) GetGuildAdminID(guildID string) (adminID string, err error) {
 	guild, err := h.GetGuildByID(guildID)
 	if err != nil {
@@ -300,7 +310,7 @@ func (h *GuildsManager) GetGuildAdminID(guildID string) (adminID string, err err
 	return guild.AdminID, nil
 }
 
-
+// GetGuildModeratorID function
 func (h *GuildsManager) GetGuildModeratorID(guildID string) (moderatorID string, err error) {
 	guild, err := h.GetGuildByID(guildID)
 	if err != nil {
@@ -309,6 +319,7 @@ func (h *GuildsManager) GetGuildModeratorID(guildID string) (moderatorID string,
 	return guild.ModeratorID, nil
 }
 
+// GetGuildBuilderID function
 func (h *GuildsManager) GetGuildBuilderID(guildID string) (builderID string, err error) {
 	guild, err := h.GetGuildByID(guildID)
 	if err != nil {
@@ -317,6 +328,7 @@ func (h *GuildsManager) GetGuildBuilderID(guildID string) (builderID string, err
 	return guild.BuilderID, nil
 }
 
+// GetGuildEveryoneID function
 func (h *GuildsManager) GetGuildEveryoneID(guildID string) (builderID string, err error) {
 	guild, err := h.GetGuildByID(guildID)
 	if err != nil {
@@ -325,7 +337,7 @@ func (h *GuildsManager) GetGuildEveryoneID(guildID string) (builderID string, er
 	return guild.EveryoneID, nil
 }
 
-
+// GetGuildDiscordAdminID function
 func (h *GuildsManager) GetGuildDiscordAdminID(guildID string, s *discordgo.Session) (adminID string, err error) {
 	adminID, err = getRoleIDByName(s, guildID, "Admin")
 	if err != nil {
@@ -334,6 +346,7 @@ func (h *GuildsManager) GetGuildDiscordAdminID(guildID string, s *discordgo.Sess
 	return adminID, nil
 }
 
+// GetGuildDiscordModeratorID function
 func (h *GuildsManager) GetGuildDiscordModeratorID(guildID string, s *discordgo.Session) (moderatorID string, err error) {
 	moderatorID, err = getRoleIDByName(s, guildID, "Moderator")
 	if err != nil {
@@ -342,6 +355,7 @@ func (h *GuildsManager) GetGuildDiscordModeratorID(guildID string, s *discordgo.
 	return moderatorID, nil
 }
 
+// GetGuildDiscordBuilderID function
 func (h *GuildsManager) GetGuildDiscordBuilderID(guildID string, s *discordgo.Session) (builderID string, err error) {
 	builderID, err = getRoleIDByName(s, guildID, "Builder")
 	if err != nil {
@@ -350,6 +364,7 @@ func (h *GuildsManager) GetGuildDiscordBuilderID(guildID string, s *discordgo.Se
 	return builderID, nil
 }
 
+// GetGuildDiscordEveryoneID function
 func (h *GuildsManager) GetGuildDiscordEveryoneID(guildID string, s *discordgo.Session) (everyoneid string, err error) {
 	roles, err := s.GuildRoles(guildID)
 	if err != nil {
@@ -366,7 +381,7 @@ func (h *GuildsManager) GetGuildDiscordEveryoneID(guildID string, s *discordgo.S
 }
 
 
-
+// RegisterGuild function
 func (h *GuildsManager) RegisterGuild(guildID string, s *discordgo.Session) (err error) {
 
 	guildRecord, err := h.GetGuildByID(guildID)
@@ -434,14 +449,10 @@ func (h *GuildsManager) RegisterGuild(guildID string, s *discordgo.Session) (err
 					return err
 				}
 			}
-
 			return nil
-
-		} else {
-			return err
 		}
-	} else {
-		return nil
+		return err
 	}
+	return nil
 }
 

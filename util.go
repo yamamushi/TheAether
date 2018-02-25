@@ -103,6 +103,7 @@ func RemoveFromString(s []string, i int) []string {
 	return s[:len(s)-1]
 }
 
+// SliceToString function
 func SliceToString(s []string, seperator string)(formatted string){
 	for _, element := range s {
 		formatted = formatted + element + seperator
@@ -296,7 +297,7 @@ func truncateString(str string, num int) string {
 	return bnoden
 }
 
-
+// GetGuildID function
 func getGuildID(s *discordgo.Session, channelID string) (guildID string, err error) {
 
 	channel, err := s.Channel(channelID)
@@ -307,6 +308,7 @@ func getGuildID(s *discordgo.Session, channelID string) (guildID string, err err
 	return channel.GuildID, nil
 }
 
+// getGuildEveryoneRoleID function
 func getGuildEveryoneRoleID(s *discordgo.Session, guildID string) (everyoneid string, err error) {
 
 	roles, err := s.GuildRoles(guildID)
@@ -324,7 +326,7 @@ func getGuildEveryoneRoleID(s *discordgo.Session, guildID string) (everyoneid st
 
 }
 
-
+// getGuildChannelIDByName function
 func getGuildChannelIDByName(s *discordgo.Session, guildID string, name string) (channelid string, err error) {
 
 	channels, err := s.GuildChannels(guildID)
@@ -341,7 +343,7 @@ func getGuildChannelIDByName(s *discordgo.Session, guildID string, name string) 
 	return "", errors.New("Channel ID Not Found: " + name)
 }
 
-
+// getRoleIDByName function
 func getRoleIDByName(s *discordgo.Session, guildID string, name string) (roleid string, err error) {
 
 	name = strings.Title(name)
@@ -359,6 +361,7 @@ func getRoleIDByName(s *discordgo.Session, guildID string, name string) (roleid 
 	return "", errors.New("Role ID Not Found: " + name)
 }
 
+// getRoleNameByID function
 func getRoleNameByID(roleID string, guildID string, s *discordgo.Session) (rolename string, err error){
 
 	roles, err := s.GuildRoles(guildID)
@@ -376,7 +379,7 @@ func getRoleNameByID(roleID string, guildID string, s *discordgo.Session) (rolen
 	return "", errors.New("Role "+ roleID +" not found in guild " + guildID)
 }
 
-
+// getGuildOwnerID function
 func getGuildOwnerID(s *discordgo.Session, channelID string) (ownerID string, err error) {
 
 	guildID, err := getGuildID(s, channelID)
@@ -393,15 +396,15 @@ func getGuildOwnerID(s *discordgo.Session, channelID string) (ownerID string, er
 
 }
 
-
+// FlushMessages function
 func FlushMessages(s *discordgo.Session, channelID string, count int) (err error){
 
 	if count <= 0 {
-		return errors.New(":rotating_light: Invalid message count supplied!")
+		return errors.New(":rotating_light: Invalid message count supplied")
 	}
 
 	if count > 100 {
-		return errors.New(":rotating_light: Count must be less than or equal to 100!")
+		return errors.New(":rotating_light: Count must be less than or equal to 100")
 
 	}
 
@@ -433,7 +436,7 @@ func FlushMessages(s *discordgo.Session, channelID string, count int) (err error
 	return nil
 }
 
-
+// RollDiceString function
 func RollDiceString(faces int, count int) (rolls []string){
 
 	// Always 1 or higher!
@@ -455,6 +458,7 @@ func RollDiceString(faces int, count int) (rolls []string){
 	return rolls
 }
 
+// RollDice function
 func RollDice(faces int, count int) (rolls []int){
 
 	// Always 1 or higher!
@@ -476,6 +480,7 @@ func RollDice(faces int, count int) (rolls []int){
 	return rolls
 }
 
+// RollDiceAndAdd function
 func RollDiceAndAdd(faces int, count int) (total int){
 	// Always 1 or higher!
 	if faces == 0 {
@@ -496,7 +501,7 @@ func RollDiceAndAdd(faces int, count int) (total int){
 	return total
 }
 
-
+// IsJSON function
 func IsJSON(str string) bool {
 	var js json.RawMessage
 	return json.Unmarshal([]byte(str), &js) == nil

@@ -1,6 +1,7 @@
 package main
 
 
+// GetRaceList function
 func GetRaceList() (list string){
 
 	list = "-Catfolk\n" +

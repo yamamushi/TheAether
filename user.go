@@ -6,11 +6,12 @@ import (
 	"errors"
 )
 
-
+// UserManager struct
 type UserManager struct {
 	db          *DBHandler
 	querylocker sync.RWMutex
 }
+
 // User struct
 type User struct {
 	ID 						string `storm:"id"` // primary key
@@ -139,7 +140,7 @@ type User struct {
 
 
 
-
+// SaveUserToDB function
 func (h *UserManager) SaveUserToDB(user User) (err error) {
 	h.querylocker.Lock()
 	defer h.querylocker.Unlock()
@@ -149,6 +150,7 @@ func (h *UserManager) SaveUserToDB(user User) (err error) {
 	return err
 }
 
+// RemoveUserFromDB function
 func (h *UserManager) RemoveUserFromDB(user User) (err error) {
 	h.querylocker.Lock()
 	defer h.querylocker.Unlock()
@@ -158,6 +160,7 @@ func (h *UserManager) RemoveUserFromDB(user User) (err error) {
 	return err
 }
 
+// RemoveUserByID function
 func (h *UserManager) RemoveUserByID(userID string) (err error) {
 
 	room, err := h.GetUserByID(userID)
@@ -173,6 +176,7 @@ func (h *UserManager) RemoveUserByID(userID string) (err error) {
 	return nil
 }
 
+// GetUserByID function
 func (h *UserManager) GetUserByID(userID string) (user User, err error) {
 
 	users, err := h.GetAllUsers()
@@ -189,6 +193,7 @@ func (h *UserManager) GetUserByID(userID string) (user User, err error) {
 	return user, errors.New("No record found")
 }
 
+// GetUserByName function
 func (h *UserManager) GetUserByName(username string, guildID string) (user User, err error) {
 
 	users, err := h.GetAllUsers()
@@ -205,6 +210,7 @@ func (h *UserManager) GetUserByName(username string, guildID string) (user User,
 	return user, errors.New("No record found")
 }
 
+// GetAllUsers function
 func (h *UserManager) GetAllUsers() (userlist []User, err error) {
 	h.querylocker.Lock()
 	defer h.querylocker.Unlock()
@@ -340,6 +346,7 @@ func (u *User) CheckRole(role string) bool {
 	}
 }
 
+// CheckCurrentRoleList function
 func (u *User) CheckCurrentRoleList(roleID string) bool {
 	for _, currentRole := range u.RoleIDs {
 		if currentRole == roleID{
@@ -349,20 +356,18 @@ func (u *User) CheckCurrentRoleList(roleID string) bool {
 	return false
 }
 
+// JoinRoleID function
 func (u *User) JoinRoleID(roleID string) {
 	if u.CheckCurrentRoleList(roleID){
 		return
 	}
-
 	u.RoleIDs = append(u.RoleIDs, roleID)
-
 }
 
-
+// LeaveRoleID function
 func (u *User) LeaveRoleID(roleID string) {
 	if !u.CheckCurrentRoleList(roleID){
 		return
 	}
-
 	u.RoleIDs = RemoveStringFromSlice(u.RoleIDs, roleID)
 }

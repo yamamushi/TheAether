@@ -8,7 +8,7 @@ import (
 )
 
 // PrimaryHandler struct
-type MainHandler struct {
+type PrimaryHandler struct {
 	db          *DBHandler
 	conf        *Config
 	dg          *discordgo.Session
@@ -24,7 +24,7 @@ type MainHandler struct {
 }
 
 // Init function
-func (h *MainHandler) Init() (err error) {
+func (h *PrimaryHandler) Init() (err error) {
 	// DO NOT add anything above this line!!
 	// Add our main handler -
 	h.dg.AddHandler(h.Read)
@@ -68,7 +68,7 @@ func (h *MainHandler) Init() (err error) {
 
 // PostInit function
 // Just some quick things to run after our websocket has been setup and opened
-func (h *MainHandler) PostInit(dg *discordgo.Session) error {
+func (h *PrimaryHandler) PostInit(dg *discordgo.Session) error {
 	fmt.Println("Running Post-Init")
 
 	// Update our default playing status
@@ -89,7 +89,7 @@ func (h *MainHandler) PostInit(dg *discordgo.Session) error {
 // message is created on any channel that the autenticated bot has access to.
 
 // Read function
-func (h *MainHandler) Read(s *discordgo.Session, m *discordgo.MessageCreate) {
+func (h *PrimaryHandler) Read(s *discordgo.Session, m *discordgo.MessageCreate) {
 	// very important to set this first!
 	cp := h.conf.MainConfig.CP
 
@@ -149,7 +149,7 @@ func (h *MainHandler) Read(s *discordgo.Session, m *discordgo.MessageCreate) {
 }
 
 // RegisterCommands function
-func (h *MainHandler) RegisterCommands() (err error) {
+func (h *PrimaryHandler) RegisterCommands() (err error) {
 
 	h.registry.Register("ping", "Ping command", "ping")
 	h.registry.Register("pong", "Pong command", "pong")

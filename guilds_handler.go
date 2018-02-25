@@ -10,7 +10,7 @@ import (
 	"sync"
 )
 
-
+// GuildsHandler struct
 type GuildsHandler struct {
 
 	room 			*RoomsHandler
@@ -131,10 +131,9 @@ func (h *GuildsHandler) ParseCommand(command []string, s *discordgo.Session, m *
 					h.syncinprogress = false
 					s.ChannelMessageSend(m.ChannelID, "Cluster synced, took: " + delta.String())
 					return
-				} else {
-					s.ChannelMessageSend(m.ChannelID, "invalid input, command canceled.")
-					return
 				}
+				s.ChannelMessageSend(m.ChannelID, "invalid input, command canceled.")
+				return
 			}
 			if command[2] == "guild"{
 				// Syncs room roles on the specified guild
@@ -171,14 +170,12 @@ func (h *GuildsHandler) ParseCommand(command []string, s *discordgo.Session, m *
 						h.syncinprogress = false
 						s.ChannelMessageSend(m.ChannelID, "Guild synced: " + command[3] + " Took:" + delta.String())
 						return
-					} else {
-						s.ChannelMessageSend(m.ChannelID, "Error: Supplied guild ID is not registered in the cluster.")
-						return
 					}
-				} else {
-					s.ChannelMessageSend(m.ChannelID, "invalid input, command canceled.")
+					s.ChannelMessageSend(m.ChannelID, "Error: Supplied guild ID is not registered in the cluster.")
 					return
 				}
+				s.ChannelMessageSend(m.ChannelID, "invalid input, command canceled.")
+				return
 			}
 			s.ChannelMessageSend(m.ChannelID, "invalid argument specified, see command usage for help")
 			return
@@ -194,21 +191,19 @@ func (h *GuildsHandler) ParseCommand(command []string, s *discordgo.Session, m *
 			}
 			s.ChannelMessageSend(m.ChannelID, ":satellite: Guild Information: " + info )
 			return
-		} else {
-			if h.guildmanager.IsGuildRegistered(command[2]){
-				// display guild info for supplied argument
-				info, err := h.GuildInfo(command[2])
-				if err != nil {
-					s.ChannelMessageSend(m.ChannelID, "Could not retrieve guild information: " + err.Error())
-					return
-				}
-				s.ChannelMessageSend(m.ChannelID, ":satellite: Guild Information: " + info)
-				return
-			} else {
-				s.ChannelMessageSend(m.ChannelID, "Error: Supplied guild ID is not registered in the cluster.")
+		}
+		if h.guildmanager.IsGuildRegistered(command[2]){
+			// display guild info for supplied argument
+			info, err := h.GuildInfo(command[2])
+			if err != nil {
+				s.ChannelMessageSend(m.ChannelID, "Could not retrieve guild information: " + err.Error())
 				return
 			}
+			s.ChannelMessageSend(m.ChannelID, ":satellite: Guild Information: " + info)
+			return
 		}
+		s.ChannelMessageSend(m.ChannelID, "Error: Supplied guild ID is not registered in the cluster.")
+		return
 	}
 	if command[1] == "cluster" {
 		info, err := h.ClusterInfo()
@@ -223,11 +218,10 @@ func (h *GuildsHandler) ParseCommand(command []string, s *discordgo.Session, m *
 
 
 
-
+// SyncCluster function
 // This will sync the entire cluster, roles for every room and permissions for all of them
 // This is a very intensive task so it's important that it not be run all the time
 // There are timers throughout it to try and alleviate some of the strain on the api
-// SyncCluster function
 func (h *GuildsHandler) SyncCluster(s *discordgo.Session) (err error){
 	h.clustersynclocker.Lock() // Don't let multiple cluster syncs happen at the same time!
 	defer h.clustersynclocker.Unlock()
@@ -247,10 +241,10 @@ func (h *GuildsHandler) SyncCluster(s *discordgo.Session) (err error){
 	return nil
 }
 
+// SyncGuild function
 // This will resync a specific guild overwriting any settings in the DB for it
 // It will also fix roles for users in that guild
 // It by itself will take a long time to finish
-// SyncGuild function
 func (h *GuildsHandler) SyncGuild(guildID string, s *discordgo.Session) (err error){
 	h.guildsynclocker.Lock()	// One guild at a time!
 	defer h.guildsynclocker.Unlock()

@@ -1,7 +1,7 @@
 package main
 
 
-
+// GetClassList function
 func GetClassList() (list string){
 
 	list = "-Bard\n" +

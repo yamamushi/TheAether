@@ -41,7 +41,7 @@ func init() {
 
 func main() {
 
-	fmt.Println("\n\n|| Starting Aetheral ||\n")
+	fmt.Println("\n\n|| Starting Aetheral ||\n ")
 	log.SetOutput(ioutil.Discard)
 
 	// Setup our tmp directory
@@ -183,7 +183,7 @@ func main() {
 
 
 	// Startup setup for channels and roles
-	fmt.Println("\n|| Running Startup Setup ||\n")
+	fmt.Println("\n|| Running Startup Setup ||\n ")
 	setup := SetupProcess{db: &dbhandler, conf: &conf, user: &userhandler, rooms: &roomshandler, guilds: &guildsmanager}
 	err = setup.Init(dg, conf.MainConfig.LobbyChannelID)
 	if err != nil {
@@ -192,7 +192,7 @@ func main() {
 	}
 
 	// Setup our Events Handler now that first rooms are operational
-	fmt.Println("\n|| Standing Up Events Handler ||\n")
+	fmt.Println("\n|| Standing Up Events Handler ||\n ")
 	eventshandler := EventHandler{conf: &conf, registry: commandhandler.registry, callback: &callbackhandler, db: &dbhandler,
 	user: &userhandler, dg: dg, logger: &logger}
 	err = eventshandler.Init()
@@ -205,16 +205,16 @@ func main() {
 
 
 	// Now we create and initialize our main handler
-	fmt.Println("\n|| Initializing Main Handler ||\n")
-	handler := MainHandler{db: &dbhandler, conf: &conf, dg: dg, callback: &callbackhandler, perm: &permissionshandler,
+	fmt.Println("\n|| Initializing Main Handler ||\n ")
+	primaryhandler := PrimaryHandler{db: &dbhandler, conf: &conf, dg: dg, callback: &callbackhandler, perm: &permissionshandler,
 		command: &commandhandler, logchan: logchannel, user: &userhandler, channel: &channelhandler, rooms: &roomshandler,
 		travel: &travelhandler}
-	err = handler.Init()
+	err = primaryhandler.Init()
 	if err != nil {
 		fmt.Println("error in mainHandler.init", err)
 		return
 	}
-	fmt.Println("\n|| Main Handler Initialized ||\n")
+	fmt.Println("\n|| Main Handler Initialized ||\n ")
 
 
 	// Setup Profiler if enabled in config

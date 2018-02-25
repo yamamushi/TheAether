@@ -1,4 +1,6 @@
 
+[![The Aether Central Hub](https://img.shields.io/badge/Discord%20Gophers-%23discordgo-blue.svg)](https://discord.me/theaethergame)
+
 Table of Contents
 =================
 
