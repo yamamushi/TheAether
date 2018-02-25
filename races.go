@@ -1,6 +1,5 @@
 package main
 
-
 func GetRaceList() (m map[string]string) {
 	m = map[string]string{
 		"-Catfolk\n": "-Catfolk are a race of natural explorers who rarely tire of trailblazing, but such trailblazing is not limited merely to the search for new horizons in distant lands. " +

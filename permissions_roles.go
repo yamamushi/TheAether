@@ -52,12 +52,12 @@ func WriterRole(u *User) {
 	SetBit(&u.Perms, 55) // Writer
 }
 
-// StreamerRole function
+// ScripterRole function
 func ScripterRole(u *User) {
 	SetBit(&u.Perms, 54) // Scripter
 }
 
-// RecruiterRole function
+// ArchitectRole function
 func ArchitectRole(u *User) {
 	SetBit(&u.Perms, 53) // Architect
 }
@@ -74,7 +74,7 @@ func ClearRoles(u *User) {
 	ClearBit(&u.Perms, 10) // Player
 }
 
-// CitizenRole function
+// PlayerRole function
 func PlayerRole(u *User) {
 	SetBit(&u.Perms, 10) // Player
 }

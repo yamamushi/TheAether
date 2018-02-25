@@ -1,10 +1,10 @@
 package main
 
 import (
-	"sync"
-	"time"
 	"errors"
 	"github.com/bwmarrin/discordgo"
+	"sync"
+	"time"
 )
 
 // Notifications struct
@@ -13,22 +13,20 @@ type Notifications struct {
 	querylocker sync.RWMutex
 }
 
-// RSSFeed struct
+// Notification struct
 type Notification struct {
-	ID          string `storm:"id"`
-	Message     string
+	ID      string `storm:"id"`
+	Message string
 }
 
+// ChannelNotification struct
 type ChannelNotification struct {
-
-	ID          	string `storm:"id"`
-	Notification	string	// The ID of our notification message
-	ChannelID   	string `storm:"index"` // Limit our notifications per channel
-	LastRun    		time.Time
-	Timeout         string    `storm:"index"`
-
+	ID           string `storm:"id"`
+	Notification string // The ID of our notification message
+	ChannelID    string `storm:"index"` // Limit our notifications per channel
+	LastRun      time.Time
+	Timeout      string `storm:"index"`
 }
-
 
 // AddNotificationToDB function
 func (h *Notifications) AddNotificationToDB(notification Notification) (err error) {
@@ -39,7 +37,6 @@ func (h *Notifications) AddNotificationToDB(notification Notification) (err erro
 	err = db.Save(&notification)
 	return err
 }
-
 
 // RemoveNotificationFromDB function
 func (h *Notifications) RemoveNotificationFromDB(notification Notification) (err error) {
@@ -75,14 +72,14 @@ func (h *Notifications) RemoveNotificationFromDBByID(messageid string, s *discor
 				return err
 			}
 
-			if channelsinuse != ""{
+			if channelsinuse != "" {
 				channelsinuse = channelsinuse + ", " + mention
 			} else {
 				channelsinuse = mention
 			}
 		}
 	}
-	if (found) {
+	if found {
 		return errors.New("Could not remove message from db, it is currently in use by the following channel(s):\n" + channelsinuse)
 	}
 
@@ -98,19 +95,18 @@ func (h *Notifications) RemoveNotificationFromDBByID(messageid string, s *discor
 func (h *Notifications) GetNotificationFromDB(messageid string) (notification Notification, err error) {
 
 	notifications, err := h.GetAllNotifications()
-	if err != nil{
+	if err != nil {
 		return notification, err
 	}
 
 	for _, i := range notifications {
-		if i.ID == messageid{
+		if i.ID == messageid {
 			return i, nil
 		}
 	}
 
 	return notification, errors.New("No record found")
 }
-
 
 // GetAllNotifications function
 func (h *Notifications) GetAllNotifications() (notificationlist []Notification, err error) {
@@ -125,10 +121,6 @@ func (h *Notifications) GetAllNotifications() (notificationlist []Notification, 
 
 	return notificationlist, nil
 }
-
-
-
-
 
 // AddChannelNotificationToDB function
 func (h *Notifications) AddChannelNotificationToDB(channelnotification ChannelNotification) (err error) {
@@ -150,6 +142,7 @@ func (h *Notifications) RemoveChannelNotificationFromDB(channelnotification Chan
 	return err
 }
 
+// UpdateChannelNotification function
 func (h *Notifications) UpdateChannelNotification(channelnotification ChannelNotification) (err error) {
 	h.querylocker.Lock()
 	defer h.querylocker.Unlock()
@@ -164,9 +157,7 @@ func (h *Notifications) UpdateChannelNotification(channelnotification ChannelNot
 	return nil
 }
 
-
-
-// RemoveNotificationFromDBByID function
+// RemoveChannelNotificationFromDBByID function
 func (h *Notifications) RemoveChannelNotificationFromDBByID(channelnotificationid string, channelid string) (err error) {
 
 	channelnotification, err := h.GetChannelNotificationFromDB(channelnotificationid, channelid)
@@ -182,17 +173,16 @@ func (h *Notifications) RemoveChannelNotificationFromDBByID(channelnotificationi
 	return nil
 }
 
-
-// GetNotificationFromDB function
+// GetChannelNotificationFromDB function
 func (h *Notifications) GetChannelNotificationFromDB(channelnotificationid string, channelid string) (channelnotification ChannelNotification, err error) {
 
 	channelnotifications, err := h.GetAllChannelNotifications()
-	if err != nil{
+	if err != nil {
 		return channelnotification, err
 	}
 
 	for _, i := range channelnotifications {
-		if i.ID == channelnotificationid{
+		if i.ID == channelnotificationid {
 			if i.ChannelID == channelid {
 				return i, nil
 			}
@@ -201,7 +191,6 @@ func (h *Notifications) GetChannelNotificationFromDB(channelnotificationid strin
 
 	return channelnotification, errors.New("Channel notification " + channelnotificationid + " does not exist for this channel!")
 }
-
 
 // GetAllChannelNotifications function
 func (h *Notifications) GetAllChannelNotifications() (channelnotificationlist []ChannelNotification, err error) {
@@ -217,8 +206,8 @@ func (h *Notifications) GetAllChannelNotifications() (channelnotificationlist []
 	return channelnotificationlist, nil
 }
 
-
-func (h *Notifications) FlushChannelNotifications(channelid string) (err error){
+// FlushChannelNotifications function
+func (h *Notifications) FlushChannelNotifications(channelid string) (err error) {
 
 	channelnotifications, err := h.GetAllChannelNotifications()
 	if err != nil {
@@ -235,8 +224,8 @@ func (h *Notifications) FlushChannelNotifications(channelid string) (err error){
 	return nil
 }
 
-
-func (h *Notifications) CreateChannelNotification(id string, notificationid string, channelid string, timeout string) (err error){
+// CreateChannelNotification function
+func (h *Notifications) CreateChannelNotification(id string, notificationid string, channelid string, timeout string) (err error) {
 
 	_, err = h.GetNotificationFromDB(notificationid)
 	if err != nil {
@@ -244,7 +233,7 @@ func (h *Notifications) CreateChannelNotification(id string, notificationid stri
 	}
 
 	channelnotifications, err := h.GetAllChannelNotifications()
-	if err != nil{
+	if err != nil {
 		return err
 	}
 
@@ -266,14 +255,14 @@ func (h *Notifications) CreateChannelNotification(id string, notificationid stri
 	channelnotification := ChannelNotification{ID: id, Notification: notificationid, ChannelID: channelid, LastRun: time.Now(), Timeout: timeout}
 
 	err = h.AddChannelNotificationToDB(channelnotification)
-	if err != nil{
+	if err != nil {
 		return err
 	}
 	return nil
 }
 
-
-func (h *Notifications) GetNotificationLinkedChannels(messageid string, s *discordgo.Session) (channels string, err error){
+// GetNotificationLinkedChannels function
+func (h *Notifications) GetNotificationLinkedChannels(messageid string, s *discordgo.Session) (channels string, err error) {
 
 	notification, err := h.GetNotificationFromDB(messageid)
 	if err != nil {
@@ -296,16 +285,15 @@ func (h *Notifications) GetNotificationLinkedChannels(messageid string, s *disco
 				return channels, err
 			}
 
-			if channelsinuse != ""{
+			if channelsinuse != "" {
 				channelsinuse = channelsinuse + ", " + mention
 			} else {
 				channelsinuse = mention
 			}
 		}
 	}
-	if (found) {
+	if found {
 		return channelsinuse, nil
-	} else {
-		return channels, nil
 	}
+	return channels, nil
 }

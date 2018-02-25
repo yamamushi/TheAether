@@ -1,21 +1,18 @@
 package main
 
 import (
-
 	"github.com/bwmarrin/discordgo"
 	"strings"
 )
 
+// WelcomeHandler struct
 type WelcomeHandler struct {
-
-	conf 	*Config
-	user 	*UserHandler
-	db 		*DBHandler
-
+	conf *Config
+	user *UserHandler
+	db   *DBHandler
 }
 
-
-
+// Read function
 func (h *WelcomeHandler) Read(s *discordgo.Session, m *discordgo.MessageCreate) {
 
 	cp := h.conf.MainConfig.CP
@@ -38,7 +35,7 @@ func (h *WelcomeHandler) Read(s *discordgo.Session, m *discordgo.MessageCreate) 
 
 }
 
-
+// ReadNewMember function
 func (h *WelcomeHandler) ReadNewMember(s *discordgo.Session, m *discordgo.GuildMemberAdd) {
 
 	// We do not want to send a welcome message to anyone except on first join in the central (main) guild

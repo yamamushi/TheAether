@@ -1,145 +1,139 @@
 package main
 
 import (
-	"time"
-	"sync"
 	"errors"
+	"sync"
+	"time"
 )
 
-
+// UserManager struct
 type UserManager struct {
 	db          *DBHandler
 	querylocker sync.RWMutex
 }
+
 // User struct
 type User struct {
-	ID 						string `storm:"id"` // primary key
+	ID string `storm:"id"` // primary key
 
-	Perms 					[]uint64 // Internal Permissions - NOT Discord Roles
-	RoleIDs					[]string
+	Perms   []uint64 // Internal Permissions - NOT Discord Roles
+	RoleIDs []string
 
 	// Profile stuff
-	Name					string
-	SkinTone				string
-	Race					string
-	Class					string
-	SecondaryClass			string
-	Gender					string
-	HairColor				string
-	HairStyle				string
-	Height					string
+	Name           string
+	SkinTone       string
+	Race           string
+	Class          string
+	SecondaryClass string
+	Gender         string
+	HairColor      string
+	HairStyle      string
+	Height         string
 
-	Stamina					int64
-	Mana 					int64
-	Sanity					int64
-	Focus 					int64
+	Stamina int64
+	Mana    int64
+	Sanity  int64
+	Focus   int64
 
-	QuestFlags				[]string
-	Statuses 				[]string
+	QuestFlags []string
+	Statuses   []string
 
 	// Body Parts Can Have Individual States
-	REye					string
-	LEye 					string
-	Mouth 					string
-	RHand					string
-	LHand					string
-	RArm					string
-	LArm 					string
-	Head 					string
-	Torso 					string
-	RLeg					string
-	RFoot					string
-	LLeg					string
-	LFoot					string
+	REye  string
+	LEye  string
+	Mouth string
+	RHand string
+	LHand string
+	RArm  string
+	LArm  string
+	Head  string
+	Torso string
+	RLeg  string
+	RFoot string
+	LLeg  string
+	LFoot string
 
-	Email 					string
+	Email string
 
-
-	Registered				string
-	RegistrationStatus		string
-	RegisteredDate			time.Time
-
+	Registered         string
+	RegistrationStatus string
+	RegisteredDate     time.Time
 
 	// Related to tracking taveling
-	GuildID					string `storm:"index"` // GuildID of the users current guild
-	RoomID    				string `storm:"index"` // ChannelID of the users current room
+	GuildID string `storm:"index"` // GuildID of the users current guild
+	RoomID  string `storm:"index"` // ChannelID of the users current room
 
+	ItemsMap []string // An ID pointing to the item in the database
 
-	ItemsMap				[]string	// An ID pointing to the item in the database
+	Strength     int
+	Dexterity    int
+	Constitution int
+	Intelligence int
+	Wisdom       int
+	Charisma     int
 
-	Strength				int
-	Dexterity				int
-	Constitution			int
-	Intelligence			int
-	Wisdom					int
-	Charisma				int
+	InitiativeMod float64
 
-	InitiativeMod			float64
+	HitPoints        int64
+	ExperiencePoints int64
 
-	HitPoints				int64
-	ExperiencePoints		int64
+	Acrobatics             int64
+	Appraise               int64
+	Bluff                  int64
+	Climb                  int64
+	CraftOneType           int64
+	CraftOne               int64
+	CraftTwoType           int64
+	CraftTwo               int64
+	CraftThreeType         int64
+	CraftThree             int64
+	Diplomacy              int64
+	DisableDevice          int64
+	Disguise               int64
+	EscapeArtist           int64
+	Fly                    int64
+	HandleAnimal           int64
+	Heal                   int64
+	Intimidate             int64
+	KnowledgeArcana        int64
+	KnowledgeDungeoneering int64
+	KnowledgeEngineering   int64
+	KnowledgeGeography     int64
+	KnowledgeHistory       int64
+	KnowledgeLocal         int64
+	KnowledgeNature        int64
+	KnowledgeNobility      int64
+	KnowledgePlains        int64
+	KnowledgeReligion      int64
+	Linguistics            int64
+	Perception             int64
+	PerformOneType         string
+	PerformOne             int64
+	PerformTwoType         string
+	PerformTwo             int64
+	ProfessionOneType      int64
+	ProfessionOne          int64
+	ProfessionTwoType      int64
+	ProfessionTwo          int64
+	Ride                   int64
+	SenseMotive            int64
+	SleightOfHand          int64
+	Spellcraft             int64
+	Stealth                int64
+	Survival               int64
+	Swim                   int64
+	UseMagicDevice         int64
 
-
-	Acrobatics 				int64
-	Appraise				int64
-	Bluff					int64
-	Climb					int64
-	CraftOneType			int64
-	CraftOne				int64
-	CraftTwoType			int64
-	CraftTwo				int64
-	CraftThreeType			int64
-	CraftThree				int64
-	Diplomacy				int64
-	DisableDevice			int64
-	Disguise				int64
-	EscapeArtist			int64
-	Fly						int64
-	HandleAnimal			int64
-	Heal					int64
-	Intimidate				int64
-	KnowledgeArcana			int64
-	KnowledgeDungeoneering	int64
-	KnowledgeEngineering	int64
-	KnowledgeGeography		int64
-	KnowledgeHistory		int64
-	KnowledgeLocal			int64
-	KnowledgeNature			int64
-	KnowledgeNobility		int64
-	KnowledgePlains			int64
-	KnowledgeReligion		int64
-	Linguistics				int64
-	Perception				int64
-	PerformOneType			string
-	PerformOne				int64
-	PerformTwoType			string
-	PerformTwo				int64
-	ProfessionOneType		int64
-	ProfessionOne			int64
-	ProfessionTwoType		int64
-	ProfessionTwo			int64
-	Ride					int64
-	SenseMotive				int64
-	SleightOfHand			int64
-	Spellcraft				int64
-	Stealth					int64
-	Survival				int64
-	Swim					int64
-	UseMagicDevice			int64
-
-	Spellbook				string // An ID of the spellbook in the database
+	Spellbook string // An ID of the spellbook in the database
 
 	// Money
-	CopperPieces			int64
-	SilverPieces			int64
-	GoldPieces				int64
-	PlatinumPieces			int64
-
+	CopperPieces   int64
+	SilverPieces   int64
+	GoldPieces     int64
+	PlatinumPieces int64
 }
 
-
-
-
+// SaveUserToDB function
 func (h *UserManager) SaveUserToDB(user User) (err error) {
 	h.querylocker.Lock()
 	defer h.querylocker.Unlock()
@@ -149,6 +143,7 @@ func (h *UserManager) SaveUserToDB(user User) (err error) {
 	return err
 }
 
+// RemoveUserFromDB function
 func (h *UserManager) RemoveUserFromDB(user User) (err error) {
 	h.querylocker.Lock()
 	defer h.querylocker.Unlock()
@@ -158,6 +153,7 @@ func (h *UserManager) RemoveUserFromDB(user User) (err error) {
 	return err
 }
 
+// RemoveUserByID function
 func (h *UserManager) RemoveUserByID(userID string) (err error) {
 
 	room, err := h.GetUserByID(userID)
@@ -173,15 +169,16 @@ func (h *UserManager) RemoveUserByID(userID string) (err error) {
 	return nil
 }
 
+// GetUserByID function
 func (h *UserManager) GetUserByID(userID string) (user User, err error) {
 
 	users, err := h.GetAllUsers()
-	if err != nil{
+	if err != nil {
 		return user, err
 	}
 
 	for _, i := range users {
-		if i.ID == userID{
+		if i.ID == userID {
 			return i, nil
 		}
 	}
@@ -189,15 +186,16 @@ func (h *UserManager) GetUserByID(userID string) (user User, err error) {
 	return user, errors.New("No record found")
 }
 
+// GetUserByName function
 func (h *UserManager) GetUserByName(username string, guildID string) (user User, err error) {
 
 	users, err := h.GetAllUsers()
-	if err != nil{
+	if err != nil {
 		return user, err
 	}
 
 	for _, i := range users {
-		if i.Name == username && i.GuildID == guildID{
+		if i.Name == username && i.GuildID == guildID {
 			return i, nil
 		}
 	}
@@ -205,6 +203,7 @@ func (h *UserManager) GetUserByName(username string, guildID string) (user User,
 	return user, errors.New("No record found")
 }
 
+// GetAllUsers function
 func (h *UserManager) GetAllUsers() (userlist []User, err error) {
 	h.querylocker.Lock()
 	defer h.querylocker.Unlock()
@@ -217,8 +216,6 @@ func (h *UserManager) GetAllUsers() (userlist []User, err error) {
 
 	return userlist, nil
 }
-
-
 
 // Init function
 func (u *User) Init() {
@@ -340,29 +337,28 @@ func (u *User) CheckRole(role string) bool {
 	}
 }
 
+// CheckCurrentRoleList function
 func (u *User) CheckCurrentRoleList(roleID string) bool {
 	for _, currentRole := range u.RoleIDs {
-		if currentRole == roleID{
+		if currentRole == roleID {
 			return true
 		}
 	}
 	return false
 }
 
+// JoinRoleID function
 func (u *User) JoinRoleID(roleID string) {
-	if u.CheckCurrentRoleList(roleID){
+	if u.CheckCurrentRoleList(roleID) {
 		return
 	}
-
 	u.RoleIDs = append(u.RoleIDs, roleID)
-
 }
 
-
+// LeaveRoleID function
 func (u *User) LeaveRoleID(roleID string) {
-	if !u.CheckCurrentRoleList(roleID){
+	if !u.CheckCurrentRoleList(roleID) {
 		return
 	}
-
 	u.RoleIDs = RemoveStringFromSlice(u.RoleIDs, roleID)
 }

@@ -5,14 +5,13 @@ import (
 	"strings"
 )
 
+// EventParser struct
 // Parse event scripts and formatted event data fields
 type EventParser struct {
-
-
 }
 
-
-func (h *EventParser) ParseFormattedEvent(data string, channelID string, userID string) (parsed Event, err error){
+// ParseFormattedEvent function
+func (h *EventParser) ParseFormattedEvent(data string, channelID string, userID string) (parsed Event, err error) {
 	unmarshallcontainer := Event{}
 	if err := json.Unmarshal([]byte(data), &unmarshallcontainer); err != nil {
 		return unmarshallcontainer, err

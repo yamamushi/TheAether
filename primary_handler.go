@@ -8,39 +8,38 @@ import (
 )
 
 // PrimaryHandler struct
-type MainHandler struct {
-	db          *DBHandler
-	conf        *Config
-	dg          *discordgo.Session
-	callback    *CallbackHandler
-	perm        *PermissionsHandler
-	user        *UserHandler
-	command     *CommandHandler
-	registry    *CommandRegistry
-	logchan     chan string
-	channel     *ChannelHandler
-	rooms 		*RoomsHandler
-	travel 		*TravelHandler
+type PrimaryHandler struct {
+	db       *DBHandler
+	conf     *Config
+	dg       *discordgo.Session
+	callback *CallbackHandler
+	perm     *PermissionsHandler
+	user     *UserHandler
+	command  *CommandHandler
+	registry *CommandRegistry
+	logchan  chan string
+	channel  *ChannelHandler
+	rooms    *RoomsHandler
+	travel   *TravelHandler
 }
 
 // Init function
-func (h *MainHandler) Init() (err error) {
+func (h *PrimaryHandler) Init() (err error) {
 	// DO NOT add anything above this line!!
 	// Add our main handler -
 	h.dg.AddHandler(h.Read)
 	h.registry = h.command.registry
 
-
 	// Add new handlers below this line //
-/*
-	fmt.Println("Adding Utilities Handler")
-	utilities := UtilitiesHandler{db: h.db, conf: h.conf, usermanager: h.usermanager, registry: h.command.registry, logchan: h.logchan, callback: h.callback}
-	h.dg.AddHandler(utilities.Read)
+	/*
+		fmt.Println("Adding Utilities Handler")
+		utilities := UtilitiesHandler{db: h.db, conf: h.conf, usermanager: h.usermanager, registry: h.command.registry, logchan: h.logchan, callback: h.callback}
+		h.dg.AddHandler(utilities.Read)
 
-	fmt.Println("Adding Tutorial Handler")
-	tutorials := TutorialHandler{db: h.db, conf: h.conf, usermanager: h.usermanager, registry: h.command.registry}
-	h.dg.AddHandler(tutorials.Read)
-*/
+		fmt.Println("Adding Tutorial Handler")
+		tutorials := TutorialHandler{db: h.db, conf: h.conf, usermanager: h.usermanager, registry: h.command.registry}
+		h.dg.AddHandler(tutorials.Read)
+	*/
 	fmt.Println("Adding Notifications Handler")
 	notifications := NotificationsHandler{db: h.db, callback: h.callback, conf: h.conf, registry: h.command.registry}
 	notifications.Init()
@@ -68,7 +67,7 @@ func (h *MainHandler) Init() (err error) {
 
 // PostInit function
 // Just some quick things to run after our websocket has been setup and opened
-func (h *MainHandler) PostInit(dg *discordgo.Session) error {
+func (h *PrimaryHandler) PostInit(dg *discordgo.Session) error {
 	fmt.Println("Running Post-Init")
 
 	// Update our default playing status
@@ -89,7 +88,7 @@ func (h *MainHandler) PostInit(dg *discordgo.Session) error {
 // message is created on any channel that the autenticated bot has access to.
 
 // Read function
-func (h *MainHandler) Read(s *discordgo.Session, m *discordgo.MessageCreate) {
+func (h *PrimaryHandler) Read(s *discordgo.Session, m *discordgo.MessageCreate) {
 	// very important to set this first!
 	cp := h.conf.MainConfig.CP
 
@@ -149,7 +148,7 @@ func (h *MainHandler) Read(s *discordgo.Session, m *discordgo.MessageCreate) {
 }
 
 // RegisterCommands function
-func (h *MainHandler) RegisterCommands() (err error) {
+func (h *PrimaryHandler) RegisterCommands() (err error) {
 
 	h.registry.Register("ping", "Ping command", "ping")
 	h.registry.Register("pong", "Pong command", "pong")

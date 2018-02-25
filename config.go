@@ -8,26 +8,26 @@ import (
 
 // Config struct
 type Config struct {
-	MainConfig mainConfig  	 `toml:"main"`
-	BankConfig    bankConfig     `toml:"bank"`
+	MainConfig mainConfig `toml:"main"`
+	BankConfig bankConfig `toml:"bank"`
 }
 
 // discordConfig struct
 type mainConfig struct {
 
 	// Command Prefix
-	Token   		 string 	   `toml:"bot_token"`
-	ClusterOwnerID	 string		   `toml:"cluster_owner_id"`
-	CentralGuildID	 string		   `toml:"central_Server_id"`
-	LobbyChannelID	 string		   `toml:"lobby_channel_id"`
-	CP               string        `toml:"default_command_prefix"`
-	Playing          string        `toml:"default_now_playing"`
-	Notifications	 time.Duration `toml:"notifications_update_timeout"`
-	PerPageCount     int           `toml:"per_page_count"`
-	LuaTimeout       int           `toml:"lua_timeout"`
-	Profiler         bool          `toml:"enable_profiler"`
-	DBFile			 string 	   `toml:"dbfilename"`
-
+	Token          string        `toml:"bot_token"`
+	BotName        string        `toml:"bot_name"`
+	ClusterOwnerID string        `toml:"cluster_owner_id"`
+	CentralGuildID string        `toml:"central_Server_id"`
+	LobbyChannelID string        `toml:"lobby_channel_id"`
+	CP             string        `toml:"default_command_prefix"`
+	Playing        string        `toml:"default_now_playing"`
+	Notifications  time.Duration `toml:"notifications_update_timeout"`
+	PerPageCount   int           `toml:"per_page_count"`
+	LuaTimeout     int           `toml:"lua_timeout"`
+	Profiler       bool          `toml:"enable_profiler"`
+	DBFile         string        `toml:"dbfilename"`
 }
 
 // bankConfig struct
@@ -54,4 +54,3 @@ func ReadConfig(path string) (config Config, err error) {
 
 	return conf, nil
 }
-

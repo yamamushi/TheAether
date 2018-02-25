@@ -1,11 +1,10 @@
 package main
 
 import (
-
-	"fmt"
 	"flag"
-	"os"
+	"fmt"
 	"log"
+	"os"
 
 	"io/ioutil"
 	"net/http"
@@ -15,10 +14,7 @@ import (
 
 	"github.com/asdine/storm"
 	"github.com/bwmarrin/discordgo"
-
-
 )
-
 
 // Variables used for command line parameters
 var (
@@ -38,10 +34,9 @@ func init() {
 	}
 }
 
-
 func main() {
 
-	fmt.Println("\n\n|| Starting Aetheral ||\n")
+	fmt.Println("\n\n|| Starting Aetheral ||\n ")
 	log.SetOutput(ioutil.Discard)
 
 	// Setup our tmp directory
@@ -63,7 +58,6 @@ func main() {
 		return
 	}
 
-
 	// Create / open our embedded database
 	db, err := storm.Open(conf.MainConfig.DBFile)
 	if err != nil {
@@ -71,7 +65,6 @@ func main() {
 		return
 	}
 	defer db.Close()
-
 
 	// Run a quick first time db configuration to verify that it is working properly
 	fmt.Println("Checking Database")
@@ -89,11 +82,10 @@ func main() {
 		return
 	}
 	defer dg.Close()
-	
+
 	if conf.MainConfig.Profiler {
 		http.ListenAndServe(":8080", http.DefaultServeMux)
 	}
-
 
 	logchannel := make(chan string)
 	logger := Logger{logchan: logchannel}
@@ -137,7 +129,7 @@ func main() {
 
 	fmt.Println("Adding Rooms Handler")
 	roomshandler := RoomsHandler{callback: &callbackhandler, conf: &conf, db: &dbhandler, perm: &permissionshandler,
-	registry: commandhandler.registry, dg: dg, user: &userhandler, ch: &channelhandler, guilds: &guildsmanager}
+		registry: commandhandler.registry, dg: dg, user: &userhandler, ch: &channelhandler, guilds: &guildsmanager}
 	dg.AddHandler(roomshandler.Read)
 	permissionshandler.room = &roomshandler
 	// No rooms handler init here!
@@ -173,17 +165,16 @@ func main() {
 	// Initialize Guilds Handler
 	fmt.Println("Adding Guilds Handler")
 	guildshandler := GuildsHandler{room: &roomshandler, registry: commandhandler.registry, db: &dbhandler, conf: &conf,
-	perm: &permissionshandler, user: &userhandler, guildmanager: &guildsmanager}
+		perm: &permissionshandler, user: &userhandler, guildmanager: &guildsmanager}
 	guildshandler.Init()
 	dg.AddHandler(guildshandler.Read)
 
-	// Initalize our Logger
+	// Initialize our Logger
 	fmt.Println("Initializing Logger")
 	logger.Init(&channelhandler, logchannel, dg)
 
-
 	// Startup setup for channels and roles
-	fmt.Println("\n|| Running Startup Setup ||\n")
+	fmt.Println("\n|| Running Startup Setup ||\n ")
 	setup := SetupProcess{db: &dbhandler, conf: &conf, user: &userhandler, rooms: &roomshandler, guilds: &guildsmanager}
 	err = setup.Init(dg, conf.MainConfig.LobbyChannelID)
 	if err != nil {
@@ -192,9 +183,9 @@ func main() {
 	}
 
 	// Setup our Events Handler now that first rooms are operational
-	fmt.Println("\n|| Standing Up Events Handler ||\n")
+	fmt.Println("\n|| Standing Up Events Handler ||\n ")
 	eventshandler := EventHandler{conf: &conf, registry: commandhandler.registry, callback: &callbackhandler, db: &dbhandler,
-	user: &userhandler, dg: dg, logger: &logger}
+		user: &userhandler, dg: dg, logger: &logger}
 	err = eventshandler.Init()
 	if err != nil {
 		fmt.Println("Error starting events handler: " + err.Error())
@@ -203,25 +194,22 @@ func main() {
 	dg.AddHandler(eventshandler.Read)
 	dg.AddHandler(eventshandler.ReadEvents)
 
-
 	// Now we create and initialize our main handler
-	fmt.Println("\n|| Initializing Main Handler ||\n")
-	handler := MainHandler{db: &dbhandler, conf: &conf, dg: dg, callback: &callbackhandler, perm: &permissionshandler,
+	fmt.Println("\n|| Initializing Main Handler ||\n ")
+	primaryhandler := PrimaryHandler{db: &dbhandler, conf: &conf, dg: dg, callback: &callbackhandler, perm: &permissionshandler,
 		command: &commandhandler, logchan: logchannel, user: &userhandler, channel: &channelhandler, rooms: &roomshandler,
 		travel: &travelhandler}
-	err = handler.Init()
+	err = primaryhandler.Init()
 	if err != nil {
 		fmt.Println("error in mainHandler.init", err)
 		return
 	}
-	fmt.Println("\n|| Main Handler Initialized ||\n")
-
+	fmt.Println("\n|| Main Handler Initialized ||\n ")
 
 	// Setup Profiler if enabled in config
 	if conf.MainConfig.Profiler {
 		http.ListenAndServe(":8080", http.DefaultServeMux)
 	}
-
 
 	// Wait here until CTRL-C or other term signal is received.
 	fmt.Println("Bot is now running.  Press CTRL-C to exit.")

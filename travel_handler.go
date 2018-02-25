@@ -1,27 +1,26 @@
 package main
 
 import (
-	"github.com/bwmarrin/discordgo"
-	"fmt"
-	"strings"
 	"errors"
+	"fmt"
+	"github.com/bwmarrin/discordgo"
+	"strings"
 	"time"
 )
 
+// TravelHandler struct
 type TravelHandler struct {
-
-	conf       *Config
-	registry   *CommandRegistry
-	callback   *CallbackHandler
-	db         *DBHandler
-	perms	   *PermissionsHandler
-	room       *RoomsHandler
-	user	   *UserHandler
-	transfer   *TransferHandler
+	conf     *Config
+	registry *CommandRegistry
+	callback *CallbackHandler
+	db       *DBHandler
+	perms    *PermissionsHandler
+	room     *RoomsHandler
+	user     *UserHandler
+	transfer *TransferHandler
 }
 
-
-// Init TravelHandler
+// Init function
 func (h *TravelHandler) Init() {
 	h.RegisterCommands()
 
@@ -35,7 +34,6 @@ func (h *TravelHandler) RegisterCommands() (err error) {
 	return nil
 
 }
-
 
 // Read function
 func (h *TravelHandler) Read(s *discordgo.Session, m *discordgo.MessageCreate) {
@@ -72,7 +70,6 @@ func (h *TravelHandler) Read(s *discordgo.Session, m *discordgo.MessageCreate) {
 	}
 }
 
-
 // ParseCommand function
 func (h *TravelHandler) ParseCommand(command []string, s *discordgo.Session, m *discordgo.MessageCreate) {
 
@@ -89,13 +86,13 @@ func (h *TravelHandler) ParseCommand(command []string, s *discordgo.Session, m *
 
 	user, err := h.user.GetUser(m.Author.ID, s, m.ChannelID)
 	if err != nil {
-		s.ChannelMessageSend(user.RoomID, "Error retrieving usermanager: " + err.Error())
+		s.ChannelMessageSend(user.RoomID, "Error retrieving usermanager: "+err.Error())
 		return
 	}
 
 	fromroom, err := h.room.rooms.GetRoomByID(user.RoomID)
 	if err != nil {
-		s.ChannelMessageSend(user.RoomID, "Error retrieving room: " + err.Error())
+		s.ChannelMessageSend(user.RoomID, "Error retrieving room: "+err.Error())
 		return
 	}
 
@@ -133,22 +130,20 @@ func (h *TravelHandler) ParseCommand(command []string, s *discordgo.Session, m *
 
 	// Notify channel that usermanager has left
 	discorduser, err := s.User(user.ID)
-	if err != nil{
-		s.ChannelMessageSend(m.ChannelID, "Error retrieving usermanager: " + err.Error())
+	if err != nil {
+		s.ChannelMessageSend(m.ChannelID, "Error retrieving usermanager: "+err.Error())
 		return
 	}
 	leaveoutout := discorduser.Username + " has left traveling " + command[1]
 	s.ChannelMessageSend(m.ChannelID, leaveoutout)
 
-
 	// If we're not leaving the server, we want to notify the channel that the usermanager has arrived
 	if travelfrom == "below" || travelfrom == "above" {
-		s.ChannelMessageSend(user.RoomID, discorduser.Mention() + " has arrived from " + travelfrom + ".")
+		s.ChannelMessageSend(user.RoomID, discorduser.Mention()+" has arrived from "+travelfrom+".")
 
 	} else {
-		s.ChannelMessageSend(user.RoomID, discorduser.Mention() + " has arrived from the " + travelfrom + ".")
+		s.ChannelMessageSend(user.RoomID, discorduser.Mention()+" has arrived from the "+travelfrom+".")
 	}
-
 
 	time.Sleep(3000)
 	// If we're leaving this server, we want to avoid sending an arrival message to the holding channel
@@ -161,9 +156,9 @@ func (h *TravelHandler) ParseCommand(command []string, s *discordgo.Session, m *
 	return
 }
 
-
+// HandleServerTransfer function
 func (h *TravelHandler) HandleServerTransfer(user User, travelfromID string, transerToID string, targetGuildID string, fromroom Room, fromDirection string,
-												s *discordgo.Session, m *discordgo.MessageCreate) {
+	s *discordgo.Session, m *discordgo.MessageCreate) {
 
 	// We create a private message to send to the usermanager
 
@@ -174,7 +169,7 @@ func (h *TravelHandler) HandleServerTransfer(user User, travelfromID string, tra
 
 	userprivatechannel, err := s.UserChannelCreate(user.ID)
 	if err != nil {
-		s.ChannelMessageSend(m.ChannelID, "Error creating Aether Link: " + err.Error())
+		s.ChannelMessageSend(m.ChannelID, "Error creating Aether Link: "+err.Error())
 		return
 	}
 
@@ -182,28 +177,27 @@ func (h *TravelHandler) HandleServerTransfer(user User, travelfromID string, tra
 
 	channel, err := s.Channel(transerToID)
 	if err != nil {
-		s.ChannelMessageSend(m.ChannelID, "Error creating Aether Link: " + err.Error())
+		s.ChannelMessageSend(m.ChannelID, "Error creating Aether Link: "+err.Error())
 		return
 	}
 
 	if channel.GuildID != targetGuildID {
-		s.ChannelMessageSend(m.ChannelID, "Error creating Aether Link: " + err.Error())
+		s.ChannelMessageSend(m.ChannelID, "Error creating Aether Link: "+err.Error())
 		return
 	}
 
-
 	// We create an notification for the transfer_handler
-	err = h.transfer.AddTransfer(user.ID, travelfromID,  transerToID, targetGuildID, fromDirection)
+	err = h.transfer.AddTransfer(user.ID, travelfromID, transerToID, targetGuildID, fromDirection)
 	if err != nil {
-		s.ChannelMessageSend(m.ChannelID, "Error creating Aether Link: " + err.Error())
+		s.ChannelMessageSend(m.ChannelID, "Error creating Aether Link: "+err.Error())
 		return
 	}
 
 	return
 }
 
-
-func (h *TravelHandler) Travel(direction string, s *discordgo.Session, m *discordgo.MessageCreate) (err error){
+// Travel function
+func (h *TravelHandler) Travel(direction string, s *discordgo.Session, m *discordgo.MessageCreate) (err error) {
 
 	user, err := h.user.GetUser(m.Author.ID, s, m.ChannelID)
 	if err != nil {
@@ -237,13 +231,12 @@ func (h *TravelHandler) Travel(direction string, s *discordgo.Session, m *discor
 	} else if direction == "northwest" {
 		toroom = fromroom.NorthWestID
 	} else {
-		return errors.New("Unrecognized direction: "+direction)
+		return errors.New("Unrecognized direction: " + direction)
 
 	}
 
 	if toroom == "" {
-		return errors.New("There is nowhere to travel in that direction.")
-
+		return errors.New("There is nowhere to travel in that direction")
 	}
 
 	targetroom, err := h.room.rooms.GetRoomByID(toroom)
@@ -252,13 +245,12 @@ func (h *TravelHandler) Travel(direction string, s *discordgo.Session, m *discor
 	}
 
 	if len(targetroom.AdditionalRoleIDs) < 1 {
-		return errors.New("Target room is not configured properly: " + toroom )
+		return errors.New("Target room is not configured properly: " + toroom)
 	}
 
 	if len(fromroom.AdditionalRoleIDs) < 1 {
-		return errors.New("From room is not configured properly: " + toroom )
+		return errors.New("From room is not configured properly: " + toroom)
 	}
-
 
 	if len(targetroom.Items) > 0 {
 		// This is where the logic for items validation will go
@@ -270,12 +262,12 @@ func (h *TravelHandler) Travel(direction string, s *discordgo.Session, m *discor
 	}
 
 	err = h.perms.AddRoleToUser(targetroom.TravelRoleID, user.ID, s, m, true)
-	if err != nil{
+	if err != nil {
 		return err
 	}
 
 	err = h.perms.RemoveRoleFromUser(fromroom.TravelRoleID, user.ID, s, m, true)
-	if err != nil{
+	if err != nil {
 		return err
 	}
 
@@ -290,10 +282,10 @@ func (h *TravelHandler) Travel(direction string, s *discordgo.Session, m *discor
 	db := h.db.rawdb.From("Users")
 	err = db.Update(&user)
 	if err != nil {
-		return errors.New("Error updating user record into database!")
+		return errors.New("Error updating user record into database")
 	}
 
-	err = h.room.AddUserIDToRoomRecord(user.ID, targetroom.ID, guildID,  s)
+	err = h.room.AddUserIDToRoomRecord(user.ID, targetroom.ID, guildID, s)
 	if err != nil {
 		return errors.New("Error updating user record into room: " + err.Error())
 	}
@@ -302,6 +294,5 @@ func (h *TravelHandler) Travel(direction string, s *discordgo.Session, m *discor
 	if err != nil {
 		return errors.New("Error removing user record from room: " + err.Error())
 	}
-
 	return nil
 }

@@ -1,7 +1,6 @@
 package main
 
 
-
 func GetClassList() (m map[string]string) {
 
 	m = map[string]string{
@@ -91,6 +90,5 @@ func GetClassList() (m map[string]string) {
 							"those with the ambition and the intellect to rise above the common folk to grasp true might. Such is the path of the wizard. " +
 							"These shrewd magic-users seek, collect, and covet esoteric knowledge, drawing on cultic arts to work wonders beyond the abilities of mere mortals.",
 	}
-
 	return m
 }
