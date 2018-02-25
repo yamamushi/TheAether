@@ -1168,7 +1168,7 @@ func (h *PermissionsHandler) GuildReorderRoles(guildID string, s *discordgo.Sess
 	for i, role := range guildroles {
 		if role.Name != "Admin" && role.Name != "Builder" && role.Name != "Moderator" &&
 			role.Name != "Writer" && role.Name != "Spoilers" && role.Name != "Registered" &&
-			role.Name != "Developer" && role.Name != "@everyone" && role.Name != "TheAether" {
+			role.Name != "Developer" && role.Name != "@everyone" && role.Name != h.conf.MainConfig.BotName {
 			if i < 8 {
 				guildroles[i].Position = total - 1 - i
 			} else {
@@ -1191,7 +1191,7 @@ func (h *PermissionsHandler) GuildReorderRoles(guildID string, s *discordgo.Sess
 			guildroles[i].Position = 1
 		} else if role.Name == "@everyone" {
 			guildroles[i].Position = 0
-		} else if role.Name == "TheAether" {
+		} else if role.Name == h.conf.MainConfig.BotName {
 			guildroles[i].Position = total - 1
 		}
 	}
