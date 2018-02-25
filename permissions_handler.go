@@ -354,7 +354,6 @@ func (h *PermissionsHandler) Read(s *discordgo.Session, m *discordgo.MessageCrea
 			}
 			s.ChannelMessageSend(m.ChannelID, "rolesDB synchronized")
 			return
-			return
 		}
 
 		if command[1] == "translaterole" {
