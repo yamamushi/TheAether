@@ -5,7 +5,8 @@
 
 
 
-# The Aether
+The Aether
+=========
 
 [![The Aether Central Hub](https://img.shields.io/badge/Play%20The%20Aether-%23welcome-blue.svg)](https://discord.gg/Ju28dpe)
 
@@ -16,23 +17,21 @@ Will you become a traveled adventurer or a rich king? Perhaps a ship merchantman
 
 
 
-Table of Contents
-=================
+## Table of Contents
 
-   * [The Aether](#The-Aether)
    * [About](#About)
-      * [Features](#features)
-      * [Commands](#commands)
-         * [Role Management](#role-management-commands)
-         * [Room Management](#room-management-commands)
-         * [Cluster Management](#cluster-management-commands)
-         * [Notify Command](#notify-command)
-         * [Events Command](#events-command)
-      * [Discord](#discord)
-   * [Developers Guide](Developers.md)
+   * [Features](#features)
+   * [Commands](#commands)
+     * [Role Management](#role-management-commands)
+     * [Room Management](#room-management-commands)
+     * [Cluster Management](#cluster-management-commands)
+     * [Notify Command](#notify-command)
+     * [Events Command](#events-command)
+   * [Development](#development)
+   * [Discord](#discord)
 
 
-# About 
+## About 
 
 The Aether is, at its core, a MUD that runs on top of Discord. However, what separates The Aether from other discord roleplaying games (such as Discord RPG, which is arguably a great game on its own) is that by playing it you are a true participant in the world.
 
@@ -137,7 +136,7 @@ While other discord bots control traveling in a 2-dimensional way (you can play 
 | listenabled | | |
 
 
-# Development 
+## Development
 
 **Development Branch Status**
 
