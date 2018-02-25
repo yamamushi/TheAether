@@ -21,7 +21,6 @@ vendor/
 
 #
 notes
-deploy.sh
 tmp/
 
 
@@ -59,5 +58,4 @@ Temporary Items
 
 # Database Files
 *.db
-Aetheral
 TheAether
