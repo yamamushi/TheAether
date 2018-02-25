@@ -387,10 +387,52 @@ func (h *RegistrationHandler) RaceInfo(s *discordgo.Session, m *discordgo.Messag
 		s.ChannelMessageSend(m.ChannelID, ":sparkles: You may pick from one of the following races: \n```" + racelist +"\n```\n" )
 		return
 	} else {
+		raceinfo := GetRaceInfo()
 		raceoption := payload[0]
 		if h.ValidateRaceChoice(raceoption){
-			s.ChannelMessageSend(m.ChannelID, ":construction: -Raceinfo goes here-" )
-			return
+			if(strings.ToLower(raceoption) == "catfolk") {
+				s.ChannelMessageSend(m.ChannelID, ":construction: "+raceinfo[0])
+				return
+			}else if(strings.ToLower(raceoption) == "clockwork") {
+				s.ChannelMessageSend(m.ChannelID, ":construction: "+raceinfo[1])
+				return
+			}else if(strings.ToLower(raceoption) == "dwarf") {
+				s.ChannelMessageSend(m.ChannelID, ":construction: "+raceinfo[2])
+				return
+			}else if(strings.ToLower(raceoption) == "elf") {
+				s.ChannelMessageSend(m.ChannelID, ":construction: "+raceinfo[3])
+				return
+			}else if(strings.ToLower(raceoption) == "halfing") {
+				s.ChannelMessageSend(m.ChannelID, ":construction: "+raceinfo[4])
+				return
+			}else if(strings.ToLower(raceoption) == "half-elf") {
+				s.ChannelMessageSend(m.ChannelID, ":construction: "+raceinfo[5])
+				return
+			}else if(strings.ToLower(raceoption) == "half-orc") {
+				s.ChannelMessageSend(m.ChannelID, ":construction: "+raceinfo[6])
+				return
+			}else if(strings.ToLower(raceoption) == "human") {
+				s.ChannelMessageSend(m.ChannelID, ":construction: "+raceinfo[7])
+				return
+			}else if(strings.ToLower(raceoption) == "kobold") {
+				s.ChannelMessageSend(m.ChannelID, ":construction: "+raceinfo[8])
+				return
+			}else if(strings.ToLower(raceoption) == "gnome") {
+				s.ChannelMessageSend(m.ChannelID, ":construction: "+raceinfo[9])
+				return
+			}else if(strings.ToLower(raceoption) == "orc") {
+				s.ChannelMessageSend(m.ChannelID, ":construction: "+raceinfo[10])
+				return
+			}else if(strings.ToLower(raceoption) == "ratfolk") {
+				s.ChannelMessageSend(m.ChannelID, ":construction: "+raceinfo[11])
+				return
+			}else if(strings.ToLower(raceoption) == "saurian") {
+				s.ChannelMessageSend(m.ChannelID, ":construction: "+raceinfo[12])
+				return
+			}else if(strings.ToLower(raceoption) == "skinwalker") {
+				s.ChannelMessageSend(m.ChannelID, ":construction: "+raceinfo[13])
+				return
+			}
 		} else {
 			racelist := GetRaceList()
 			s.ChannelMessageSend(m.ChannelID, ":sparkles: Invalid Race Choice! You may pick from one of the following races: \n```" +
@@ -405,7 +447,7 @@ func (h *RegistrationHandler) PickRace(s *discordgo.Session, m *discordgo.Messag
 	_, payload := SplitPayload(strings.Split(m.Content, " "))
 	if len(payload) < 1{
 
-		racelist := "\n```Tip - Use the \"pick-race raceinfo\" command for more information about a given race \n\n" + GetRaceList()
+		racelist := "\n```Tip - Use the \"~raceinfo <race>\" command for more information about a given race \n\n" + GetRaceList()
 		racelist = racelist + "\n Use \"pick-race choose <race>\" to assign an option " + "```\n"
 		s.ChannelMessageSend(m.ChannelID, ":sparkles: You may pick from one of the following races: " + racelist)
 		return
@@ -519,10 +561,67 @@ func (h *RegistrationHandler) ClassInfo(s *discordgo.Session, m *discordgo.Messa
 		s.ChannelMessageSend(m.ChannelID, ":sparkles: You may pick from one of the following races: \n```" + classlist +"\n```\n" )
 		return
 	} else {
+		classinfo := GetClassInfo()
 		classoption := payload[0]
-		if h.ValidateRaceChoice(classoption){
-			s.ChannelMessageSend(m.ChannelID, ":construction: -Classinfo goes here-" )
-			return
+		if h.ValidateClassChoice(classoption){
+			if(strings.ToLower(classoption) == "bard") {
+				s.ChannelMessageSend(m.ChannelID, ":construction: "+classinfo[0])
+				return
+			}else if(strings.ToLower(classoption) == "claric") {
+				s.ChannelMessageSend(m.ChannelID, ":construction: "+classinfo[1])
+				return
+			}else if(strings.ToLower(classoption) == "druid") {
+				s.ChannelMessageSend(m.ChannelID, ":construction: "+classinfo[2])
+				return
+			}else if(strings.ToLower(classoption) == "elf") {
+				s.ChannelMessageSend(m.ChannelID, ":construction: "+classinfo[3])
+				return
+			}else if(strings.ToLower(classoption) == "enchanter") {
+				s.ChannelMessageSend(m.ChannelID, ":construction: "+classinfo[4])
+				return
+			}else if(strings.ToLower(classoption) == "fighter") {
+				s.ChannelMessageSend(m.ChannelID, ":construction: "+classinfo[5])
+				return
+			}else if(strings.ToLower(classoption) == "monk") {
+				s.ChannelMessageSend(m.ChannelID, ":construction: "+classinfo[6])
+				return
+			}else if(strings.ToLower(classoption) == "necromancer") {
+				s.ChannelMessageSend(m.ChannelID, ":construction: "+classinfo[7])
+				return
+			}else if(strings.ToLower(classoption) == "ninja") {
+				s.ChannelMessageSend(m.ChannelID, ":construction: "+classinfo[8])
+				return
+			}else if(strings.ToLower(classoption) == "paladin") {
+				s.ChannelMessageSend(m.ChannelID, ":construction: "+classinfo[9])
+				return
+			}else if(strings.ToLower(classoption) == "plaguedoctor") {
+				s.ChannelMessageSend(m.ChannelID, ":construction: "+classinfo[10])
+				return
+			}else if(strings.ToLower(classoption) == "planeswalker") {
+				s.ChannelMessageSend(m.ChannelID, ":construction: "+classinfo[11])
+				return
+			}else if(strings.ToLower(classoption) == "ranger") {
+				s.ChannelMessageSend(m.ChannelID, ":construction: "+classinfo[12])
+				return
+			}else if(strings.ToLower(classoption) == "rogue") {
+				s.ChannelMessageSend(m.ChannelID, ":construction: "+classinfo[13])
+				return
+			}else if(strings.ToLower(classoption) == "shaman") {
+				s.ChannelMessageSend(m.ChannelID, ":construction: "+classinfo[14])
+				return
+			}else if(strings.ToLower(classoption) == "shaolin") {
+				s.ChannelMessageSend(m.ChannelID, ":construction: "+classinfo[15])
+				return
+			}else if(strings.ToLower(classoption) == "smuggler") {
+				s.ChannelMessageSend(m.ChannelID, ":construction: "+classinfo[16])
+				return
+			}else if(strings.ToLower(classoption) == "sorcerer") {
+				s.ChannelMessageSend(m.ChannelID, ":construction: "+classinfo[17])
+				return
+			}else if(strings.ToLower(classoption) == "wizard") {
+				s.ChannelMessageSend(m.ChannelID, ":construction: "+classinfo[18])
+				return
+			}
 		} else {
 			classlist := GetClassList()
 			s.ChannelMessageSend(m.ChannelID, ":sparkles: Invalid Class Choice! You may pick from one of the following classes: \n```" +
