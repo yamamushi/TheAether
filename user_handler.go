@@ -3,8 +3,8 @@ package main
 import (
 	"fmt"
 	"github.com/bwmarrin/discordgo"
-	"strings"
 	"strconv"
+	"strings"
 	"time"
 )
 
@@ -145,7 +145,7 @@ func (h *UserHandler) Read(s *discordgo.Session, m *discordgo.MessageCreate) {
 
 	}
 
-	if message[0] == cp+"debuguser"{
+	if message[0] == cp+"debuguser" {
 		if !user.CheckRole("moderator") {
 			s.ChannelMessageSend(m.ChannelID, "You do not have permission to use this command")
 			return
@@ -163,18 +163,18 @@ func (h *UserHandler) Read(s *discordgo.Session, m *discordgo.MessageCreate) {
 		}
 	}
 
-	if message[0] == cp+"attributes"{
+	if message[0] == cp+"attributes" {
 		/*
-		if !usermanager.CheckRole("player") || !usermanager.CheckRole("Registered") {
-			s.ChannelMessageSend(m.ChannelID, "You do not have permission to use this command")
-			return
-		}
+			if !usermanager.CheckRole("player") || !usermanager.CheckRole("Registered") {
+				s.ChannelMessageSend(m.ChannelID, "You do not have permission to use this command")
+				return
+			}
 		*/
 		if len(message) > 1 {
-			if !user.CheckRole("moderator")  {
+			if !user.CheckRole("moderator") {
 
 				attributes := h.GetFormattedAttributes(m.Author.ID)
-				s.ChannelMessageSend(m.ChannelID, ":large_blue_diamond: Attributes: \n" + attributes)
+				s.ChannelMessageSend(m.ChannelID, ":large_blue_diamond: Attributes: \n"+attributes)
 				return
 			}
 			mentionlist := m.Mentions
@@ -184,25 +184,25 @@ func (h *UserHandler) Read(s *discordgo.Session, m *discordgo.MessageCreate) {
 			}
 
 			attributes := h.GetFormattedAttributes(mentionlist[0].ID)
-			s.ChannelMessageSend(m.ChannelID, ":large_blue_diamond: Attributes: \n" + attributes)
+			s.ChannelMessageSend(m.ChannelID, ":large_blue_diamond: Attributes: \n"+attributes)
 			return
 		}
 		attributes := h.GetFormattedAttributes(m.Author.ID)
-		s.ChannelMessageSend(m.ChannelID, ":large_blue_diamond: Attributes: \n" + attributes)
+		s.ChannelMessageSend(m.ChannelID, ":large_blue_diamond: Attributes: \n"+attributes)
 		return
 	}
-	if message[0] == cp+"stats"{
+	if message[0] == cp+"stats" {
 		/*
-		if !usermanager.CheckRole("player") || !usermanager.CheckRole("Registered") {
-			s.ChannelMessageSend(m.ChannelID, "You do not have permission to use this command")
-			return
-		}
+			if !usermanager.CheckRole("player") || !usermanager.CheckRole("Registered") {
+				s.ChannelMessageSend(m.ChannelID, "You do not have permission to use this command")
+				return
+			}
 		*/
 		if len(message) > 1 {
-			if !user.CheckRole("moderator")  {
+			if !user.CheckRole("moderator") {
 
 				stats := h.GetFormattedStats(m.Author.ID)
-				s.ChannelMessageSend(m.ChannelID, ":large_blue_diamond: Stats: \n" + stats)
+				s.ChannelMessageSend(m.ChannelID, ":large_blue_diamond: Stats: \n"+stats)
 				return
 			}
 			mentionlist := m.Mentions
@@ -211,18 +211,18 @@ func (h *UserHandler) Read(s *discordgo.Session, m *discordgo.MessageCreate) {
 				return
 			}
 			stats := h.GetFormattedStats(mentionlist[0].ID)
-			s.ChannelMessageSend(m.ChannelID, ":large_blue_diamond: Stats: \n" + stats)
+			s.ChannelMessageSend(m.ChannelID, ":large_blue_diamond: Stats: \n"+stats)
 			return
 		}
 		stats := h.GetFormattedStats(m.Author.ID)
-		s.ChannelMessageSend(m.ChannelID, ":large_blue_diamond: Stats: \n" + stats)
+		s.ChannelMessageSend(m.ChannelID, ":large_blue_diamond: Stats: \n"+stats)
 		return
 	}
 	return
 }
 
 // AddItem function
-func (h *UserHandler) AddItem(itemid string, userid string,  s *discordgo.Session, channelID string) (err error) {
+func (h *UserHandler) AddItem(itemid string, userid string, s *discordgo.Session, channelID string) (err error) {
 	// Make sure usermanager is in the database before we pull it out!
 	user, err := h.GetUser(userid, s, channelID)
 	if err != nil {
@@ -233,7 +233,7 @@ func (h *UserHandler) AddItem(itemid string, userid string,  s *discordgo.Sessio
 }
 
 // RemoveItem function
-func (h *UserHandler) RemoveItem(itemid string, userid string,  s *discordgo.Session, channelID string) (err error) {
+func (h *UserHandler) RemoveItem(itemid string, userid string, s *discordgo.Session, channelID string) (err error) {
 	// Make sure usermanager is in the database before we pull it out!
 	user, err := h.GetUser(userid, s, channelID)
 	if err != nil {
@@ -262,7 +262,7 @@ func (h *UserHandler) RepairUser(userid string, s *discordgo.Session, channelID 
 	// These are ID's now!
 	for _, roleID := range user.RoleIDs {
 		// Ignore errors if role doesn't exist on the guild
-		time.Sleep(time.Duration(time.Second*1))
+		time.Sleep(time.Duration(time.Second * 1))
 		_ = s.GuildMemberRoleAdd(guildID, user.ID, roleID)
 	}
 
@@ -285,7 +285,7 @@ func (h *UserHandler) DebugUser(userid string, s *discordgo.Session, channelID s
 	}
 
 	discordUser, err := s.User(userid)
-	if err != nil{
+	if err != nil {
 		return err
 	}
 
@@ -297,11 +297,10 @@ func (h *UserHandler) DebugUser(userid string, s *discordgo.Session, channelID s
 	userRecord = userRecord + "Roles: " + "\n"
 	userRecord = userRecord + "```\n"
 
-	s.ChannelMessageSend(channelID, "User Record: " + userRecord)
+	s.ChannelMessageSend(channelID, "User Record: "+userRecord)
 
 	return nil
 }
-
 
 // GetUser function
 func (h *UserHandler) GetUser(userid string, s *discordgo.Session, channelID string) (user User, err error) {
@@ -358,7 +357,6 @@ func (h *UserHandler) GetRoles(ID string, s *discordgo.Session, channelID string
 	return user.RoleIDs, nil
 }
 
-
 // GetGroups function
 func (h *UserHandler) GetGroups(ID string, s *discordgo.Session, channelID string) (groups []string, err error) {
 
@@ -412,7 +410,6 @@ func (h *UserHandler) FormatGroups(groups []string) (formatted string) {
 	return formatted
 }
 
-
 // FormatRoles function
 func (h *UserHandler) FormatRoles(roles []string) (formatted string) {
 
@@ -439,12 +436,12 @@ func (h *UserHandler) GetFormattedAttributes(userID string) (formatted string) {
 	}
 
 	attributes := "```\n"
-	attributes = attributes + "Strength: " + strconv.Itoa(user.Strength) +"\n"
-	attributes = attributes + "Dexterity: " + strconv.Itoa(user.Dexterity) +"\n"
-	attributes = attributes + "Constitution: " + strconv.Itoa(user.Constitution) +"\n"
-	attributes = attributes + "Intelligence: " + strconv.Itoa(user.Intelligence) +"\n"
-	attributes = attributes + "Wisdom: " + strconv.Itoa(user.Wisdom) +"\n"
-	attributes = attributes + "Charism: " + strconv.Itoa(user.Charisma) +"\n"
+	attributes = attributes + "Strength: " + strconv.Itoa(user.Strength) + "\n"
+	attributes = attributes + "Dexterity: " + strconv.Itoa(user.Dexterity) + "\n"
+	attributes = attributes + "Constitution: " + strconv.Itoa(user.Constitution) + "\n"
+	attributes = attributes + "Intelligence: " + strconv.Itoa(user.Intelligence) + "\n"
+	attributes = attributes + "Wisdom: " + strconv.Itoa(user.Wisdom) + "\n"
+	attributes = attributes + "Charism: " + strconv.Itoa(user.Charisma) + "\n"
 	attributes = attributes + "```\n"
 
 	return attributes

@@ -1,8 +1,8 @@
 package main
 
 import (
-	"sync"
 	"errors"
+	"sync"
 )
 
 // Transfers struct
@@ -13,16 +13,14 @@ type Transfers struct {
 
 // Transfer struct
 type Transfer struct {
-
 	ID              string `storm:"id"` // primary key
 	TargetChannelID string `storm:"index"`
 	TargetGuildID   string `storm:"index"`
 	FromChannelID   string `storm:"index"`
 
-	FromDirection	string
+	FromDirection string
 
-	UserID 			string `storm:"index"`
-
+	UserID string `storm:"index"`
 }
 
 // SaveTransferToDB function
@@ -65,12 +63,12 @@ func (h *Transfers) RemoveRoomByID(transferID string) (err error) {
 func (h *Transfers) GetTransferByID(roomID string) (transfer Transfer, err error) {
 
 	transfers, err := h.GetAllTransfers()
-	if err != nil{
+	if err != nil {
 		return transfer, err
 	}
 
 	for _, i := range transfers {
-		if i.ID == roomID{
+		if i.ID == roomID {
 			return i, nil
 		}
 	}

@@ -9,18 +9,18 @@ import (
 
 // PrimaryHandler struct
 type PrimaryHandler struct {
-	db          *DBHandler
-	conf        *Config
-	dg          *discordgo.Session
-	callback    *CallbackHandler
-	perm        *PermissionsHandler
-	user        *UserHandler
-	command     *CommandHandler
-	registry    *CommandRegistry
-	logchan     chan string
-	channel     *ChannelHandler
-	rooms 		*RoomsHandler
-	travel 		*TravelHandler
+	db       *DBHandler
+	conf     *Config
+	dg       *discordgo.Session
+	callback *CallbackHandler
+	perm     *PermissionsHandler
+	user     *UserHandler
+	command  *CommandHandler
+	registry *CommandRegistry
+	logchan  chan string
+	channel  *ChannelHandler
+	rooms    *RoomsHandler
+	travel   *TravelHandler
 }
 
 // Init function
@@ -30,17 +30,16 @@ func (h *PrimaryHandler) Init() (err error) {
 	h.dg.AddHandler(h.Read)
 	h.registry = h.command.registry
 
-
 	// Add new handlers below this line //
-/*
-	fmt.Println("Adding Utilities Handler")
-	utilities := UtilitiesHandler{db: h.db, conf: h.conf, usermanager: h.usermanager, registry: h.command.registry, logchan: h.logchan, callback: h.callback}
-	h.dg.AddHandler(utilities.Read)
+	/*
+		fmt.Println("Adding Utilities Handler")
+		utilities := UtilitiesHandler{db: h.db, conf: h.conf, usermanager: h.usermanager, registry: h.command.registry, logchan: h.logchan, callback: h.callback}
+		h.dg.AddHandler(utilities.Read)
 
-	fmt.Println("Adding Tutorial Handler")
-	tutorials := TutorialHandler{db: h.db, conf: h.conf, usermanager: h.usermanager, registry: h.command.registry}
-	h.dg.AddHandler(tutorials.Read)
-*/
+		fmt.Println("Adding Tutorial Handler")
+		tutorials := TutorialHandler{db: h.db, conf: h.conf, usermanager: h.usermanager, registry: h.command.registry}
+		h.dg.AddHandler(tutorials.Read)
+	*/
 	fmt.Println("Adding Notifications Handler")
 	notifications := NotificationsHandler{db: h.db, callback: h.callback, conf: h.conf, registry: h.command.registry}
 	notifications.Init()

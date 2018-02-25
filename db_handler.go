@@ -14,40 +14,40 @@ type DBHandler struct {
 // FirstTimeSetup function
 func (h *DBHandler) FirstTimeSetup() error {
 
-//	usermanager.ID = h.conf.DiscordConfig.AdminID
+	//	usermanager.ID = h.conf.DiscordConfig.AdminID
 
 	//_ := h.rawdb.From("Users")
 
-/*	err := db.One("ID", h.conf.DiscordConfig.AdminID, &usermanager)
-	if err != nil {
-		fmt.Println("Running first time db config")
-		walletdb := db.From("Wallets")
-		usermanager.SetRole("owner")
-		err := db.Save(&usermanager)
+	/*	err := db.One("ID", h.conf.DiscordConfig.AdminID, &usermanager)
 		if err != nil {
-			fmt.Println("error saving owner")
-			return err
-		}
-
-		wallet := Wallet{Account: h.conf.DiscordConfig.AdminID, Balance: 10000}
-		err = walletdb.Save(&wallet)
-		if err != nil {
-			fmt.Println("error saving wallet")
-			return err
-		}
-
-		if usermanager.Owner {
-			err = db.One("ID", h.conf.DiscordConfig.AdminID, &usermanager)
+			fmt.Println("Running first time db config")
+			walletdb := db.From("Wallets")
+			usermanager.SetRole("owner")
+			err := db.Save(&usermanager)
 			if err != nil {
-				fmt.Println("Could not retrieve data from the database, something went wrong!")
+				fmt.Println("error saving owner")
 				return err
 			}
-			fmt.Println("Owner ID: " + usermanager.ID)
-			fmt.Println("Database has been configured")
-			return nil
+
+			wallet := Wallet{Account: h.conf.DiscordConfig.AdminID, Balance: 10000}
+			err = walletdb.Save(&wallet)
+			if err != nil {
+				fmt.Println("error saving wallet")
+				return err
+			}
+
+			if usermanager.Owner {
+				err = db.One("ID", h.conf.DiscordConfig.AdminID, &usermanager)
+				if err != nil {
+					fmt.Println("Could not retrieve data from the database, something went wrong!")
+					return err
+				}
+				fmt.Println("Owner ID: " + usermanager.ID)
+				fmt.Println("Database has been configured")
+				return nil
+			}
 		}
-	}
-*/
+	*/
 	return nil
 }
 

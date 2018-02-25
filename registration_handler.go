@@ -7,19 +7,18 @@ This handler is responsible for player registration, which includes character cr
 Once a player has created a profile and is ready to enter the world, this handler will
 assign the registered role and drop them into the #Crossroads room.
 
- */
+*/
 
 import (
-	"github.com/bwmarrin/discordgo"
-	"strings"
 	"errors"
-	"time"
+	"github.com/bwmarrin/discordgo"
 	"strconv"
+	"strings"
+	"time"
 )
 
 // RegistrationHandler function
 type RegistrationHandler struct {
-
 	callback *CallbackHandler
 	conf     *Config
 	db       *DBHandler
@@ -28,9 +27,8 @@ type RegistrationHandler struct {
 	dg       *discordgo.Session
 	user     *UserHandler
 	ch       *ChannelHandler
-	rooms	 *Rooms
-	guilds 	 *GuildsManager
-
+	rooms    *Rooms
+	guilds   *GuildsManager
 }
 
 // Init function
@@ -66,7 +64,7 @@ func (h *RegistrationHandler) Read(s *discordgo.Session, m *discordgo.MessageCre
 
 	guildID, err := getGuildID(s, m.ChannelID)
 	if err != nil {
-		s.ChannelMessageSend(m.ChannelID, "Could not retrieve GuildID: " + err.Error())
+		s.ChannelMessageSend(m.ChannelID, "Could not retrieve GuildID: "+err.Error())
 		return
 	}
 
@@ -133,23 +131,20 @@ func (h *RegistrationHandler) Read(s *discordgo.Session, m *discordgo.MessageCre
 
 }
 
-
-
 // StartRegistration function
 func (h *RegistrationHandler) StartRegistration(s *discordgo.Session, m *discordgo.MessageCreate) {
-/*
-	guildID, err := getGuildID(s, m.ChannelID)
-	if err != nil {
-		s.ChannelMessageSend(m.ChannelID, "Could not retrieve GuildID: " + err.Error())
-		return
-	}
-*/
+	/*
+		guildID, err := getGuildID(s, m.ChannelID)
+		if err != nil {
+			s.ChannelMessageSend(m.ChannelID, "Could not retrieve GuildID: " + err.Error())
+			return
+		}
+	*/
 	user, err := h.db.GetUser(m.Author.ID)
 	if err != nil {
-		s.ChannelMessageSend(m.ChannelID, "Error finding usermanager: " + err.Error())
+		s.ChannelMessageSend(m.ChannelID, "Error finding usermanager: "+err.Error())
 		return
 	}
-
 
 	welcomeMessage := ":sunrise_over_mountains: Avatar Construction Chamber ```\n"
 	welcomeMessage = welcomeMessage + "You are now standing in a large chamber of light, there are no walls as far as you can tell.\n\n"
@@ -157,18 +152,17 @@ func (h *RegistrationHandler) StartRegistration(s *discordgo.Session, m *discord
 
 	userprivatechannel, err := s.UserChannelCreate(user.ID)
 	if err != nil {
-		s.ChannelMessageSend(m.ChannelID, "Error starting Registration: " + err.Error())
+		s.ChannelMessageSend(m.ChannelID, "Error starting Registration: "+err.Error())
 		return
 	}
 
 	s.ChannelMessageSend(userprivatechannel.ID, welcomeMessage)
-	time.Sleep(time.Duration(time.Second*5))
+	time.Sleep(time.Duration(time.Second * 5))
 
 	privateMessage := "*\"Hello* " + m.Author.Mention() + " *you are now standing in what is known as the avatar construction chamber.\"*\n\n"
 	privateMessage = privateMessage + ""
 
-
-	time.Sleep(time.Duration(time.Second*5))
+	time.Sleep(time.Duration(time.Second * 5))
 	s.ChannelMessageSend(userprivatechannel.ID, privateMessage)
 
 	privateMessage = "\"Beyond this chamber lies the beginning of your path into The Aether, a world of unlimited possibilites awaits you!\n\n"
@@ -178,9 +172,8 @@ func (h *RegistrationHandler) StartRegistration(s *discordgo.Session, m *discord
 	privateMessage = privateMessage + "Will you lead a cult in the shadows, or will you band together with allies to kill a god?\n\n"
 	privateMessage = privateMessage + "Whatever you choose to become and wherever you choose to go, we welcome you!\""
 
-	time.Sleep(time.Duration(time.Second*10))
+	time.Sleep(time.Duration(time.Second * 10))
 	s.ChannelMessageSend(userprivatechannel.ID, privateMessage)
-
 
 	privateMessage = "\"A basic avatar has now been summoned for you, however it cannot be used until you "
 	privateMessage = privateMessage + "prepare it for materialization into The Aether.\n\n"
@@ -188,12 +181,12 @@ func (h *RegistrationHandler) StartRegistration(s *discordgo.Session, m *discord
 	privateMessage = privateMessage + "and choosing a set of starter equipment.\n\n"
 	privateMessage = privateMessage + "You don't need to remember all of that though, for now you can begin by typing ~roll-attributes\""
 
-	time.Sleep(time.Duration(time.Second*10))
+	time.Sleep(time.Duration(time.Second * 10))
 	s.ChannelMessageSend(userprivatechannel.ID, privateMessage)
 
 	err = h.SetRegistrationStep("attributes", user.ID)
 	if err != nil {
-		s.ChannelMessageSend(userprivatechannel.ID, "Error starting Registration: " + err.Error())
+		s.ChannelMessageSend(userprivatechannel.ID, "Error starting Registration: "+err.Error())
 		return
 	}
 
@@ -201,25 +194,25 @@ func (h *RegistrationHandler) StartRegistration(s *discordgo.Session, m *discord
 }
 
 // SetRegistrationStep function
-func (h *RegistrationHandler) SetRegistrationStep(status string, userID string) (err error){
+func (h *RegistrationHandler) SetRegistrationStep(status string, userID string) (err error) {
 
 	switch status {
-		case "attributes":
-			break
-		case "race":
-			break
-		case "class":
-			break
-		case "complete":
-			break
-		case "skills":
-			break
-		case "feats":
-			break
-		case "equipment":
-			break
-		default:
-			return errors.New("Invalid registration status update")
+	case "attributes":
+		break
+	case "race":
+		break
+	case "class":
+		break
+	case "complete":
+		break
+	case "skills":
+		break
+	case "feats":
+		break
+	case "equipment":
+		break
+	default:
+		return errors.New("Invalid registration status update")
 	}
 
 	user, err := h.db.GetUser(userID)
@@ -237,7 +230,7 @@ func (h *RegistrationHandler) SetRegistrationStep(status string, userID string) 
 }
 
 // FinishRegistration function
-func (h *RegistrationHandler) FinishRegistration(s *discordgo.Session, m *discordgo.MessageCreate){
+func (h *RegistrationHandler) FinishRegistration(s *discordgo.Session, m *discordgo.MessageCreate) {
 
 	user, err := h.db.GetUser(m.Author.ID)
 	if err != nil {
@@ -247,30 +240,28 @@ func (h *RegistrationHandler) FinishRegistration(s *discordgo.Session, m *discor
 
 	err = h.perm.AddRoleToUser("Registered", user.ID, s, m, false)
 	if err != nil {
-		s.ChannelMessageSend(m.ChannelID, "Could not complete registration: " + err.Error())
+		s.ChannelMessageSend(m.ChannelID, "Could not complete registration: "+err.Error())
 		return
 	}
 
 	err = h.perm.AddRoleToUser("Crossroads", user.ID, s, m, false)
 	if err != nil {
-		s.ChannelMessageSend(m.ChannelID, "Could not complete registration: " + err.Error())
+		s.ChannelMessageSend(m.ChannelID, "Could not complete registration: "+err.Error())
 		return
 	}
 
 	err = h.user.usermanager.SaveUserToDB(user)
 	if err != nil {
-		s.ChannelMessageSend(m.ChannelID, "Could not complete registration: " + err.Error())
+		s.ChannelMessageSend(m.ChannelID, "Could not complete registration: "+err.Error())
 		return
 	}
 
-	s.ChannelMessageSend(m.ChannelID,"Registration complete, please enjoy your journey through *The Aether*!")
+	s.ChannelMessageSend(m.ChannelID, "Registration complete, please enjoy your journey through *The Aether*!")
 	return
 }
 
-
-
 // RollAttributes function
-func (h *RegistrationHandler) RollAttributes(s *discordgo.Session, m *discordgo.MessageCreate){
+func (h *RegistrationHandler) RollAttributes(s *discordgo.Session, m *discordgo.MessageCreate) {
 
 	strengthroll := RollDiceAndAdd(6, 3)
 	dexterityroll := RollDiceAndAdd(6, 3)
@@ -279,7 +270,6 @@ func (h *RegistrationHandler) RollAttributes(s *discordgo.Session, m *discordgo.
 	wisdomroll := RollDiceAndAdd(6, 3)
 	charismaroll := RollDiceAndAdd(6, 3)
 
-
 	roll := strconv.Itoa(strengthroll)
 	roll = roll + " " + strconv.Itoa(dexterityroll)
 	roll = roll + " " + strconv.Itoa(constituionroll)
@@ -287,19 +277,16 @@ func (h *RegistrationHandler) RollAttributes(s *discordgo.Session, m *discordgo.
 	roll = roll + " " + strconv.Itoa(wisdomroll)
 	roll = roll + " " + strconv.Itoa(charismaroll)
 
-
-
 	attributes := "```\n"
-	attributes = attributes + "Strength: " + strconv.Itoa(strengthroll) +"\n"
-	attributes = attributes + "Dexterity: " + strconv.Itoa(dexterityroll) +"\n"
-	attributes = attributes + "Constitution: " + strconv.Itoa(constituionroll) +"\n"
-	attributes = attributes + "Intelligence: " + strconv.Itoa(intelligenceroll) +"\n"
-	attributes = attributes + "Wisdom: " + strconv.Itoa(wisdomroll) +"\n"
-	attributes = attributes + "Charism: " + strconv.Itoa(charismaroll) +"\n"
+	attributes = attributes + "Strength: " + strconv.Itoa(strengthroll) + "\n"
+	attributes = attributes + "Dexterity: " + strconv.Itoa(dexterityroll) + "\n"
+	attributes = attributes + "Constitution: " + strconv.Itoa(constituionroll) + "\n"
+	attributes = attributes + "Intelligence: " + strconv.Itoa(intelligenceroll) + "\n"
+	attributes = attributes + "Wisdom: " + strconv.Itoa(wisdomroll) + "\n"
+	attributes = attributes + "Charism: " + strconv.Itoa(charismaroll) + "\n"
 	attributes = attributes + "```\n"
 
-
-	s.ChannelMessageSend(m.ChannelID, "Roll result: Confirm? (Yes/No):\n" + attributes)
+	s.ChannelMessageSend(m.ChannelID, "Roll result: Confirm? (Yes/No):\n"+attributes)
 	h.callback.Watch(h.ConfirmAttributes, GetUUIDv2(), roll, s, m)
 	return
 }
@@ -321,112 +308,111 @@ func (h *RegistrationHandler) ConfirmAttributes(command string, s *discordgo.Ses
 
 		user, err := h.db.GetUser(m.Author.ID)
 		if err != nil {
-			s.ChannelMessageSend(m.ChannelID, "Could not retrieve usermanager record: " + err.Error())
+			s.ChannelMessageSend(m.ChannelID, "Could not retrieve usermanager record: "+err.Error())
 			return
 		}
 
-		user.Strength, err 			= strconv.Atoi(attributes[0])
+		user.Strength, err = strconv.Atoi(attributes[0])
 		if err != nil {
-			s.ChannelMessageSend(m.ChannelID, "Error with strength conversion: " + err.Error())
+			s.ChannelMessageSend(m.ChannelID, "Error with strength conversion: "+err.Error())
 			return
 		}
-		user.Dexterity, err			= strconv.Atoi(attributes[1])
+		user.Dexterity, err = strconv.Atoi(attributes[1])
 		if err != nil {
-			s.ChannelMessageSend(m.ChannelID, "Error with strength conversion: " + err.Error())
+			s.ChannelMessageSend(m.ChannelID, "Error with strength conversion: "+err.Error())
 			return
 		}
-		user.Constitution, err		= strconv.Atoi(attributes[2])
+		user.Constitution, err = strconv.Atoi(attributes[2])
 		if err != nil {
-			s.ChannelMessageSend(m.ChannelID, "Error with strength conversion: " + err.Error())
+			s.ChannelMessageSend(m.ChannelID, "Error with strength conversion: "+err.Error())
 			return
 		}
-		user.Intelligence, err 		= strconv.Atoi(attributes[3])
+		user.Intelligence, err = strconv.Atoi(attributes[3])
 		if err != nil {
-			s.ChannelMessageSend(m.ChannelID, "Error with strength conversion: " + err.Error())
+			s.ChannelMessageSend(m.ChannelID, "Error with strength conversion: "+err.Error())
 			return
 		}
-		user.Wisdom, err			= strconv.Atoi(attributes[4])
+		user.Wisdom, err = strconv.Atoi(attributes[4])
 		if err != nil {
-			s.ChannelMessageSend(m.ChannelID, "Error with strength conversion: " + err.Error())
+			s.ChannelMessageSend(m.ChannelID, "Error with strength conversion: "+err.Error())
 			return
 		}
-		user.Charisma, err			= strconv.Atoi(attributes[5])
+		user.Charisma, err = strconv.Atoi(attributes[5])
 		if err != nil {
-			s.ChannelMessageSend(m.ChannelID, "Error with strength conversion: " + err.Error())
+			s.ChannelMessageSend(m.ChannelID, "Error with strength conversion: "+err.Error())
 			return
 		}
 
 		err = h.user.usermanager.SaveUserToDB(user)
 		if err != nil {
-			s.ChannelMessageSend(m.ChannelID, "Could not complete registration: " + err.Error())
+			s.ChannelMessageSend(m.ChannelID, "Could not complete registration: "+err.Error())
 			return
 		}
 	}
 	if m.Content == "n" || m.Content == "no" {
-		s.ChannelMessageSend(m.ChannelID, "Roll discarded, you may " +
-													"re-roll with "+h.conf.MainConfig.CP+"roll-attributes.")
+		s.ChannelMessageSend(m.ChannelID, "Roll discarded, you may "+
+			"re-roll with "+h.conf.MainConfig.CP+"roll-attributes.")
 		return
 	}
 
-		err := h.SetRegistrationStep("attributes", m.Author.ID)
+	err := h.SetRegistrationStep("attributes", m.Author.ID)
 	if err != nil {
-		s.ChannelMessageSend(m.ChannelID, "Could not complete registration: " + err.Error())
+		s.ChannelMessageSend(m.ChannelID, "Could not complete registration: "+err.Error())
 		return
 	}
-	s.ChannelMessageSend(m.ChannelID, "Attributes assigned! You may now proceed with your " +
-			"avatar creation by using the "+h.conf.MainConfig.CP+"pick-race command")
+	s.ChannelMessageSend(m.ChannelID, "Attributes assigned! You may now proceed with your "+
+		"avatar creation by using the "+h.conf.MainConfig.CP+"pick-race command")
 	return
 }
-
 
 // Race
 
 // RaceInfo function
-func (h *RegistrationHandler) RaceInfo(s *discordgo.Session, m *discordgo.MessageCreate){
+func (h *RegistrationHandler) RaceInfo(s *discordgo.Session, m *discordgo.MessageCreate) {
 
 	_, payload := SplitPayload(strings.Split(m.Content, " "))
-	if len(payload) < 1{
+	if len(payload) < 1 {
 
 		racelist := GetRaceList()
-		s.ChannelMessageSend(m.ChannelID, ":sparkles: You may pick from one of the following races: \n```" + racelist +"\n```\n" )
+		s.ChannelMessageSend(m.ChannelID, ":sparkles: You may pick from one of the following races: \n```"+racelist+"\n```\n")
 		return
 	}
 	raceoption := payload[0]
-	if h.ValidateRaceChoice(raceoption){
-		s.ChannelMessageSend(m.ChannelID, ":construction: -Raceinfo goes here-" )
+	if h.ValidateRaceChoice(raceoption) {
+		s.ChannelMessageSend(m.ChannelID, ":construction: -Raceinfo goes here-")
 		return
 	}
 	racelist := GetRaceList()
-	s.ChannelMessageSend(m.ChannelID, ":sparkles: Invalid Race Choice! You may pick from one of the following races: \n```" +
-		racelist +"\n```\n" )
+	s.ChannelMessageSend(m.ChannelID, ":sparkles: Invalid Race Choice! You may pick from one of the following races: \n```"+
+		racelist+"\n```\n")
 	return
 }
 
 // PickRace function
-func (h *RegistrationHandler) PickRace(s *discordgo.Session, m *discordgo.MessageCreate){
+func (h *RegistrationHandler) PickRace(s *discordgo.Session, m *discordgo.MessageCreate) {
 
 	_, payload := SplitPayload(strings.Split(m.Content, " "))
-	if len(payload) < 1{
+	if len(payload) < 1 {
 		racelist := "\n```Tip - Use the \"pick-race raceinfo\" command for more information about a given race \n\n" + GetRaceList()
 		racelist = racelist + "\n Use \"pick-race choose <race>\" to assign an option " + "```\n"
-		s.ChannelMessageSend(m.ChannelID, ":sparkles: You may pick from one of the following races: " + racelist)
+		s.ChannelMessageSend(m.ChannelID, ":sparkles: You may pick from one of the following races: "+racelist)
 		return
 	}
 
-	for _, argument := range payload{
+	for _, argument := range payload {
 		argument = strings.ToLower(argument)
 	}
 
 	if len(payload) > 0 {
 		raceoption := payload[0]
-		if h.ValidateRaceChoice(raceoption){
-			s.ChannelMessageSend(m.ChannelID, "You have chosen: " + raceoption +"\nConfirm? (Yes/No)\n")
+		if h.ValidateRaceChoice(raceoption) {
+			s.ChannelMessageSend(m.ChannelID, "You have chosen: "+raceoption+"\nConfirm? (Yes/No)\n")
 			h.callback.Watch(h.ConfirmRace, GetUUIDv2(), raceoption, s, m)
 			return
 		}
 		racelist := GetRaceList()
-		s.ChannelMessageSend(m.ChannelID, ":sparkles: Invalid Race Choice! You may pick from one of the following races: \n```" +
-			racelist +"\n```\n" )
+		s.ChannelMessageSend(m.ChannelID, ":sparkles: Invalid Race Choice! You may pick from one of the following races: \n```"+
+			racelist+"\n```\n")
 		return
 	}
 }
@@ -437,39 +423,39 @@ func (h *RegistrationHandler) ValidateRaceChoice(race string) (valid bool) {
 	race = strings.ToLower(race)
 
 	switch race {
-		case "catfolk":
-			return true
-		case "clockwork":
-			return true
-		case "dwarf":
-			return true
-		case "elf":
-			return true
-		case "half-elf":
-			return true
-		case "half-orc":
-			return true
-		case "human":
-			return true
-		case "kobold":
-			return true
-		case "gnome":
-			return true
-		case "orc":
-			return true
-		case "ratfolk":
-			return true
-		case "saurian":
-			return true
-		case "skinwalker":
-			return true
-		default:
-			return false
+	case "catfolk":
+		return true
+	case "clockwork":
+		return true
+	case "dwarf":
+		return true
+	case "elf":
+		return true
+	case "half-elf":
+		return true
+	case "half-orc":
+		return true
+	case "human":
+		return true
+	case "kobold":
+		return true
+	case "gnome":
+		return true
+	case "orc":
+		return true
+	case "ratfolk":
+		return true
+	case "saurian":
+		return true
+	case "skinwalker":
+		return true
+	default:
+		return false
 	}
 }
 
 // ConfirmRace function
-func (h *RegistrationHandler) ConfirmRace(race string, s *discordgo.Session, m *discordgo.MessageCreate){
+func (h *RegistrationHandler) ConfirmRace(race string, s *discordgo.Session, m *discordgo.MessageCreate) {
 
 	// We do this to avoid having duplicate commands overrunning each other
 	cp := h.conf.MainConfig.CP
@@ -483,7 +469,7 @@ func (h *RegistrationHandler) ConfirmRace(race string, s *discordgo.Session, m *
 
 		user, err := h.db.GetUser(m.Author.ID)
 		if err != nil {
-			s.ChannelMessageSend(m.ChannelID, "Could not retrieve usermanager record: " + err.Error())
+			s.ChannelMessageSend(m.ChannelID, "Could not retrieve usermanager record: "+err.Error())
 			return
 		}
 
@@ -491,7 +477,7 @@ func (h *RegistrationHandler) ConfirmRace(race string, s *discordgo.Session, m *
 
 		err = h.user.usermanager.SaveUserToDB(user)
 		if err != nil {
-			s.ChannelMessageSend(m.ChannelID, "Could not complete registration: " + err.Error())
+			s.ChannelMessageSend(m.ChannelID, "Could not complete registration: "+err.Error())
 			return
 		}
 	}
@@ -502,93 +488,92 @@ func (h *RegistrationHandler) ConfirmRace(race string, s *discordgo.Session, m *
 
 	err := h.SetRegistrationStep("race", m.Author.ID)
 	if err != nil {
-		s.ChannelMessageSend(m.ChannelID, "Could not complete registration: " + err.Error())
+		s.ChannelMessageSend(m.ChannelID, "Could not complete registration: "+err.Error())
 		return
 	}
-	s.ChannelMessageSend(m.ChannelID, "Race assigned! You may now proceed with your " +
+	s.ChannelMessageSend(m.ChannelID, "Race assigned! You may now proceed with your "+
 		"avatar creation by using the "+h.conf.MainConfig.CP+"pick-class command")
 	return
 
 }
 
-
 // ClassInfo function
-func (h *RegistrationHandler) ClassInfo(s *discordgo.Session, m *discordgo.MessageCreate){
+func (h *RegistrationHandler) ClassInfo(s *discordgo.Session, m *discordgo.MessageCreate) {
 
 	_, payload := SplitPayload(strings.Split(m.Content, " "))
-	if len(payload) < 1{
+	if len(payload) < 1 {
 
 		classlist := GetClassList()
-		s.ChannelMessageSend(m.ChannelID, ":sparkles: You may pick from one of the following races: \n```" + classlist +"\n```\n" )
+		s.ChannelMessageSend(m.ChannelID, ":sparkles: You may pick from one of the following races: \n```"+classlist+"\n```\n")
 		return
 	}
 	classoption := payload[0]
-	if h.ValidateRaceChoice(classoption){
-		s.ChannelMessageSend(m.ChannelID, ":construction: -Classinfo goes here-" )
+	if h.ValidateRaceChoice(classoption) {
+		s.ChannelMessageSend(m.ChannelID, ":construction: -Classinfo goes here-")
 		return
 	}
 	classlist := GetClassList()
-	s.ChannelMessageSend(m.ChannelID, ":sparkles: Invalid Class Choice! You may pick from one of the following classes: \n```" +
-		classlist +"\n```\n" )
+	s.ChannelMessageSend(m.ChannelID, ":sparkles: Invalid Class Choice! You may pick from one of the following classes: \n```"+
+		classlist+"\n```\n")
 	return
 }
 
 // PickClass function
-func (h *RegistrationHandler) PickClass(s *discordgo.Session, m *discordgo.MessageCreate){
+func (h *RegistrationHandler) PickClass(s *discordgo.Session, m *discordgo.MessageCreate) {
 
 	_, payload := SplitPayload(strings.Split(m.Content, " "))
-	if len(payload) < 1{
+	if len(payload) < 1 {
 
 		classlist := "\n```Tip - Use the \"pick-class classinfo\" command for more information about a given class \n\n" + GetClassList()
 		classlist = classlist + "\n Use \"pick-class choose <class>\" to assign an option " + "```\n"
-		s.ChannelMessageSend(m.ChannelID, ":sparkles: You may pick from one of the following classes: " + classlist)
+		s.ChannelMessageSend(m.ChannelID, ":sparkles: You may pick from one of the following classes: "+classlist)
 		return
 	}
 
-	for _, argument := range payload{
+	for _, argument := range payload {
 		argument = strings.ToLower(argument)
 	}
 
 	if len(payload) > 0 {
 		classoption := payload[0]
-		if h.ValidateClassChoice(classoption){
-			s.ChannelMessageSend(m.ChannelID, "You have chosen: " + classoption +"\nConfirm? (Yes/No)\n")
+		if h.ValidateClassChoice(classoption) {
+			s.ChannelMessageSend(m.ChannelID, "You have chosen: "+classoption+"\nConfirm? (Yes/No)\n")
 			h.callback.Watch(h.ConfirmClass, GetUUIDv2(), classoption, s, m)
 			return
 		}
 		classlist := GetClassList()
-		s.ChannelMessageSend(m.ChannelID, ":sparkles: Invalid Class Choice! You may pick from one of the following classes: \n```" +
-			classlist +"\n```\n" )
+		s.ChannelMessageSend(m.ChannelID, ":sparkles: Invalid Class Choice! You may pick from one of the following classes: \n```"+
+			classlist+"\n```\n")
 		return
 	}
 }
 
 // ChooseClass function
-func (h *RegistrationHandler) ChooseClass(s *discordgo.Session, m *discordgo.MessageCreate){
+func (h *RegistrationHandler) ChooseClass(s *discordgo.Session, m *discordgo.MessageCreate) {
 
 	_, payload := SplitPayload(strings.Split(m.Content, " "))
-	if len(payload) < 1{
+	if len(payload) < 1 {
 
 		classlist := "\n```Tip - Use the \"pick-class classinfo\" command for more information about a given race \n\n" + GetClassList()
 		classlist = classlist + "\n Use \"pick-race choose <race>\" to assign an option " + "```\n"
-		s.ChannelMessageSend(m.ChannelID, ":sparkles: You may pick from one of the following classes: " + classlist)
+		s.ChannelMessageSend(m.ChannelID, ":sparkles: You may pick from one of the following classes: "+classlist)
 		return
 	}
 
-	for _, argument := range payload{
+	for _, argument := range payload {
 		argument = strings.ToLower(argument)
 	}
 
 	if len(payload) > 0 {
 		classoption := payload[0]
-		if h.ValidateRaceChoice(classoption){
-			s.ChannelMessageSend(m.ChannelID, "You have chosen: " + classoption +"\nConfirm? (Yes/No)\n")
+		if h.ValidateRaceChoice(classoption) {
+			s.ChannelMessageSend(m.ChannelID, "You have chosen: "+classoption+"\nConfirm? (Yes/No)\n")
 			h.callback.Watch(h.ConfirmClass, GetUUIDv2(), classoption, s, m)
 			return
 		}
 		classlist := GetClassList()
-		s.ChannelMessageSend(m.ChannelID, ":sparkles: Invalid Class Choice! You may pick from one of the following classes: \n```" +
-			classlist +"\n```\n" )
+		s.ChannelMessageSend(m.ChannelID, ":sparkles: Invalid Class Choice! You may pick from one of the following classes: \n```"+
+			classlist+"\n```\n")
 		return
 	}
 }
@@ -643,7 +628,7 @@ func (h *RegistrationHandler) ValidateClassChoice(class string) (valid bool) {
 }
 
 // ConfirmClass function
-func (h *RegistrationHandler) ConfirmClass(class string, s *discordgo.Session, m *discordgo.MessageCreate){
+func (h *RegistrationHandler) ConfirmClass(class string, s *discordgo.Session, m *discordgo.MessageCreate) {
 
 	// We do this to avoid having duplicate commands overrunning each other
 	cp := h.conf.MainConfig.CP
@@ -657,7 +642,7 @@ func (h *RegistrationHandler) ConfirmClass(class string, s *discordgo.Session, m
 
 		user, err := h.db.GetUser(m.Author.ID)
 		if err != nil {
-			s.ChannelMessageSend(m.ChannelID, "Could not retrieve usermanager record: " + err.Error())
+			s.ChannelMessageSend(m.ChannelID, "Could not retrieve usermanager record: "+err.Error())
 			return
 		}
 
@@ -665,7 +650,7 @@ func (h *RegistrationHandler) ConfirmClass(class string, s *discordgo.Session, m
 
 		err = h.user.usermanager.SaveUserToDB(user)
 		if err != nil {
-			s.ChannelMessageSend(m.ChannelID, "Could not complete registration: " + err.Error())
+			s.ChannelMessageSend(m.ChannelID, "Could not complete registration: "+err.Error())
 			return
 		}
 	}
@@ -676,46 +661,46 @@ func (h *RegistrationHandler) ConfirmClass(class string, s *discordgo.Session, m
 
 	err := h.SetRegistrationStep("class", m.Author.ID)
 	if err != nil {
-		s.ChannelMessageSend(m.ChannelID, "Could not complete registration: " + err.Error())
+		s.ChannelMessageSend(m.ChannelID, "Could not complete registration: "+err.Error())
 		return
 	}
-	s.ChannelMessageSend(m.ChannelID, "Class assigned! You may now proceed with your " +
+	s.ChannelMessageSend(m.ChannelID, "Class assigned! You may now proceed with your "+
 		"avatar creation by using the "+h.conf.MainConfig.CP+"pick-skills command")
 	return
 
 }
 
-
 // ChooseSkills function
-func (h *RegistrationHandler) ChooseSkills(s *discordgo.Session, m *discordgo.MessageCreate){}
+func (h *RegistrationHandler) ChooseSkills(s *discordgo.Session, m *discordgo.MessageCreate) {}
 
 // ConfirmSkills function
-func (h *RegistrationHandler) ConfirmSkills(command string, s *discordgo.Session, m *discordgo.MessageCreate){}
-
+func (h *RegistrationHandler) ConfirmSkills(command string, s *discordgo.Session, m *discordgo.MessageCreate) {
+}
 
 // ChooseFeats function
-func (h *RegistrationHandler) ChooseFeats(s *discordgo.Session, m *discordgo.MessageCreate){}
+func (h *RegistrationHandler) ChooseFeats(s *discordgo.Session, m *discordgo.MessageCreate) {}
 
 // ConfirmFeats function
-func (h *RegistrationHandler) ConfirmFeats(command string, s *discordgo.Session, m *discordgo.MessageCreate){}
-
+func (h *RegistrationHandler) ConfirmFeats(command string, s *discordgo.Session, m *discordgo.MessageCreate) {
+}
 
 // ChooseStarterGear function
-func (h *RegistrationHandler) ChooseStarterGear(s *discordgo.Session, m *discordgo.MessageCreate){}
+func (h *RegistrationHandler) ChooseStarterGear(s *discordgo.Session, m *discordgo.MessageCreate) {}
 
 // ConfirmStarterGear function
-func (h *RegistrationHandler) ConfirmStarterGear(command string, s *discordgo.Session, m *discordgo.MessageCreate){}
-
+func (h *RegistrationHandler) ConfirmStarterGear(command string, s *discordgo.Session, m *discordgo.MessageCreate) {
+}
 
 // ChangeMisc function
-func (h *RegistrationHandler) ChangeMisc(s *discordgo.Session, m *discordgo.MessageCreate){}
+func (h *RegistrationHandler) ChangeMisc(s *discordgo.Session, m *discordgo.MessageCreate) {}
 
 // ConfirmMisc function
-func (h *RegistrationHandler) ConfirmMisc(command string, s *discordgo.Session, m *discordgo.MessageCreate){}
-
+func (h *RegistrationHandler) ConfirmMisc(command string, s *discordgo.Session, m *discordgo.MessageCreate) {
+}
 
 // ChangeBio function
-func (h *RegistrationHandler) ChangeBio(s *discordgo.Session, m *discordgo.MessageCreate){}
+func (h *RegistrationHandler) ChangeBio(s *discordgo.Session, m *discordgo.MessageCreate) {}
 
 // ConfirmBio function
-func (h *RegistrationHandler) ConfirmBio(command string, s *discordgo.Session, m *discordgo.MessageCreate){}
+func (h *RegistrationHandler) ConfirmBio(command string, s *discordgo.Session, m *discordgo.MessageCreate) {
+}

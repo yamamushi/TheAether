@@ -1,32 +1,30 @@
 package main
 
 import (
-	"github.com/bwmarrin/discordgo"
-	"strings"
-	"fmt"
-	"reflect"
 	"container/list"
 	"errors"
+	"fmt"
+	"github.com/bwmarrin/discordgo"
+	"reflect"
+	"strings"
 )
 
 // This handles the discord input interface for registering events and managing them
 
 // EventHandler struct
 type EventHandler struct {
-
-	conf       *Config
-	registry   *CommandRegistry
-	callback   *CallbackHandler
-	db         *DBHandler
-	user	   *UserHandler
+	conf     *Config
+	registry *CommandRegistry
+	callback *CallbackHandler
+	db       *DBHandler
+	user     *UserHandler
 
 	WatchList list.List
 	dg        *discordgo.Session
 	logger    *Logger
 
-	eventsdb	*EventsDB
-	parser 		*EventParser
-
+	eventsdb *EventsDB
+	parser   *EventParser
 }
 
 // EventCallback struct
@@ -104,10 +102,10 @@ func (h *EventHandler) ParseCommand(input []string, s *discordgo.Session, m *dis
 		// We pass in the full message here because we intend to unpack it later
 		eventID, err := h.RegisterEvent(m.Content, s, m)
 		if err != nil {
-			s.ChannelMessageSend(m.ChannelID, "Error registering new event: " + err.Error())
+			s.ChannelMessageSend(m.ChannelID, "Error registering new event: "+err.Error())
 			return
 		}
-		s.ChannelMessageSend(m.ChannelID, "Event registered with ID: " + eventID)
+		s.ChannelMessageSend(m.ChannelID, "Event registered with ID: "+eventID)
 		return
 	}
 	if argument == "remove" {
@@ -117,7 +115,7 @@ func (h *EventHandler) ParseCommand(input []string, s *discordgo.Session, m *dis
 		}
 		err := h.RemoveEvent(payload[0], m.Author.ID, s, m.ChannelID)
 		if err != nil {
-			s.ChannelMessageSend(m.ChannelID, "Error removing event: " + err.Error())
+			s.ChannelMessageSend(m.ChannelID, "Error removing event: "+err.Error())
 			return
 		}
 		s.ChannelMessageSend(m.ChannelID, "Event record removed!")
@@ -129,9 +127,9 @@ func (h *EventHandler) ParseCommand(input []string, s *discordgo.Session, m *dis
 			return
 		}
 		payload[0] = CleanChannel(payload[0])
-		err := h.EnableEvent(payload[0], m.Author.ID, m.ChannelID,  s)
+		err := h.EnableEvent(payload[0], m.Author.ID, m.ChannelID, s)
 		if err != nil {
-			s.ChannelMessageSend(m.ChannelID, "Error enabling event: " + err.Error())
+			s.ChannelMessageSend(m.ChannelID, "Error enabling event: "+err.Error())
 			return
 		}
 		s.ChannelMessageSend(m.ChannelID, "Event enabled.")
@@ -142,21 +140,21 @@ func (h *EventHandler) ParseCommand(input []string, s *discordgo.Session, m *dis
 			s.ChannelMessageSend(m.ChannelID, "Command 'disable' expects an argument	: <EventID>")
 			return
 		}
-		err := h.DisableEvent(payload[0],m.Author.ID,s)
+		err := h.DisableEvent(payload[0], m.Author.ID, s)
 		if err != nil {
-			s.ChannelMessageSend(m.ChannelID, "Error unwatched event: " + err.Error())
+			s.ChannelMessageSend(m.ChannelID, "Error unwatched event: "+err.Error())
 			return
 		}
 		s.ChannelMessageSend(m.ChannelID, "Event removed from watchlist!")
 		return
 	}
 	if argument == "list" {
-		formatted,err := h.ListEvents()
+		formatted, err := h.ListEvents()
 		if err != nil {
-			s.ChannelMessageSend(m.ChannelID, "Error listing events: " + err.Error())
+			s.ChannelMessageSend(m.ChannelID, "Error listing events: "+err.Error())
 			return
 		}
-		s.ChannelMessageSend(m.ChannelID, "Events: " +formatted)
+		s.ChannelMessageSend(m.ChannelID, "Events: "+formatted)
 		return
 	}
 	if argument == "listenabled" {
@@ -165,12 +163,12 @@ func (h *EventHandler) ParseCommand(input []string, s *discordgo.Session, m *dis
 			return
 		}
 		payload[0] = CleanChannel(payload[0])
-		formatted,err := h.ListEnabled(payload[0])
+		formatted, err := h.ListEnabled(payload[0])
 		if err != nil {
-			s.ChannelMessageSend(m.ChannelID, "Error listing enabled events: " + err.Error())
+			s.ChannelMessageSend(m.ChannelID, "Error listing enabled events: "+err.Error())
 			return
 		}
-		s.ChannelMessageSend(m.ChannelID, "Enabled Events for <#"+payload[0]+">: " +formatted)
+		s.ChannelMessageSend(m.ChannelID, "Enabled Events for <#"+payload[0]+">: "+formatted)
 		return
 	}
 	if argument == "info" {
@@ -182,7 +180,7 @@ func (h *EventHandler) ParseCommand(input []string, s *discordgo.Session, m *dis
 }
 
 // EnableEvent function
-func (h *EventHandler) EnableEvent(eventID, userID string, channelID string, s *discordgo.Session) (err error){
+func (h *EventHandler) EnableEvent(eventID, userID string, channelID string, s *discordgo.Session) (err error) {
 	user, err := h.user.GetUser(userID, s, channelID)
 	if err != nil {
 		return err
@@ -203,7 +201,7 @@ func (h *EventHandler) EnableEvent(eventID, userID string, channelID string, s *
 }
 
 // DisableEvent function
-func (h *EventHandler) DisableEvent(eventID string, userID string, s *discordgo.Session) (err error){
+func (h *EventHandler) DisableEvent(eventID string, userID string, s *discordgo.Session) (err error) {
 	event, err := h.eventsdb.GetEventByID(eventID)
 	if err != nil {
 		return err
@@ -223,7 +221,7 @@ func (h *EventHandler) DisableEvent(eventID string, userID string, s *discordgo.
 }
 
 // RemoveEvent function
-func (h *EventHandler) RemoveEvent(eventID string, userID string, s *discordgo.Session, channelID string) (err error){
+func (h *EventHandler) RemoveEvent(eventID string, userID string, s *discordgo.Session, channelID string) (err error) {
 	event, err := h.eventsdb.GetEventByID(eventID)
 	if err != nil {
 		return err
@@ -256,15 +254,14 @@ func (h *EventHandler) ListEvents() (formatted string, err error) {
 	formatted = "```\n"
 
 	for _, event := range events {
-		formatted = formatted + "EventID: " +event.ID + " ChannelID:" + event.ChannelID + " Type:" + event.Type + " CreatorID:" + event.CreatorID + "\n"
+		formatted = formatted + "EventID: " + event.ID + " ChannelID:" + event.ChannelID + " Type:" + event.Type + " CreatorID:" + event.CreatorID + "\n"
 	}
 	formatted = formatted + "\n```\n"
 	return formatted, nil
 }
 
-
 // RegisterEvent function
-func (h *EventHandler) RegisterEvent(payload string, s *discordgo.Session, m *discordgo.MessageCreate) (eventID string, err error){
+func (h *EventHandler) RegisterEvent(payload string, s *discordgo.Session, m *discordgo.MessageCreate) (eventID string, err error) {
 	payload = strings.TrimPrefix(payload, "~events add ")
 	payload = strings.TrimPrefix(payload, "\n")
 	payload = strings.TrimPrefix(payload, "```")
@@ -289,9 +286,8 @@ func (h *EventHandler) RegisterEvent(payload string, s *discordgo.Session, m *di
 	return createdEvent.ID, nil
 }
 
-
 // LoadEvents function
-func (h *EventHandler) LoadEvents() (err error){
+func (h *EventHandler) LoadEvents() (err error) {
 	events, err := h.eventsdb.GetAllEvents()
 	if err != nil {
 		return err
@@ -307,17 +303,17 @@ func (h *EventHandler) LoadEvents() (err error){
 }
 
 // LoadEvent function
-func (h *EventHandler) LoadEvent(eventID string) (err error){
+func (h *EventHandler) LoadEvent(eventID string) (err error) {
 	event, err := h.eventsdb.GetEventByID(eventID)
 	if err != nil {
 		return err
 	}
 
-	if event.Type == "ReadMessage"{
+	if event.Type == "ReadMessage" {
 		//TypeFields
 		// 0 - word to trigger on
 		h.WatchEvent(h.UnfoldReadMessageEvent, event.ID, event.ChannelID)
-	} else if event.Type == "TimedMessage"{
+	} else if event.Type == "TimedMessage" {
 		//TypeFields
 		// 0 - Formatted Duration String
 		// Data - Formatted message to send
@@ -325,9 +321,6 @@ func (h *EventHandler) LoadEvent(eventID string) (err error){
 	}
 	return nil
 }
-
-
-
 
 // WatchEvent function
 func (h *EventHandler) WatchEvent(Handler func(string, *discordgo.Session, *discordgo.MessageCreate), EventID string, ChannelID string) {
@@ -358,21 +351,19 @@ func (h *EventHandler) UnWatchEvent(ChannelID string, EventID string) {
 }
 
 // ListEnabled function
-func (h *EventHandler) ListEnabled(channelID string) (formatted string, err error){
+func (h *EventHandler) ListEnabled(channelID string) (formatted string, err error) {
 	formatted = "```\n"
 	for e := h.WatchList.Front(); e != nil; e = e.Next() {
 		r := reflect.ValueOf(e.Value)
 		eventID := reflect.Indirect(r).FieldByName("EventID")
 		channel := reflect.Indirect(r).FieldByName("ChannelID")
-		if channel.String() == channelID{
-			formatted = formatted +"ID: "+ eventID.String() + "\n"
+		if channel.String() == channelID {
+			formatted = formatted + "ID: " + eventID.String() + "\n"
 		}
 	}
 	formatted = formatted + "\n```\n"
 	return formatted, nil
 }
-
-
 
 // ReadEvents function
 func (h *EventHandler) ReadEvents(s *discordgo.Session, m *discordgo.MessageCreate) {
@@ -417,7 +408,7 @@ func (h *EventHandler) UnfoldReadMessageEvent(eventID string, s *discordgo.Sessi
 
 	event, err := h.eventsdb.GetEventByID(eventID)
 	if err != nil {
-		s.ChannelMessageSend(m.ChannelID, "Error loading event: " + eventID + " Error: " + err.Error())
+		s.ChannelMessageSend(m.ChannelID, "Error loading event: "+eventID+" Error: "+err.Error())
 		return
 	}
 

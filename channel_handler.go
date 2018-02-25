@@ -85,7 +85,7 @@ func (h *ChannelHandler) ReadCommand(message []string, s *discordgo.Session, m *
 }
 
 // FlushChannel function
-func (h* ChannelHandler) FlushChannel(payload []string, s *discordgo.Session, m *discordgo.MessageCreate){
+func (h *ChannelHandler) FlushChannel(payload []string, s *discordgo.Session, m *discordgo.MessageCreate) {
 
 	var strcount string
 	var channelID string
@@ -98,26 +98,26 @@ func (h* ChannelHandler) FlushChannel(payload []string, s *discordgo.Session, m 
 	}
 
 	_, err := s.Channel(channelID)
-	if err != nil{
-		s.ChannelMessageSend(m.ChannelID, ":rotating_light: Error flushing channel: " + err.Error())
+	if err != nil {
+		s.ChannelMessageSend(m.ChannelID, ":rotating_light: Error flushing channel: "+err.Error())
 		return
 	}
 
 	count, err := strconv.Atoi(strcount)
-	if err != nil{
-		s.ChannelMessageSend(m.ChannelID, ":rotating_light: Error flushing channel: " + err.Error())
+	if err != nil {
+		s.ChannelMessageSend(m.ChannelID, ":rotating_light: Error flushing channel: "+err.Error())
 		return
 	}
 
 	err = FlushMessages(s, channelID, count+1) // +1 to account for the flush command itself
 	if err != nil {
-		s.ChannelMessageSend(m.ChannelID, ":rotating_light: Error flushing channel: " + err.Error())
+		s.ChannelMessageSend(m.ChannelID, ":rotating_light: Error flushing channel: "+err.Error())
 		return
 	}
 
-	validated, err := s.ChannelMessageSend(m.ChannelID, ":ballot_box_with_check:  Deleted " + payload[0] + " messages from channel!")
+	validated, err := s.ChannelMessageSend(m.ChannelID, ":ballot_box_with_check:  Deleted "+payload[0]+" messages from channel!")
 	if err != nil {
-		s.ChannelMessageSend(m.ChannelID, ":rotating_light: Error flushing channel: " + err.Error())
+		s.ChannelMessageSend(m.ChannelID, ":rotating_light: Error flushing channel: "+err.Error())
 		return
 	}
 	sleeptime := time.Duration(time.Second * 3)
@@ -125,7 +125,7 @@ func (h* ChannelHandler) FlushChannel(payload []string, s *discordgo.Session, m 
 
 	err = s.ChannelMessageDelete(m.ChannelID, validated.ID)
 	if err != nil {
-		s.ChannelMessageSend(m.ChannelID, ":rotating_light: Error flushing channel: " + err.Error())
+		s.ChannelMessageSend(m.ChannelID, ":rotating_light: Error flushing channel: "+err.Error())
 		return
 	}
 

@@ -23,9 +23,9 @@ type CommandRegistry struct {
 
 // CommandRecord struct
 type CommandRecord struct {
-	Command     string   `storm:"id"`
+	Command     string `storm:"id"`
 	Groups      []string
-	Roles 		[]string
+	Roles       []string
 	Channels    []string `storm:"index"`
 	Users       []string `storm:"index"`
 	Description string
@@ -127,7 +127,6 @@ func (h *CommandRegistry) AddGroup(command string, group string) (err error) {
 	return nil
 }
 
-
 // AddRole function
 func (h *CommandRegistry) AddRole(command string, role string) (err error) {
 	role = strings.Title(role)
@@ -167,8 +166,6 @@ func (h *CommandRegistry) RemoveGroup(command string, group string) (err error) 
 	return errors.New("Command does not belong to group " + group)
 }
 
-
-
 // RemoveRole function
 func (h *CommandRegistry) RemoveRole(command string, role string) (err error) {
 
@@ -189,7 +186,6 @@ func (h *CommandRegistry) RemoveRole(command string, role string) (err error) {
 
 	return errors.New("Command does not belong to role " + role)
 }
-
 
 // GetGroups function
 func (h *CommandRegistry) GetGroups(command string) (groups []string, err error) {
@@ -212,7 +208,6 @@ func (h *CommandRegistry) GetRoles(command string) (roles []string, err error) {
 
 	return record.Roles, nil
 }
-
 
 // AddChannel function
 func (h *CommandRegistry) AddChannel(command string, channel string) (err error) {
@@ -345,7 +340,6 @@ func (h *CommandRegistry) CheckUserRoles(command string, user User, s *discordgo
 
 	return false
 }
-
 
 // AddUser function
 func (h *CommandRegistry) AddUser(command string, user string) (err error) {

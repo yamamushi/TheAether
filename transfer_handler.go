@@ -1,30 +1,28 @@
 package main
 
 import (
-	"github.com/bwmarrin/discordgo"
-	"time"
-	"fmt"
-	"strings"
-	"strconv"
 	"errors"
+	"fmt"
+	"github.com/bwmarrin/discordgo"
+	"strconv"
+	"strings"
+	"time"
 )
 
 // TransferHandler struct
 type TransferHandler struct {
-
-	db          *DBHandler
-	conf        *Config
-	dg          *discordgo.Session
-	callback    *CallbackHandler
-	perms        *PermissionsHandler
-	user        *UserHandler
-	command     *CommandHandler
-	registry    *CommandRegistry
-	channel     *ChannelHandler
-	rooms 		*RoomsHandler
-	transferdb	*Transfers
+	db         *DBHandler
+	conf       *Config
+	dg         *discordgo.Session
+	callback   *CallbackHandler
+	perms      *PermissionsHandler
+	user       *UserHandler
+	command    *CommandHandler
+	registry   *CommandRegistry
+	channel    *ChannelHandler
+	rooms      *RoomsHandler
+	transferdb *Transfers
 }
-
 
 // Init function
 func (h *TransferHandler) Init() {
@@ -35,7 +33,6 @@ func (h *TransferHandler) Init() {
 	h.RegisterCommands()
 }
 
-
 // RegisterCommands function
 func (h *TransferHandler) RegisterCommands() (err error) {
 
@@ -45,9 +42,8 @@ func (h *TransferHandler) RegisterCommands() (err error) {
 
 }
 
-
 // Read function
-func (h *TransferHandler) Read(s *discordgo.Session, m *discordgo.MessageCreate){
+func (h *TransferHandler) Read(s *discordgo.Session, m *discordgo.MessageCreate) {
 
 	cp := h.conf.MainConfig.CP
 
@@ -82,7 +78,7 @@ func (h *TransferHandler) Read(s *discordgo.Session, m *discordgo.MessageCreate)
 }
 
 // AddTransfer function
-func  (h *TransferHandler) AddTransfer(userID string, fromChannelID string, toChannelID string, targetGuildID string, fromDirection string) (err error){
+func (h *TransferHandler) AddTransfer(userID string, fromChannelID string, toChannelID string, targetGuildID string, fromDirection string) (err error) {
 
 	uuid, err := GetUUID()
 	if err != nil {
@@ -133,14 +129,14 @@ func (h *TransferHandler) ParseCommand(input []string, s *discordgo.Session, m *
 func (h *TransferHandler) HandleTransfers() {
 	// Get all transfers and parse them every 3 minutes
 	for true {
-		time.Sleep(time.Duration(time.Second*30))
+		time.Sleep(time.Duration(time.Second * 30))
 
 		transfers, err := h.transferdb.GetAllTransfers()
 		if err != nil {
 			fmt.Print("Error retrieving transfers db: " + err.Error())
 		} else {
 			for _, transfer := range transfers {
-				time.Sleep(time.Duration(time.Second*5))
+				time.Sleep(time.Duration(time.Second * 5))
 
 				// Verify the usermanager is actually in the guild before proceeding, otherwise
 				// They have not accepted the invite yet and we should skip them for now
@@ -162,13 +158,13 @@ func (h *TransferHandler) HandleTransfers() {
 					}
 
 					if transfer.FromDirection == "below" || transfer.FromDirection == "above" {
-						h.dg.ChannelMessageSend(transfer.TargetChannelID, user.Mention() + " has materialized from " + transfer.FromDirection + ".")
+						h.dg.ChannelMessageSend(transfer.TargetChannelID, user.Mention()+" has materialized from "+transfer.FromDirection+".")
 
 					} else {
-						h.dg.ChannelMessageSend(transfer.TargetChannelID, user.Mention() + " has materialized from the " + transfer.FromDirection + ".")
+						h.dg.ChannelMessageSend(transfer.TargetChannelID, user.Mention()+" has materialized from the "+transfer.FromDirection+".")
 					}
 
-					h.dg.ChannelMessageSend(transfer.FromChannelID, user.Username + " has dematerialized")
+					h.dg.ChannelMessageSend(transfer.FromChannelID, user.Username+" has dematerialized")
 
 				}
 			}
@@ -189,7 +185,7 @@ func (h *TransferHandler) IsUserInGuild(userID string, guildID string) (ispresen
 
 // TransferToChannel function
 func (h *TransferHandler) TransferToChannel(userID string, targetGuildID string, fromChannelID string,
-	targetChannelID string, s *discordgo.Session) (err error){
+	targetChannelID string, s *discordgo.Session) (err error) {
 
 	// First we remove roles
 	fromRoom, err := h.rooms.rooms.GetRoomByID(fromChannelID)
@@ -209,7 +205,6 @@ func (h *TransferHandler) TransferToChannel(userID string, targetGuildID string,
 	if err != nil {
 		return errors.New("Error removing usermanager record from room: " + err.Error())
 	}
-
 
 	// Now we add roles
 	toroom, err := h.rooms.rooms.GetRoomByID(targetChannelID)
@@ -233,7 +228,6 @@ func (h *TransferHandler) TransferToChannel(userID string, targetGuildID string,
 	if err != nil {
 		return errors.New("Error updating usermanager record into room: " + err.Error())
 	}
-
 
 	// Add registered role here
 	err = h.perms.AddRoleToUser("registered", userID, s, m, false)

@@ -1,8 +1,7 @@
 package main
 
-
 // GetRaceList function
-func GetRaceList() (list string){
+func GetRaceList() (list string) {
 
 	list = "-Catfolk\n" +
 		"-Clockwork\n" +

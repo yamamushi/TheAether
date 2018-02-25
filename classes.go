@@ -1,8 +1,7 @@
 package main
 
-
 // GetClassList function
-func GetClassList() (list string){
+func GetClassList() (list string) {
 
 	list = "-Bard\n" +
 		"-Claric\n" +

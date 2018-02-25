@@ -1,9 +1,8 @@
 package main
 
 import (
-
-	"sync"
 	"errors"
+	"sync"
 )
 
 // EventsDB struct
@@ -14,19 +13,16 @@ type EventsDB struct {
 
 // Event struct
 type Event struct {
+	ID string `json:"id"`
 
-	ID			string `json:"id"`
+	ChannelID string `json:"channelid"`
 
-	ChannelID  	string `json:"channelid"`
+	Type      string   `json:"type"`
+	TypeFlags []string `json:"typeflags"`
 
-	Type		string `json:"type"`
-	TypeFlags	[]string `json:"typeflags"`
-
-	CreatorID 	string `json:"creatorid"`// The userID of the creator
-	Data		string `json:"data"`
-
+	CreatorID string `json:"creatorid"` // The userID of the creator
+	Data      string `json:"data"`
 }
-
 
 // SaveEventToDB function
 func (h *EventsDB) SaveEventToDB(Event Event) (err error) {
@@ -68,7 +64,7 @@ func (h *EventsDB) RemoveEventByID(EventID string) (err error) {
 func (h *EventsDB) GetEventByID(EventID string) (Event Event, err error) {
 
 	Events, err := h.GetAllEvents()
-	if err != nil{
+	if err != nil {
 		return Event, err
 	}
 
@@ -80,7 +76,6 @@ func (h *EventsDB) GetEventByID(EventID string) (Event Event, err error) {
 	}
 	return Event, errors.New("No record found")
 }
-
 
 // GetAllEvents function
 func (h *EventsDB) GetAllEvents() (Eventlist []Event, err error) {
@@ -95,6 +90,3 @@ func (h *EventsDB) GetAllEvents() (Eventlist []Event, err error) {
 
 	return Eventlist, nil
 }
-
-
-

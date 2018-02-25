@@ -1,43 +1,38 @@
 package main
 
 import (
-
-	"sync"
 	"errors"
 	"github.com/bwmarrin/discordgo"
 	"strings"
+	"sync"
 )
 
 // GuildsManager struct
 type GuildsManager struct {
-
 	db          *DBHandler
 	querylocker sync.RWMutex
-
 }
 
 // GuildRecord struct
 type GuildRecord struct {
+	ID   string `storm:"id"` // primary key
+	Name string
 
-	ID 			string `storm:"id"` // primary key
-	Name 		string
+	Region string
+	Icon   string
 
-	Region 		string
-	Icon		string
+	AFKChannel string
+	AFKTimeout int
 
-	AFKChannel 	string
-	AFKTimeout 	int
+	OwnerID string
+	RoleIDs []string
+	UserIDs []string
 
-	OwnerID		string
-	RoleIDs		[]string
-	UserIDs		[]string
-
-	AdminID		string
-	ModeratorID	string
-	BuilderID	string
-	EveryoneID	string
+	AdminID     string
+	ModeratorID string
+	BuilderID   string
+	EveryoneID  string
 }
-
 
 // SaveGuildToDB function
 func (h *GuildsManager) SaveGuildToDB(guild GuildRecord) (err error) {
@@ -79,7 +74,7 @@ func (h *GuildsManager) RemoveGuildByID(guildID string) (err error) {
 func (h *GuildsManager) GetGuildByID(guildID string) (guild GuildRecord, err error) {
 
 	guilds, err := h.GetAllGuilds()
-	if err != nil{
+	if err != nil {
 		return guild, err
 	}
 
@@ -96,19 +91,18 @@ func (h *GuildsManager) GetGuildByID(guildID string) (guild GuildRecord, err err
 func (h *GuildsManager) GetGuildByName(guildname string, guildID string) (guild GuildRecord, err error) {
 
 	guilds, err := h.GetAllGuilds()
-	if err != nil{
+	if err != nil {
 		return guild, err
 	}
 
 	for _, i := range guilds {
-		if i.Name == guildname && i.ID == guildID{
+		if i.Name == guildname && i.ID == guildID {
 			return i, nil
 		}
 	}
 
 	return guild, errors.New("No guild record found")
 }
-
 
 // GetAllGuilds function
 func (h *GuildsManager) GetAllGuilds() (guildlist []GuildRecord, err error) {
@@ -122,7 +116,6 @@ func (h *GuildsManager) GetAllGuilds() (guildlist []GuildRecord, err error) {
 	}
 	return guildlist, nil
 }
-
 
 // AddRoleToGuild function
 func (h *GuildsManager) AddRoleToGuild(guildID string, roleID string) (err error) {
@@ -165,7 +158,6 @@ func (h *GuildsManager) RemoveRoleFromGuild(guildID string, roleID string) (err 
 	return nil
 }
 
-
 // IsGuildRegistered function
 func (h *GuildsManager) IsGuildRegistered(guildID string) (valid bool) {
 
@@ -186,12 +178,11 @@ func (h *GuildsManager) IsGuildRegistered(guildID string) (valid bool) {
 func (h *GuildsManager) IsGuildIDValid(guildID string, s *discordgo.Session) (valid bool) {
 
 	_, err := s.Guild(guildID)
-	if err != nil{
+	if err != nil {
 		return false
 	}
 	return false
 }
-
 
 // AddUserToGuild function
 func (h *GuildsManager) AddUserToGuild(guildID string, userID string) (err error) {
@@ -233,7 +224,6 @@ func (h *GuildsManager) RemoveUserFromGuild(guildID string, userID string) (err 
 
 	return nil
 }
-
 
 // SetAdminID function
 func (h *GuildsManager) SetAdminID(guildID string, adminID string) (err error) {
@@ -298,8 +288,6 @@ func (h *GuildsManager) SetEveryoneID(guildID string, everyoneID string) (err er
 	}
 	return nil
 }
-
-
 
 // GetGuildAdminID function
 func (h *GuildsManager) GetGuildAdminID(guildID string) (adminID string, err error) {
@@ -380,20 +368,19 @@ func (h *GuildsManager) GetGuildDiscordEveryoneID(guildID string, s *discordgo.S
 	return "", errors.New("Everyone Role ID Not Found")
 }
 
-
 // RegisterGuild function
 func (h *GuildsManager) RegisterGuild(guildID string, s *discordgo.Session) (err error) {
 
 	guildRecord, err := h.GetGuildByID(guildID)
 	if err != nil {
-		if strings.Contains(err.Error(), "No guild record found"){
+		if strings.Contains(err.Error(), "No guild record found") {
 
 			discordguild, err := s.Guild(guildID)
 			if err != nil {
 				return err
 			}
 
-			guildRecord = GuildRecord{ID: guildID, Name: discordguild.Name }
+			guildRecord = GuildRecord{ID: guildID, Name: discordguild.Name}
 			roles, err := s.GuildRoles(guildID)
 			if err != nil {
 				return err
@@ -455,4 +442,3 @@ func (h *GuildsManager) RegisterGuild(guildID string, s *discordgo.Session) (err
 	}
 	return nil
 }
-

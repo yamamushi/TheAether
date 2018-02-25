@@ -1,26 +1,25 @@
 package main
 
 import (
-	"github.com/bwmarrin/discordgo"
-	"fmt"
 	"errors"
+	"fmt"
+	"github.com/bwmarrin/discordgo"
 	"strings"
 )
 
 // SetupProcess function
 type SetupProcess struct {
-
-	db       *DBHandler
-	conf     *Config
-	user     *UserHandler
-	rooms 	 *RoomsHandler
-	guilds	 *GuildsManager
+	db     *DBHandler
+	conf   *Config
+	user   *UserHandler
+	rooms  *RoomsHandler
+	guilds *GuildsManager
 }
 
 // Init function
 func (h *SetupProcess) Init(s *discordgo.Session, channelID string) (err error) {
 
-	err = h.SetupOwnerPermissions(s,channelID)
+	err = h.SetupOwnerPermissions(s, channelID)
 	if err != nil {
 		return err
 	}
@@ -57,7 +56,7 @@ func (h *SetupProcess) SetupOwnerPermissions(s *discordgo.Session, channelID str
 	fmt.Println("Getting Guild Record")
 	guildRecord, err := h.guilds.GetGuildByID(guildID)
 	if err != nil {
-		if strings.Contains(err.Error(), "No guild record found"){
+		if strings.Contains(err.Error(), "No guild record found") {
 			fmt.Println("Registering Guild in Database")
 
 			discordguild, err := s.Guild(guildID)
@@ -65,7 +64,7 @@ func (h *SetupProcess) SetupOwnerPermissions(s *discordgo.Session, channelID str
 				return err
 			}
 
-			guildRecord = GuildRecord{ID: guildID, Name: discordguild.Name }
+			guildRecord = GuildRecord{ID: guildID, Name: discordguild.Name}
 			err = h.guilds.SaveGuildToDB(guildRecord)
 			if err != nil {
 				return err
@@ -102,4 +101,3 @@ func (h *SetupProcess) SetupOwnerPermissions(s *discordgo.Session, channelID str
 	}
 	return nil
 }
-

@@ -4,8 +4,8 @@ import (
 	"errors"
 	"fmt"
 	"github.com/bwmarrin/discordgo"
-	"strings"
 	"strconv"
+	"strings"
 	"time"
 )
 
@@ -35,7 +35,7 @@ func (h *PermissionsHandler) Read(s *discordgo.Session, m *discordgo.MessageCrea
 	}
 
 	// Verify the usermanager account exists (creates one if it doesn't exist already)
-	h.user.CheckUser(m.Author.ID, s, m.ChannelID )
+	h.user.CheckUser(m.Author.ID, s, m.ChannelID)
 
 	/*
 		usermanager, err := h.db.GetUser(m.Author.ID)
@@ -70,15 +70,15 @@ func (h *PermissionsHandler) Read(s *discordgo.Session, m *discordgo.MessageCrea
 
 		guildID, err := getGuildID(s, m.ChannelID)
 		if err != nil {
-			s.ChannelMessageSend(m.ChannelID, "Could not retrieve GuildID: " + err.Error())
+			s.ChannelMessageSend(m.ChannelID, "Could not retrieve GuildID: "+err.Error())
 			return
 		}
 
-		if command[1] == "addrole"{
+		if command[1] == "addrole" {
 			// Get the authors user object from the database
 			user, err := h.db.GetUser(m.Author.ID)
 			if err != nil {
-				s.ChannelMessageSend(m.ChannelID, "syncserverroles error: " + err.Error())
+				s.ChannelMessageSend(m.ChannelID, "syncserverroles error: "+err.Error())
 				return
 			}
 
@@ -105,20 +105,20 @@ func (h *PermissionsHandler) Read(s *discordgo.Session, m *discordgo.MessageCrea
 				}
 			}
 
-			err = h.AddRoleToUser( command[2], m.Mentions[0].ID, s, m, false)
-			if err != nil{
-				s.ChannelMessageSend(m.ChannelID, "Error adding role: " + err.Error())
+			err = h.AddRoleToUser(command[2], m.Mentions[0].ID, s, m, false)
+			if err != nil {
+				s.ChannelMessageSend(m.ChannelID, "Error adding role: "+err.Error())
 				return
 			}
 
-			s.ChannelMessageSend(m.ChannelID, "Role " + command[2] + " added to user")
+			s.ChannelMessageSend(m.ChannelID, "Role "+command[2]+" added to user")
 			return
 		}
-		if command[1] == "removerole"{
+		if command[1] == "removerole" {
 			// Get the authors usermanager object from the database
 			user, err := h.db.GetUser(m.Author.ID)
 			if err != nil {
-				s.ChannelMessageSend(m.ChannelID, "syncserverroles error: " + err.Error())
+				s.ChannelMessageSend(m.ChannelID, "syncserverroles error: "+err.Error())
 				return
 			}
 
@@ -127,7 +127,7 @@ func (h *PermissionsHandler) Read(s *discordgo.Session, m *discordgo.MessageCrea
 				return
 			}
 
-			if len(command) < 4{
+			if len(command) < 4 {
 				s.ChannelMessageSend(m.ChannelID, "<removerole> expects two argument - <role name> <usermanager mention>.")
 				return
 			}
@@ -145,21 +145,21 @@ func (h *PermissionsHandler) Read(s *discordgo.Session, m *discordgo.MessageCrea
 				}
 			}
 
-			err = h.RemoveRoleFromUser( command[2], m.Mentions[0].ID, s, m, false)
+			err = h.RemoveRoleFromUser(command[2], m.Mentions[0].ID, s, m, false)
 			if err != nil {
-				s.ChannelMessageSend(m.ChannelID, "Error removing role: " + err.Error())
+				s.ChannelMessageSend(m.ChannelID, "Error removing role: "+err.Error())
 				return
 			}
-			s.ChannelMessageSend(m.ChannelID, "Role " + command[2] + " removed from usermanager")
+			s.ChannelMessageSend(m.ChannelID, "Role "+command[2]+" removed from usermanager")
 			return
 		}
 
-		if command[1] == "createrole"{
+		if command[1] == "createrole" {
 
 			// Get the authors usermanager object from the database
 			user, err := h.db.GetUser(m.Author.ID)
 			if err != nil {
-				s.ChannelMessageSend(m.ChannelID, "syncserverroles error: " + err.Error())
+				s.ChannelMessageSend(m.ChannelID, "syncserverroles error: "+err.Error())
 				return
 			}
 
@@ -201,19 +201,19 @@ func (h *PermissionsHandler) Read(s *discordgo.Session, m *discordgo.MessageCrea
 			}
 
 			perms := h.CreatePermissionInt(RolePermissions{})
-			createdrole, err := h.CreateRole( command[2], guildID, hoist, mentionable, color, perms, s)
+			createdrole, err := h.CreateRole(command[2], guildID, hoist, mentionable, color, perms, s)
 			if err != nil {
-				s.ChannelMessageSend(m.ChannelID, "Error creating role: " + err.Error())
+				s.ChannelMessageSend(m.ChannelID, "Error creating role: "+err.Error())
 				return
 			}
-			s.ChannelMessageSend(m.ChannelID, "Role " + createdrole.Name + " created: " + createdrole.ID)
+			s.ChannelMessageSend(m.ChannelID, "Role "+createdrole.Name+" created: "+createdrole.ID)
 			return
 		}
 		if command[1] == "deleterole" {
 			// Get the authors usermanager object from the database
 			user, err := h.db.GetUser(m.Author.ID)
 			if err != nil {
-				s.ChannelMessageSend(m.ChannelID, "syncserverroles error: " + err.Error())
+				s.ChannelMessageSend(m.ChannelID, "syncserverroles error: "+err.Error())
 				return
 			}
 
@@ -229,14 +229,14 @@ func (h *PermissionsHandler) Read(s *discordgo.Session, m *discordgo.MessageCrea
 
 			rolename := command[2]
 			roleID, err := getRoleIDByName(s, guildID, rolename)
-			if err != nil{
-				s.ChannelMessageSend(m.ChannelID, "Could not delete role: " + err.Error())
+			if err != nil {
+				s.ChannelMessageSend(m.ChannelID, "Could not delete role: "+err.Error())
 				return
 			}
 
 			err = h.DeleteRoleOnGuild(roleID, guildID, s)
-			if err != nil{
-				s.ChannelMessageSend(m.ChannelID, "Could not delete role: " + err.Error())
+			if err != nil {
+				s.ChannelMessageSend(m.ChannelID, "Could not delete role: "+err.Error())
 				return
 			}
 
@@ -249,7 +249,7 @@ func (h *PermissionsHandler) Read(s *discordgo.Session, m *discordgo.MessageCrea
 			// Get the authors usermanager object from the database
 			user, err := h.db.GetUser(m.Author.ID)
 			if err != nil {
-				s.ChannelMessageSend(m.ChannelID, "syncserverroles error: " + err.Error())
+				s.ChannelMessageSend(m.ChannelID, "syncserverroles error: "+err.Error())
 				return
 			}
 
@@ -272,7 +272,7 @@ func (h *PermissionsHandler) Read(s *discordgo.Session, m *discordgo.MessageCrea
 			// Get the authors usermanager object from the database
 			user, err := h.db.GetUser(m.Author.ID)
 			if err != nil {
-				s.ChannelMessageSend(m.ChannelID, "syncserverroles error: " + err.Error())
+				s.ChannelMessageSend(m.ChannelID, "syncserverroles error: "+err.Error())
 				return
 			}
 
@@ -291,7 +291,7 @@ func (h *PermissionsHandler) Read(s *discordgo.Session, m *discordgo.MessageCrea
 			// Get the authors usermanager object from the database
 			user, err := h.db.GetUser(m.Author.ID)
 			if err != nil {
-				s.ChannelMessageSend(m.ChannelID, "syncserverroles error: " + err.Error())
+				s.ChannelMessageSend(m.ChannelID, "syncserverroles error: "+err.Error())
 				return
 			}
 
@@ -310,7 +310,7 @@ func (h *PermissionsHandler) Read(s *discordgo.Session, m *discordgo.MessageCrea
 			// Get the authors usermanager object from the database
 			user, err := h.db.GetUser(m.Author.ID)
 			if err != nil {
-				s.ChannelMessageSend(m.ChannelID, "syncserverroles error: " + err.Error())
+				s.ChannelMessageSend(m.ChannelID, "syncserverroles error: "+err.Error())
 				return
 			}
 
@@ -325,7 +325,7 @@ func (h *PermissionsHandler) Read(s *discordgo.Session, m *discordgo.MessageCrea
 			}
 			err = h.SyncServerRoles(m.Mentions[0].ID, m.ChannelID, s)
 			if err != nil {
-				s.ChannelMessageSend(m.ChannelID, "syncserverroles error: " + err.Error())
+				s.ChannelMessageSend(m.ChannelID, "syncserverroles error: "+err.Error())
 				return
 			}
 			return
@@ -334,7 +334,7 @@ func (h *PermissionsHandler) Read(s *discordgo.Session, m *discordgo.MessageCrea
 			// Get the authors usermanager object from the database
 			user, err := h.db.GetUser(m.Author.ID)
 			if err != nil {
-				s.ChannelMessageSend(m.ChannelID, "syncserverroles error: " + err.Error())
+				s.ChannelMessageSend(m.ChannelID, "syncserverroles error: "+err.Error())
 				return
 			}
 
@@ -349,7 +349,7 @@ func (h *PermissionsHandler) Read(s *discordgo.Session, m *discordgo.MessageCrea
 			}
 			err = h.SyncRolesDB(m.Mentions[0].ID, guildID, m.ChannelID, s)
 			if err != nil {
-				s.ChannelMessageSend(m.ChannelID, "syncserverroles error: " + err.Error())
+				s.ChannelMessageSend(m.ChannelID, "syncserverroles error: "+err.Error())
 				return
 			}
 			s.ChannelMessageSend(m.ChannelID, "rolesDB synchronized")
@@ -361,7 +361,7 @@ func (h *PermissionsHandler) Read(s *discordgo.Session, m *discordgo.MessageCrea
 			// Get the authors usermanager object from the database
 			user, err := h.db.GetUser(m.Author.ID)
 			if err != nil {
-				s.ChannelMessageSend(m.ChannelID, "translaterole error: " + err.Error())
+				s.ChannelMessageSend(m.ChannelID, "translaterole error: "+err.Error())
 				return
 			}
 
@@ -376,11 +376,11 @@ func (h *PermissionsHandler) Read(s *discordgo.Session, m *discordgo.MessageCrea
 			}
 			rolename, err := h.TranslateRoleID(command[2], guildID, s)
 			if err != nil {
-				s.ChannelMessageSend(m.ChannelID, "syncserverroles error: " + err.Error())
+				s.ChannelMessageSend(m.ChannelID, "syncserverroles error: "+err.Error())
 				return
 			}
-			output := "RoleID Translation: ```\nRoleID: "+ command[2] + "\nRole Name: " + rolename + "\n```\n"
-			s.ChannelMessageSend(m.ChannelID, output )
+			output := "RoleID Translation: ```\nRoleID: " + command[2] + "\nRole Name: " + rolename + "\n```\n"
+			s.ChannelMessageSend(m.ChannelID, output)
 			return
 		}
 	}
@@ -392,7 +392,7 @@ func (h *PermissionsHandler) ViewRole(rolename string, guildID string, s *discor
 
 	roles, err := s.GuildRoles(guildID)
 	if err != nil {
-		s.ChannelMessageSend(m.ChannelID, "Could not retrieve guild roles: " + err.Error())
+		s.ChannelMessageSend(m.ChannelID, "Could not retrieve guild roles: "+err.Error())
 		return
 	}
 
@@ -409,13 +409,9 @@ func (h *PermissionsHandler) ViewRole(rolename string, guildID string, s *discor
 	}
 	formatted = formatted + "```\n"
 
-
-	s.ChannelMessageSend(m.ChannelID, "Role: \n" + formatted)
+	s.ChannelMessageSend(m.ChannelID, "Role: \n"+formatted)
 	return
 }
-
-
-
 
 // ReadPromote The promote command runs using our commands array to get the promotion settings
 func (h *PermissionsHandler) ReadPromote(commands []string, s *discordgo.Session, m *discordgo.MessageCreate) {
@@ -839,7 +835,6 @@ func (h *PermissionsHandler) Demote(userid string, group string) (err error) {
 	return nil
 }
 
-
 // CreatePermissionOverwrite function
 func (h *PermissionsHandler) CreatePermissionOverwrite(roleid string, permtype string, allow bool) (overwrite discordgo.PermissionOverwrite, err error) {
 
@@ -853,7 +848,7 @@ func (h *PermissionsHandler) CreatePermissionOverwrite(roleid string, permtype s
 }
 
 // CreatePermissionInt function
-func (h *PermissionsHandler) CreatePermissionInt(roleperms RolePermissions ) (perm int){
+func (h *PermissionsHandler) CreatePermissionInt(roleperms RolePermissions) (perm int) {
 
 	perm = 0
 	if roleperms.CreateInstantInvite {
@@ -945,7 +940,7 @@ func (h *PermissionsHandler) CreatePermissionInt(roleperms RolePermissions ) (pe
 }
 
 // CreateRole function
-func (h *PermissionsHandler) CreateRole(name string, guildID string, hoist bool, mentionable bool, color int, perm int, s *discordgo.Session) (createdrole *discordgo.Role, err error){
+func (h *PermissionsHandler) CreateRole(name string, guildID string, hoist bool, mentionable bool, color int, perm int, s *discordgo.Session) (createdrole *discordgo.Role, err error) {
 
 	// Capitalize roles
 	name = strings.Title(name)
@@ -1024,7 +1019,7 @@ func (h *PermissionsHandler) AddRoleToUser(role string, userID string, s *discor
 }
 
 // RemoveRoleFromUser function
-func (h *PermissionsHandler) RemoveRoleFromUser(role string, userID string, s *discordgo.Session, m *discordgo.MessageCreate, isID bool) (err error){
+func (h *PermissionsHandler) RemoveRoleFromUser(role string, userID string, s *discordgo.Session, m *discordgo.MessageCreate, isID bool) (err error) {
 
 	// Get usermanager from the database using the userid
 	user, err := h.user.GetUser(userID, s, m.ChannelID)
@@ -1059,7 +1054,6 @@ func (h *PermissionsHandler) RemoveRoleFromUser(role string, userID string, s *d
 
 	}
 
-
 	// Open the "Users" bucket in the database
 	db := h.db.rawdb.From("Users")
 	// Save the user changes in the database
@@ -1071,10 +1065,8 @@ func (h *PermissionsHandler) RemoveRoleFromUser(role string, userID string, s *d
 	return nil
 }
 
-
-
 // SyncRolesDB function
-func (h *PermissionsHandler) SyncRolesDB( userID string, guildID string, channelID string, s *discordgo.Session) (err error){
+func (h *PermissionsHandler) SyncRolesDB(userID string, guildID string, channelID string, s *discordgo.Session) (err error) {
 
 	// Get usermanager from the database using the userid
 	user, err := h.user.GetUser(userID, s, channelID)
@@ -1088,7 +1080,6 @@ func (h *PermissionsHandler) SyncRolesDB( userID string, guildID string, channel
 	if err != nil {
 		return err
 	}
-
 
 	guildroles, err := s.GuildRoles(guildID)
 	if err != nil {
@@ -1104,7 +1095,7 @@ func (h *PermissionsHandler) SyncRolesDB( userID string, guildID string, channel
 						addtorolelist = false
 					}
 				}
-				if (addtorolelist){
+				if addtorolelist {
 					userroleIDs = append(userroleIDs, guildrole.ID)
 				}
 			}
@@ -1114,7 +1105,7 @@ func (h *PermissionsHandler) SyncRolesDB( userID string, guildID string, channel
 }
 
 // SyncServerRoles function
-func (h *PermissionsHandler) SyncServerRoles( userID string, channelID string, s *discordgo.Session) (err error){
+func (h *PermissionsHandler) SyncServerRoles(userID string, channelID string, s *discordgo.Session) (err error) {
 
 	// Get user from the database using the userid
 	user, err := h.user.GetUser(userID, s, channelID)
@@ -1123,7 +1114,7 @@ func (h *PermissionsHandler) SyncServerRoles( userID string, channelID string, s
 	}
 
 	for _, role := range user.RoleIDs {
-		time.Sleep(time.Duration(time.Second*1))
+		time.Sleep(time.Duration(time.Second * 1))
 
 		_ = s.GuildMemberRoleAdd(user.GuildID, user.ID, role)
 	}
@@ -1132,14 +1123,14 @@ func (h *PermissionsHandler) SyncServerRoles( userID string, channelID string, s
 }
 
 // DeleteRoleOnGuild function
-func (h *PermissionsHandler) DeleteRoleOnGuild(roleID string, guildID string, s *discordgo.Session) (err error){
+func (h *PermissionsHandler) DeleteRoleOnGuild(roleID string, guildID string, s *discordgo.Session) (err error) {
 
 	rooms, err := h.room.rooms.GetAllRooms()
 
 	inUse := ""
 	for _, room := range rooms {
-		if room.TravelRoleID == roleID{
-			inUse = inUse + room.ID + " - " + room.Name +"\n"
+		if room.TravelRoleID == roleID {
+			inUse = inUse + room.ID + " - " + room.Name + "\n"
 		} else {
 			room.AdditionalRoleIDs = RemoveStringFromSlice(room.AdditionalRoleIDs, roleID)
 			err = h.room.rooms.SaveRoomToDB(room)
@@ -1149,10 +1140,9 @@ func (h *PermissionsHandler) DeleteRoleOnGuild(roleID string, guildID string, s 
 		}
 	}
 
-
 	if inUse != "" {
 		return errors.New("Cannot delete role configured as travel ID, it is currently in " +
-									"use by the following channels: \n```\n"+inUse+"\n```\n")
+			"use by the following channels: \n```\n" + inUse + "\n```\n")
 	}
 
 	return s.GuildRoleDelete(guildID, roleID)
@@ -1178,12 +1168,12 @@ func (h *PermissionsHandler) GuildReorderRoles(guildID string, s *discordgo.Sess
 	for i, role := range guildroles {
 		if role.Name != "Admin" && role.Name != "Builder" && role.Name != "Moderator" &&
 			role.Name != "Writer" && role.Name != "Spoilers" && role.Name != "Registered" &&
-			role.Name != "Developer" && role.Name != "@everyone" && role.Name != "TheAether"{
-				if i < 8 {
-					guildroles[i].Position = total-1-i
-				} else {
-					guildroles[i].Position = i
-				}
+			role.Name != "Developer" && role.Name != "@everyone" && role.Name != "TheAether" {
+			if i < 8 {
+				guildroles[i].Position = total - 1 - i
+			} else {
+				guildroles[i].Position = i
+			}
 		}
 		if role.Name == "Admin" {
 			guildroles[i].Position = 7
@@ -1193,7 +1183,7 @@ func (h *PermissionsHandler) GuildReorderRoles(guildID string, s *discordgo.Sess
 			guildroles[i].Position = 5
 		} else if role.Name == "Writer" {
 			guildroles[i].Position = 4
-		}  else if role.Name == "Developer" {
+		} else if role.Name == "Developer" {
 			guildroles[i].Position = 3
 		} else if role.Name == "Spoilers" {
 			guildroles[i].Position = 2
@@ -1202,7 +1192,7 @@ func (h *PermissionsHandler) GuildReorderRoles(guildID string, s *discordgo.Sess
 		} else if role.Name == "@everyone" {
 			guildroles[i].Position = 0
 		} else if role.Name == "TheAether" {
-			guildroles[i].Position = total-1
+			guildroles[i].Position = total - 1
 		}
 	}
 
@@ -1213,7 +1203,6 @@ func (h *PermissionsHandler) GuildReorderRoles(guildID string, s *discordgo.Sess
 
 	return nil
 }
-
 
 // ApplyModeratorRolePerms function
 // Default roles permissions handling
@@ -1229,7 +1218,7 @@ func (h *PermissionsHandler) ApplyModeratorRolePerms(roomID string, guildID stri
 	denymoderator := h.CreatePermissionInt(RolePermissions{})
 	allowmoderator := h.CreatePermissionInt(RolePermissions{ViewChannel: true, SendMessages: true,
 		ReadMessageHistory: true, ManageMessages: true, KickMembers: true, BanMembers: true})
-	err = s.ChannelPermissionSet( roomID, moderatorID, "role", allowmoderator, denymoderator)
+	err = s.ChannelPermissionSet(roomID, moderatorID, "role", allowmoderator, denymoderator)
 	if err != nil {
 		return err
 	}
@@ -1249,7 +1238,7 @@ func (h *PermissionsHandler) ApplyAdminRolePerms(roomID string, guildID string, 
 	denyadmin := h.CreatePermissionInt(RolePermissions{})
 	allowadmin := h.CreatePermissionInt(RolePermissions{ViewChannel: true, SendMessages: true,
 		ReadMessageHistory: true, ManageMessages: true, KickMembers: true, BanMembers: true})
-	err = s.ChannelPermissionSet( roomID, adminID, "role", allowadmin, denyadmin)
+	err = s.ChannelPermissionSet(roomID, adminID, "role", allowadmin, denyadmin)
 	if err != nil {
 		return err
 	}
@@ -1268,7 +1257,7 @@ func (h *PermissionsHandler) ApplyBuilderRolePerms(roomID string, guildID string
 
 	denybuilder := h.CreatePermissionInt(RolePermissions{})
 	allowbuilder := h.CreatePermissionInt(RolePermissions{ViewChannel: true, SendMessages: true})
-	err = s.ChannelPermissionSet( roomID, builderID, "role", allowbuilder, denybuilder)
+	err = s.ChannelPermissionSet(roomID, builderID, "role", allowbuilder, denybuilder)
 	if err != nil {
 		return err
 	}
@@ -1289,7 +1278,7 @@ func (h *PermissionsHandler) ApplyEveryoneRolePerms(roomID string, guildID strin
 
 	denyeveryoneperms := h.CreatePermissionInt(RolePermissions{ViewChannel: true})
 	alloweveryoneperms := h.CreatePermissionInt(RolePermissions{})
-	err = s.ChannelPermissionSet( roomID, everyoneID, "role", alloweveryoneperms, denyeveryoneperms)
+	err = s.ChannelPermissionSet(roomID, everyoneID, "role", alloweveryoneperms, denyeveryoneperms)
 	if err != nil {
 		return err
 	}
@@ -1300,7 +1289,7 @@ func (h *PermissionsHandler) ApplyEveryoneRolePerms(roomID string, guildID strin
 func (h *PermissionsHandler) ApplyTravelRolePerms(roomID string, guildID string, s *discordgo.Session) (err error) {
 
 	room, err := h.room.rooms.GetRoomByID(roomID)
-	if err != nil{
+	if err != nil {
 		return err
 	}
 
@@ -1308,16 +1297,15 @@ func (h *PermissionsHandler) ApplyTravelRolePerms(roomID string, guildID string,
 	denyperms := 0
 	allowperms := 0
 	if room.GuildTransferInvite != "" {
-		denyperms = h.CreatePermissionInt(RolePermissions{SendMessages:true, ReadMessageHistory:true})
-		allowperms = h.CreatePermissionInt(RolePermissions{ViewChannel:true, ReadMessageHistory:true, UseExternalEmojis:true})
+		denyperms = h.CreatePermissionInt(RolePermissions{SendMessages: true, ReadMessageHistory: true})
+		allowperms = h.CreatePermissionInt(RolePermissions{ViewChannel: true, ReadMessageHistory: true, UseExternalEmojis: true})
 	} else {
 		denyperms = h.CreatePermissionInt(RolePermissions{})
-		allowperms = h.CreatePermissionInt(RolePermissions{ViewChannel:true, SendMessages: true})
+		allowperms = h.CreatePermissionInt(RolePermissions{ViewChannel: true, SendMessages: true})
 	}
-	err = s.ChannelPermissionSet( room.ID, room.TravelRoleID, "role", allowperms, denyperms)
-	if err != nil{
+	err = s.ChannelPermissionSet(room.ID, room.TravelRoleID, "role", allowperms, denyperms)
+	if err != nil {
 		return err
 	}
 	return nil
 }
-

@@ -1,8 +1,8 @@
 package main
 
 import (
-	"sync"
 	"errors"
+	"sync"
 )
 
 // Rooms struct
@@ -13,69 +13,67 @@ type Rooms struct {
 
 // Room struct
 type Room struct {
-
 	ID string `storm:"id"` // primary key
 
-	Name 				string
-	GuildID						string
-	Type 				string
+	Name    string
+	GuildID string
+	Type    string
 
-	ParentID			string
-	ParentName			string
+	ParentID   string
+	ParentName string
 
-	TravelRoleID		string
-	AdditionalRoleIDs	[]string
-	UserIDs				[]string
+	TravelRoleID      string
+	AdditionalRoleIDs []string
+	UserIDs           []string
 	/*
-	These are likely to change, but here's generally what is needed in the roleID slice
-	0 - Default Travel ID
-	1 - Region Role ID
-	2 - Quest Role ID
-	3 - Spell Role ID
-	4 - Blessing Role ID
-	5 - Override Role ID
-	 */
+		These are likely to change, but here's generally what is needed in the roleID slice
+		0 - Default Travel ID
+		1 - Region Role ID
+		2 - Quest Role ID
+		3 - Spell Role ID
+		4 - Blessing Role ID
+		5 - Override Role ID
+	*/
 
-	GuildTransferInvite			string
-	TransferRoomID				string
+	GuildTransferInvite string
+	TransferRoomID      string
 
 	// Connecting Room ID's
-	UpID				string
-	UpItemID			[]string
+	UpID     string
+	UpItemID []string
 
-	DownID				string
-	DownItemID			[]string
+	DownID     string
+	DownItemID []string
 
-	NorthID				string
-	NorthItemID			[]string
+	NorthID     string
+	NorthItemID []string
 
-	NorthEastID			string
-	NorthEastItemID		[]string
+	NorthEastID     string
+	NorthEastItemID []string
 
-	EastID				string
-	EastItemID			[]string
+	EastID     string
+	EastItemID []string
 
-	SouthEastID			string
-	SouthEastItemID		[]string
+	SouthEastID     string
+	SouthEastItemID []string
 
-	SouthID				string
-	SouthItemID			[]string
+	SouthID     string
+	SouthItemID []string
 
-	SouthWestID			string
-	SouthWestItemID		[]string
+	SouthWestID     string
+	SouthWestItemID []string
 
-	WestID				string
-	WestItemID			[]string
+	WestID     string
+	WestItemID []string
 
-	NorthWestID 		string
-	NorthWestItemID		[]string
+	NorthWestID     string
+	NorthWestItemID []string
 
-	Items				[]string
-	NPC					[]string
+	Items []string
+	NPC   []string
 
-	Description			string
+	Description string
 }
-
 
 // SaveRoomToDB function
 func (h *Rooms) SaveRoomToDB(room Room) (err error) {
@@ -117,7 +115,7 @@ func (h *Rooms) RemoveRoomByID(roomID string) (err error) {
 func (h *Rooms) GetRoomByID(roomID string) (room Room, err error) {
 
 	rooms, err := h.GetAllRooms()
-	if err != nil{
+	if err != nil {
 		return room, err
 	}
 
@@ -134,19 +132,18 @@ func (h *Rooms) GetRoomByID(roomID string) (room Room, err error) {
 func (h *Rooms) GetRoomByName(roomname string, guildID string) (room Room, err error) {
 
 	rooms, err := h.GetAllRooms()
-	if err != nil{
+	if err != nil {
 		return room, err
 	}
 
 	for _, i := range rooms {
-		if i.Name == roomname && i.GuildID == guildID{
+		if i.Name == roomname && i.GuildID == guildID {
 			return i, nil
 		}
 	}
 
 	return room, errors.New("No record found")
 }
-
 
 // GetAllRooms function
 func (h *Rooms) GetAllRooms() (roomlist []Room, err error) {

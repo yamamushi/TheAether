@@ -1,20 +1,16 @@
 package main
 
 import (
-
 	"github.com/bwmarrin/discordgo"
 	"strings"
 )
 
 // WelcomeHandler struct
 type WelcomeHandler struct {
-
-	conf 	*Config
-	user 	*UserHandler
-	db 		*DBHandler
-
+	conf *Config
+	user *UserHandler
+	db   *DBHandler
 }
-
 
 // Read function
 func (h *WelcomeHandler) Read(s *discordgo.Session, m *discordgo.MessageCreate) {

@@ -272,8 +272,6 @@ func (h *CommandHandler) ReadGroups(message []string, s *discordgo.Session, m *d
 	}
 }
 
-
-
 // ReadRoles function
 func (h *CommandHandler) ReadRoles(message []string, s *discordgo.Session, m *discordgo.MessageCreate) {
 	command := message[0]
@@ -318,14 +316,14 @@ func (h *CommandHandler) ReadRoles(message []string, s *discordgo.Session, m *di
 
 		guildID, err := getGuildID(s, m.ChannelID)
 		if err != nil {
-			s.ChannelMessageSend(m.ChannelID, "Error retrieving GuildID: " + err.Error())
+			s.ChannelMessageSend(m.ChannelID, "Error retrieving GuildID: "+err.Error())
 			return
 		}
 
 		// Checks if Role Exists in Guild
 		_, err = getRoleIDByName(s, guildID, payload[0])
 		if err != nil {
-			s.ChannelMessageSend(m.ChannelID, "Error retrieving roleID: " + err.Error())
+			s.ChannelMessageSend(m.ChannelID, "Error retrieving roleID: "+err.Error())
 			return
 		}
 
@@ -347,14 +345,14 @@ func (h *CommandHandler) ReadRoles(message []string, s *discordgo.Session, m *di
 
 		guildID, err := getGuildID(s, m.ChannelID)
 		if err != nil {
-			s.ChannelMessageSend(m.ChannelID, "Error retrieving GuildID: " + err.Error())
+			s.ChannelMessageSend(m.ChannelID, "Error retrieving GuildID: "+err.Error())
 			return
 		}
 
 		// Checks if Role Exists in Guild
 		_, err = getRoleIDByName(s, guildID, payload[0])
 		if err != nil {
-			s.ChannelMessageSend(m.ChannelID, "Error retrieving roleID: " + err.Error())
+			s.ChannelMessageSend(m.ChannelID, "Error retrieving roleID: "+err.Error())
 			return
 		}
 
@@ -368,8 +366,6 @@ func (h *CommandHandler) ReadRoles(message []string, s *discordgo.Session, m *di
 		return
 	}
 }
-
-
 
 // ReadUsers function
 func (h *CommandHandler) ReadUsers(message []string, s *discordgo.Session, m *discordgo.MessageCreate) {
