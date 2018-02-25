@@ -19,6 +19,8 @@ type Room struct {
 	GuildID string
 	Type    string
 
+	Topic string // For recording the discord room topic
+
 	ParentID   string
 	ParentName string
 
