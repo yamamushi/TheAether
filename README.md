@@ -1,5 +1,12 @@
 
-[![The Aether Central Hub](https://img.shields.io/badge/Discord%20Gophers-%23discordgo-blue.svg)](https://discord.me/theaethergame)
+[![The Aether Central Hub](https://img.shields.io/badge/Play%20The%20Aether-%23welcome-blue.svg)](https://discord.gg/Ju28dpe) 
+![Discord](https://img.shields.io/discord/414332617454780416.svg) ![Travis](https://img.shields.io/travis/yamamushi/TheAether.svg) [![GitHub issues](https://img.shields.io/github/issues/yamamushi/TheAether.svg)](https://GitHub.com/yamamushi/TheAether/issues/)
+ [![Website shields.io](https://img.shields.io/website-up-down-green-red/http/TheAetherGame.com.svg)](http://shields.io/) [![made-with-go](https://img.shields.io/badge/Made%20with-Go-1f425f.svg)](https://golang.org/) [![Open Source Love svg1](https://badges.frapsoft.com/os/v1/open-source.svg?v=103)](https://github.com/ellerbrock/open-source-badges/)
+
+
+
+
+
 
 Table of Contents
 =================
