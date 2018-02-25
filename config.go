@@ -17,6 +17,7 @@ type mainConfig struct {
 
 	// Command Prefix
 	Token          string        `toml:"bot_token"`
+	BotName        string        `toml:"bot_name"`
 	ClusterOwnerID string        `toml:"cluster_owner_id"`
 	CentralGuildID string        `toml:"central_Server_id"`
 	LobbyChannelID string        `toml:"lobby_channel_id"`
