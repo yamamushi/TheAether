@@ -399,8 +399,8 @@ func (h *RegistrationHandler) PickRace(s *discordgo.Session, m *discordgo.Messag
 		return
 	}
 
-	for _, argument := range payload {
-		argument = strings.ToLower(argument)
+	for i, argument := range payload {
+		payload[i] = strings.ToLower(argument)
 	}
 
 	if len(payload) > 0 {
@@ -530,8 +530,8 @@ func (h *RegistrationHandler) PickClass(s *discordgo.Session, m *discordgo.Messa
 		return
 	}
 
-	for _, argument := range payload {
-		argument = strings.ToLower(argument)
+	for i, argument := range payload {
+		payload[i] = strings.ToLower(argument)
 	}
 
 	if len(payload) > 0 {
@@ -560,8 +560,8 @@ func (h *RegistrationHandler) ChooseClass(s *discordgo.Session, m *discordgo.Mes
 		return
 	}
 
-	for _, argument := range payload {
-		argument = strings.ToLower(argument)
+	for i, argument := range payload {
+		payload[i] = strings.ToLower(argument)
 	}
 
 	if len(payload) > 0 {

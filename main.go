@@ -169,7 +169,7 @@ func main() {
 	guildshandler.Init()
 	dg.AddHandler(guildshandler.Read)
 
-	// Initalize our Logger
+	// Initialize our Logger
 	fmt.Println("Initializing Logger")
 	logger.Init(&channelhandler, logchannel, dg)
 

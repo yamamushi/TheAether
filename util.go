@@ -104,9 +104,9 @@ func RemoveFromString(s []string, i int) []string {
 }
 
 // SliceToString function
-func SliceToString(s []string, seperator string) (formatted string) {
+func SliceToString(s []string, separator string) (formatted string) {
 	for _, element := range s {
-		formatted = formatted + element + seperator
+		formatted = formatted + element + separator
 	}
 	return formatted
 }
