@@ -45,7 +45,7 @@ func (h *EventHandler) Init() (err error) {
 	h.RegisterCommand()
 
 	fmt.Println("Loading Registered Events from Database")
-	err = h.LoadEvents()
+	err = h.LoadEventsAtBoot()
 	if err != nil {
 		return err
 	}
@@ -307,6 +307,12 @@ func (h *EventHandler) RegisterEvent(payload string, s *discordgo.Session, m *di
 	id := strings.Split(GetUUIDv2(), "-")
 	createdEvent.ID = id[0]
 
+	// After our json is parsed, we need to validate the event to make sure it will run correctly
+	err = h.parser.ValidateEvent(createdEvent)
+	if err != nil {
+		return "", err
+	}
+
 	err = h.eventsdb.SaveEventToDB(createdEvent)
 	if err != nil {
 		return "", err
@@ -314,17 +320,20 @@ func (h *EventHandler) RegisterEvent(payload string, s *discordgo.Session, m *di
 	return createdEvent.ID, nil
 }
 
-// LoadEvents function
-func (h *EventHandler) LoadEvents() (err error) {
+// LoadEventsAtBoot function
+func (h *EventHandler) LoadEventsAtBoot() (err error) {
 	events, err := h.eventsdb.GetAllEvents()
 	if err != nil {
 		return err
 	}
 
 	for _, event := range events {
-		err = h.LoadEvent(event.ID)
-		if err != nil {
-			return err
+		if event.LoadOnBoot {
+			fmt.Println("Event Loaded: " + event.ID)
+			err = h.LoadEvent(event.ID)
+			if err != nil {
+				return err
+			}
 		}
 	}
 	return nil
@@ -337,15 +346,10 @@ func (h *EventHandler) LoadEvent(eventID string) (err error) {
 		return err
 	}
 
+	// Refer to the github wiki page on Events for information on types
 	if event.Type == "ReadMessage" {
-		//TypeFields
-		// 0 - Keyword to trigger on
 		h.WatchEvent(h.UnfoldReadMessageEvent, event.ID, event.ChannelID)
 	} else if event.Type == "TimedMessage" {
-		//TypeFields
-		// 0 - Keyword to trigger on
-		// 1 -  Seconds to pause for (max 300)
-		// Data - Formatted message to send
 		h.WatchEvent(h.UnfoldTimedMessageEvent, event.ID, event.ChannelID)
 	}
 	return nil
@@ -424,6 +428,19 @@ func (h *EventHandler) ReadEvents(s *discordgo.Session, m *discordgo.MessageCrea
 	}
 }
 
+// CreateAttachedEvent function
+func (h *EventHandler) CreateAttachedEvent(event Event, userID string) (attachedevent Event, err error) {
+	// If we didn't find an event we need to save a new one in the db for this user
+	id := strings.Split(GetUUIDv2(), "-")
+	event.UserAttached = event.ID + "-" + userID // We key the new event with the root Event ID and the User ID
+	event.ID = id[0]                             // Give this new event a new ID or it will overwrite the root record
+	err = h.eventsdb.SaveEventToDB(event)
+	if err != nil {
+		return attachedevent, err
+	}
+	return event, nil
+}
+
 // UnfoldReadMessageEvent function
 func (h *EventHandler) UnfoldReadMessageEvent(eventID string, s *discordgo.Session, m *discordgo.MessageCreate) {
 	// Ignore all messages created by the bot itself
@@ -441,16 +458,66 @@ func (h *EventHandler) UnfoldReadMessageEvent(eventID string, s *discordgo.Sessi
 		return
 	}
 
-	eventstring := ""
-	if len(event.TypeFlags) > 0 {
-		eventstring = event.TypeFlags[0] // The first value in the typeflag for a readmessage event is the string to parse for
-	}
+	// We need to determine if the event is attachable or not first
+	if event.Attachable {
+		// If the event is attachable, then this is not the event we want to trigger, we want to retrieve the users attached event
+		event, err = h.eventsdb.GetEventByAttached(event.ID, m.Author.ID)
+		if err != nil {
+			return // If we didn't find a record, one wasn't registered and we want to silently fail
+			/*
+				if err.Error() == "No record found" {
+					event, err = h.CreateAttachedEvent(event, m.Author.ID)
+					if err != nil {
+						s.ChannelMessageSend(m.ChannelID, "Error creating user attached event - Error: "+err.Error())
+						return
+					}
+				} else {
+					s.ChannelMessageSend(m.ChannelID, "Error loading user attached event - Error: "+err.Error())
+					return
+				}
+			*/
+		}
+	} // Now we have the event attached to the user and can proceed with parsing it
 
+	keyword := event.TypeFlags[0]
 	messageContent := strings.Fields(strings.ToLower(m.Content))
 
 	for _, messagefield := range messageContent {
-		if messagefield == eventstring {
-			s.ChannelMessageSend(event.ChannelID, event.Data)
+		// We don't need to check for the userID here because that's what checking for event.Attachable did
+		if messagefield == keyword {
+			// First we send the data
+			s.ChannelMessageSend(event.ChannelID, FormatEventMessage(event.Data[0], m.Author.ID, m.ChannelID))
+
+			// We need to check if the cycles are indefinite or not
+			if event.Cycles > 0 {
+				// We increment our run count and save the event to the db
+				event.RunCount = event.RunCount + 1
+				err = h.eventsdb.SaveEventToDB(event)
+				if err != nil {
+					s.ChannelMessageSend(m.ChannelID, "Error saving event: "+eventID+" Error: "+err.Error())
+					return
+				}
+				// Then we check to see if we hit our cycle limit and if so then remove the event from the db
+				if event.RunCount >= event.Cycles {
+					// If this is an attached event we need to remove it from the DB after cleanup
+					if event.UserAttached != "" {
+						err = h.eventsdb.RemoveEventFromDB(event)
+						if err != nil {
+							s.ChannelMessageSend(m.ChannelID, "Error removing user attached event: "+eventID+" Error: "+err.Error())
+							return
+						}
+					}
+					// If it is a root event instead, then we need to clear the runcount and unwatch it instead of deleting it
+					event.RunCount = 0
+					err = h.eventsdb.SaveEventToDB(event)
+					if err != nil {
+						s.ChannelMessageSend(m.ChannelID, "Error saving event: "+eventID+" Error: "+err.Error())
+						return
+					}
+					h.UnWatchEvent(m.ChannelID, event.ID)
+					return
+				}
+			}
 			return
 		}
 	}
@@ -474,31 +541,68 @@ func (h *EventHandler) UnfoldTimedMessageEvent(eventID string, s *discordgo.Sess
 		return
 	}
 
-	keyword := ""
-	typeflagcount := len(event.TypeFlags)
-	if len(event.TypeFlags) < 2 {
-		s.ChannelMessageSend(m.ChannelID, "Error loading event "+eventID+": Expected two typeflags but found: "+strconv.Itoa(typeflagcount))
-		return
-	}
+	// We need to determine if the event is attachable or not first
+	if event.Attachable {
+		// If the event is attachable, then this is not the event we want to trigger, we want to retrieve the users attached event
+		event, err = h.eventsdb.GetEventByAttached(event.ID, m.Author.ID)
+		if err != nil {
+			return // If we didn't find a record, one wasn't registered and we want to silently fail
+			/*
+				if err.Error() == "No record found" {
+					event, err = h.CreateAttachedEvent(event, m.Author.ID)
+					if err != nil {
+						s.ChannelMessageSend(m.ChannelID, "Error creating user attached event - Error: "+err.Error())
+						return
+					}
+				} else {
+					s.ChannelMessageSend(m.ChannelID, "Error loading user attached event - Error: "+err.Error())
+					return
+				}
+			*/
+		}
+	} // Now we have the event attached to the user and can proceed with parsing it
 
-	keyword = event.TypeFlags[0] // The first value in the typeflag for a readmessage event is the string to parse for
-
-	timeout, err := strconv.Atoi(event.TypeFlags[1])
-	if err != nil {
-		s.ChannelMessageSend(m.ChannelID, "Error loading event: "+eventID+": Error: "+err.Error())
-		return
-	}
-	if timeout > 300 {
-		s.ChannelMessageSend(m.ChannelID, "Error loading event "+eventID+": Invalid timeout specified (max 300):"+strconv.Itoa(timeout))
-		return
-	}
-
+	keyword := event.TypeFlags[0]
+	timeout, _ := strconv.Atoi(event.TypeFlags[1]) // We don't bother checking for an error here because that was handled during the event registration.
 	messageContent := strings.Fields(strings.ToLower(m.Content))
 
 	for _, messagefield := range messageContent {
 		if messagefield == keyword {
+			// First we want to sleep for our timeout period
 			time.Sleep(time.Duration(timeout) * time.Second)
-			s.ChannelMessageSend(event.ChannelID, event.Data)
+			// Now we send the data
+			s.ChannelMessageSend(event.ChannelID, FormatEventMessage(event.Data[0], m.Author.ID, m.ChannelID))
+
+			// We need to check if the cycles are indefinite or not
+			if event.Cycles > 0 {
+				// We increment our run count and save the event to the db
+				event.RunCount = event.RunCount + 1
+				err = h.eventsdb.SaveEventToDB(event)
+				if err != nil {
+					s.ChannelMessageSend(m.ChannelID, "Error saving event: "+eventID+" Error: "+err.Error())
+					return
+				}
+				// Then we check to see if we hit our cycle limit and if so then remove the event from the db
+				if event.RunCount >= event.Cycles {
+					// If this is an attached event we need to remove it from the DB after cleanup
+					if event.UserAttached != "" {
+						err = h.eventsdb.RemoveEventFromDB(event)
+						if err != nil {
+							s.ChannelMessageSend(m.ChannelID, "Error removing user attached event: "+eventID+" Error: "+err.Error())
+							return
+						}
+					}
+					// If it is a root event instead, then we need to clear the runcount and unwatch it instead of deleting it
+					event.RunCount = 0
+					err = h.eventsdb.SaveEventToDB(event)
+					if err != nil {
+						s.ChannelMessageSend(m.ChannelID, "Error saving event: "+eventID+" Error: "+err.Error())
+						return
+					}
+					h.UnWatchEvent(m.ChannelID, event.ID)
+					return
+				}
+			}
 			return
 		}
 	}
