@@ -6,7 +6,9 @@ import (
 	"fmt"
 	"github.com/bwmarrin/discordgo"
 	"reflect"
+	"strconv"
 	"strings"
+	"time"
 )
 
 // This handles the discord input interface for registering events and managing them
@@ -337,13 +339,14 @@ func (h *EventHandler) LoadEvent(eventID string) (err error) {
 
 	if event.Type == "ReadMessage" {
 		//TypeFields
-		// 0 - word to trigger on
+		// 0 - Keyword to trigger on
 		h.WatchEvent(h.UnfoldReadMessageEvent, event.ID, event.ChannelID)
 	} else if event.Type == "TimedMessage" {
 		//TypeFields
-		// 0 - Formatted Duration String
+		// 0 - Keyword to trigger on
+		// 1 -  Seconds to pause for (max 300)
 		// Data - Formatted message to send
-		//h.Watchevent(h.UnfoldTimedMessageEvent, event.ID, event.ChannelID)
+		h.WatchEvent(h.UnfoldTimedMessageEvent, event.ID, event.ChannelID)
 	}
 	return nil
 }
@@ -447,6 +450,54 @@ func (h *EventHandler) UnfoldReadMessageEvent(eventID string, s *discordgo.Sessi
 
 	for _, messagefield := range messageContent {
 		if messagefield == eventstring {
+			s.ChannelMessageSend(event.ChannelID, event.Data)
+			return
+		}
+	}
+	return
+}
+
+// UnfoldTimedMessageEvent function
+func (h *EventHandler) UnfoldTimedMessageEvent(eventID string, s *discordgo.Session, m *discordgo.MessageCreate) {
+	// Ignore all messages created by the bot itself
+	if m.Author.ID == s.State.User.ID {
+		return
+	}
+	// Ignore bots
+	if m.Author.Bot {
+		return
+	}
+
+	event, err := h.eventsdb.GetEventByID(eventID)
+	if err != nil {
+		s.ChannelMessageSend(m.ChannelID, "Error loading event "+eventID+": Error: "+err.Error())
+		return
+	}
+
+	keyword := ""
+	typeflagcount := len(event.TypeFlags)
+	if len(event.TypeFlags) < 2 {
+		s.ChannelMessageSend(m.ChannelID, "Error loading event "+eventID+": Expected two typeflags but found: "+strconv.Itoa(typeflagcount))
+		return
+	}
+
+	keyword = event.TypeFlags[0] // The first value in the typeflag for a readmessage event is the string to parse for
+
+	timeout, err := strconv.Atoi(event.TypeFlags[1])
+	if err != nil {
+		s.ChannelMessageSend(m.ChannelID, "Error loading event: "+eventID+": Error: "+err.Error())
+		return
+	}
+	if timeout > 300 {
+		s.ChannelMessageSend(m.ChannelID, "Error loading event "+eventID+": Invalid timeout specified (max 300):"+strconv.Itoa(timeout))
+		return
+	}
+
+	messageContent := strings.Fields(strings.ToLower(m.Content))
+
+	for _, messagefield := range messageContent {
+		if messagefield == keyword {
+			time.Sleep(time.Duration(timeout) * time.Second)
 			s.ChannelMessageSend(event.ChannelID, event.Data)
 			return
 		}

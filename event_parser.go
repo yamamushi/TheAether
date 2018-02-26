@@ -19,7 +19,7 @@ func (h *EventParser) ParseFormattedEvent(data string, channelID string, userID 
 
 	unmarshallcontainer.ChannelID = channelID
 	unmarshallcontainer.CreatorID = userID
-	unmarshallcontainer.Data = strings.Replace(unmarshallcontainer.Data, "_user_", "<@"+userID+">", -1)
+	//unmarshallcontainer.Data = strings.Replace(unmarshallcontainer.Data, "_user_", "<@"+userID+">", -1)
 	// We will fix this in another parser later, this should not be formatted in this function
 
 	id := strings.Split(GetUUIDv2(), "-")
