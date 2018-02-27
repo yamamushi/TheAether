@@ -51,6 +51,7 @@ func (h *EventParser) ValidateEvent(event Event) (err error) {
 		if len(event.TypeFlags) != 1 {
 			return errors.New("Error validating event - Expected 1 typeflag but found: " + strconv.Itoa(len(event.TypeFlags)))
 		}
+		return nil
 	} else if event.Type == "TimedMessage" {
 		if len(event.TypeFlags) != 2 {
 			return errors.New("Error validating event - Expected 2 typeflags but found: " + strconv.Itoa(len(event.TypeFlags)))
@@ -62,6 +63,20 @@ func (h *EventParser) ValidateEvent(event Event) (err error) {
 		if timeout > 300 {
 			return errors.New("Error validating event - Maximum timeout is 300 but found: " + strconv.Itoa(timeout))
 		}
+		return nil
+	} else if event.Type == "ReadMessageChoice" {
+		typeflagslen := len(event.TypeFlags)
+		datafieldslen := len(event.Data)
+		if len(event.TypeFlags) < 1 {
+			return errors.New("Error validating event - Expected at least 1 typeflag")
+		}
+		if typeflagslen != datafieldslen {
+			return errors.New("Error validating event - TypeFlags and Data Fields lengths do not match")
+		}
+		if typeflagslen > 10 {
+			return errors.New("Error validating event - Maximum TypeFlags count is 10 but found: " + strconv.Itoa(typeflagslen))
+		}
+		return nil
 	}
 
 	return nil
