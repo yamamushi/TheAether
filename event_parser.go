@@ -10,6 +10,7 @@ import (
 // EventParser struct
 // Parse event scripts and formatted event data fields
 type EventParser struct {
+	eventsdb *EventsDB
 }
 
 // ParseFormattedEvent function
@@ -48,36 +49,76 @@ func (h *EventParser) EventToJSON(event Event) (formatted string, err error) {
 // Refer to the github wiki page on Events for information on types
 func (h *EventParser) ValidateEvent(event Event) (err error) {
 	if event.Type == "ReadMessage" {
-		if len(event.TypeFlags) != 1 {
-			return errors.New("Error validating event - Expected 1 typeflag but found: " + strconv.Itoa(len(event.TypeFlags)))
-		}
-		return nil
+		return h.ValidateReadMessage(event)
 	} else if event.Type == "TimedMessage" {
-		if len(event.TypeFlags) != 2 {
-			return errors.New("Error validating event - Expected 2 typeflags but found: " + strconv.Itoa(len(event.TypeFlags)))
-		}
-		timeout, err := strconv.Atoi(event.TypeFlags[1])
-		if err != nil {
-			return errors.New("Error validating event - Could not parse timeout: " + err.Error())
-		}
-		if timeout > 300 {
-			return errors.New("Error validating event - Maximum timeout is 300 but found: " + strconv.Itoa(timeout))
-		}
-		return nil
+		return h.ValidateTimedMessage(event)
 	} else if event.Type == "ReadMessageChoice" {
-		typeflagslen := len(event.TypeFlags)
-		datafieldslen := len(event.Data)
-		if len(event.TypeFlags) < 1 {
-			return errors.New("Error validating event - Expected at least 1 typeflag")
-		}
-		if typeflagslen != datafieldslen {
-			return errors.New("Error validating event - TypeFlags and Data Fields lengths do not match")
-		}
-		if typeflagslen > 10 {
-			return errors.New("Error validating event - Maximum TypeFlags count is 10 but found: " + strconv.Itoa(typeflagslen))
-		}
-		return nil
+		return h.ValidateReadMessageChoice(event)
+	} else if event.Type == "MessageChoiceTriggerEvent" {
+		return h.ValidateMessageChoiceTriggerEvent(event)
 	}
+	return nil
+}
 
+// ValidateReadMessage function
+func (h *EventParser) ValidateReadMessage(event Event) (err error) {
+	if len(event.TypeFlags) != 1 {
+		return errors.New("Error validating event - Expected 1 typeflag but found: " + strconv.Itoa(len(event.TypeFlags)))
+	}
+	return nil
+}
+
+// ValidateTimedMessage function
+func (h *EventParser) ValidateTimedMessage(event Event) (err error) {
+	if len(event.TypeFlags) != 2 {
+		return errors.New("Error validating event - Expected 2 typeflags but found: " + strconv.Itoa(len(event.TypeFlags)))
+	}
+	timeout, err := strconv.Atoi(event.TypeFlags[1])
+	if err != nil {
+		return errors.New("Error validating event - Could not parse timeout: " + err.Error())
+	}
+	if timeout > 300 {
+		return errors.New("Error validating event - Maximum timeout is 300 but found: " + strconv.Itoa(timeout))
+	}
+	return nil
+}
+
+// ValidateReadMessageChoice function
+func (h *EventParser) ValidateReadMessageChoice(event Event) (err error) {
+	typeflagslen := len(event.TypeFlags)
+	datafieldslen := len(event.Data)
+	if len(event.TypeFlags) < 1 {
+		return errors.New("Error validating event - Expected at least 1 typeflag")
+	}
+	if typeflagslen != datafieldslen {
+		return errors.New("Error validating event - TypeFlags and Data Fields lengths do not match")
+	}
+	if typeflagslen > 10 {
+		return errors.New("Error validating event - Maximum TypeFlags count is 10 but found: " + strconv.Itoa(typeflagslen))
+	}
+	return nil
+}
+
+// ValidateMessageChoiceTriggerEvent function
+func (h *EventParser) ValidateMessageChoiceTriggerEvent(event Event) (err error) {
+	typeflagslen := len(event.TypeFlags)
+	datafieldslen := len(event.Data)
+	if len(event.TypeFlags) < 1 {
+		return errors.New("Error validating event - Expected at least 1 typeflag")
+	}
+	if typeflagslen != datafieldslen {
+		return errors.New("Error validating event - TypeFlags and Data Fields lengths do not match")
+	}
+	if typeflagslen > 10 {
+		return errors.New("Error validating event - Maximum TypeFlags count is 10 but found: " + strconv.Itoa(typeflagslen))
+	}
+	// Now check to see that either the supplied eventID's are valid or set to nil
+	for _, field := range event.Data {
+		if field != "nil" {
+			if !h.eventsdb.ValidateEventByID(field) {
+				return errors.New("Error validating event - Invalid event found in data: " + field)
+			}
+		}
+	}
 	return nil
 }

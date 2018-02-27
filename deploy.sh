@@ -40,4 +40,6 @@ if [ machine != "Mac" ]; then
     exit
 fi
 
+# Fallback to the develop branch after deployments
+git checkout develop
 

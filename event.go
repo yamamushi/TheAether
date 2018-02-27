@@ -89,6 +89,23 @@ func (h *EventsDB) GetEventByID(EventID string) (Event Event, err error) {
 	return Event, errors.New("No record found")
 }
 
+// ValidateEventByID function
+func (h *EventsDB) ValidateEventByID(EventID string) (validated bool) {
+
+	Events, err := h.GetAllEvents()
+	if err != nil {
+		return false
+	}
+
+	for _, record := range Events {
+
+		if EventID == record.ID {
+			return true
+		}
+	}
+	return false
+}
+
 // GetAllEvents function
 func (h *EventsDB) GetAllEvents() (Eventlist []Event, err error) {
 	h.querylocker.Lock()
