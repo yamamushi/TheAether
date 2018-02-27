@@ -11,11 +11,12 @@ RUN mkdir /AetherData
 # Get the du-discordbot dependencies inside the container.
 RUN cd /go/src/github.com/yamamushi/TheAether && go get ./...
 
-# Install and run TheAether
+# Install TheAether
 RUN go install github.com/yamamushi/TheAether
 
 # Run the command by default when the container starts.
 WORKDIR /AetherData
 ENTRYPOINT /go/bin/TheAether
 
+# Our attached volume goes here.
 VOLUME /AetherData

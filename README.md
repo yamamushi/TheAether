@@ -1,6 +1,6 @@
 [![Travis](https://img.shields.io/travis/yamamushi/TheAether.svg?branch=master)](https://travis-ci.org/yamamushi/TheAether/) [![GitHub issues](https://img.shields.io/github/issues/yamamushi/TheAether.svg)](https://GitHub.com/yamamushi/TheAether/issues/) [![Go Report Card](https://goreportcard.com/badge/github.com/yamamushi/TheAether)](https://goreportcard.com/report/github.com/yamamushi/TheAether?style=plastic) [![Website shields.io](https://img.shields.io/website-up-down-green-red/http/TheAetherGame.com.svg)](http://theaethergame.com) 
  
- [![Build history](https://buildstats.info/travisci/chart/yamamushi/TheAether)](https://ci.appveyor.com/project/yamamushi/TheAether/history)
+ [![Build history](https://buildstats.info/travisci/chart/yamamushi/TheAether)](https://travis-ci.org/yamamushi/TheAether/)
 
 
 
@@ -33,7 +33,7 @@ Will you become a traveled adventurer or a rich king? Perhaps a ship merchantman
 
 ## About 
 
-The Aether is, at its core, a MUD that runs on top of Discord. However, what separates The Aether from other discord roleplaying games (such as Discord RPG, which is arguably a great game on its own) is that by playing it you are a true participant in the world.
+The Aether is, at its core, a MUD that runs on top of Discord. However, what separates The Aether from other discord roleplaying games (such as Discord RPG, which is arguably a great game on its own) is that while playing it you are a true participant in the world.
 
 While other discord bots control traveling in a 2-dimensional way (you can play without ever leaving a channel, and other participants can be in the same chanel as you), The Aether controls traveling in a 3-dimensional way through the world by managing the roles and permissions that define Discord. That is to say, when you travel "north" from a room, for example, roles are assigned and revoked from your account with varying permissions that emulate the feeling of actually moving to a different location.
 
