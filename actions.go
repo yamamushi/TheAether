@@ -4,7 +4,7 @@ import (
 	"sync"
 )
 
-// ActionsDB struct 
+// ActionsDB struct
 type ActionsDB struct {
 	db          *DBHandler
 	querylocker sync.RWMutex

@@ -3,11 +3,11 @@ package main
 import (
 	"encoding/json"
 	"errors"
+	"fmt"
 	"github.com/bwmarrin/discordgo"
 	"io/ioutil"
 	"os"
 	"strings"
-    "fmt"
 )
 
 // ActionsHandler struct

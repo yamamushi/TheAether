@@ -74,7 +74,7 @@ type User struct {
 
 	ItemsMap []string // An ID pointing to the item in the database
 
-	LastActions   []string
+	LastActions     []string
 	LastActionTimes []time.Time
 
 	Strength     int

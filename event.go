@@ -15,8 +15,8 @@ type EventsDB struct {
 type Event struct {
 	ID string `json:"id"`
 
-	Rooms    []string `json:"rooms"`
-	UserAttached string `json:"AttachedUserId"` // The ID of a user if the event is tied to one through a cycle count
+	Rooms        []string `json:"rooms"`
+	UserAttached string   `json:"AttachedUserId"` // The ID of a user if the event is tied to one through a cycle count
 
 	Type      string   `json:"type"`
 	TypeFlags []string `json:"typeflags"`
