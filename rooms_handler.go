@@ -1684,6 +1684,9 @@ func (h *RoomsHandler) FormatRoomInfo(roomID string) (formatted string, err erro
 		}
 		output = output + "Up Room: " + room.UpID + " - " + linkedroom.Name + " \n"
 	}
+	if room.UpScriptID != "" {
+		output = output + "Up Direction Script: " + room.UpScriptID + "\n"
+	}
 	if len(room.UpItemID) > 0 {
 		itemoutput := ""
 		for _, item := range room.UpItemID {
@@ -1698,6 +1701,9 @@ func (h *RoomsHandler) FormatRoomInfo(roomID string) (formatted string, err erro
 			return formatted, err
 		}
 		output = output + "Down Room: " + room.DownID + " - " + linkedroom.Name + " \n"
+	}
+	if room.DownScriptID != "" {
+		output = output + "Down Direction Script: " + room.DownScriptID + "\n"
 	}
 	if len(room.DownItemID) > 0 {
 		itemoutput := ""
@@ -1714,6 +1720,9 @@ func (h *RoomsHandler) FormatRoomInfo(roomID string) (formatted string, err erro
 		}
 		output = output + "North Room: " + room.NorthID + " - " + linkedroom.Name + " \n"
 	}
+	if room.NorthScriptID != "" {
+		output = output + "North Direction Script: " + room.NorthScriptID + "\n"
+	}
 	if len(room.NorthItemID) > 0 {
 		itemoutput := ""
 		for _, item := range room.NorthItemID {
@@ -1728,6 +1737,9 @@ func (h *RoomsHandler) FormatRoomInfo(roomID string) (formatted string, err erro
 			return formatted, err
 		}
 		output = output + "NorthEast Room: " + room.NorthEastID + " - " + linkedroom.Name + " \n"
+	}
+	if room.NorthEastScriptID != "" {
+		output = output + "NorthEast Direction Script: " + room.NorthEastScriptID + "\n"
 	}
 	if len(room.NorthEastItemID) > 0 {
 		itemoutput := ""
@@ -1744,6 +1756,9 @@ func (h *RoomsHandler) FormatRoomInfo(roomID string) (formatted string, err erro
 		}
 		output = output + "East Room: " + room.EastID + " - " + linkedroom.Name + " \n"
 	}
+	if room.EastScriptID != "" {
+		output = output + "East Direction Script: " + room.EastScriptID + "\n"
+	}
 	if len(room.EastItemID) > 0 {
 		itemoutput := ""
 		for _, item := range room.EastItemID {
@@ -1758,6 +1773,9 @@ func (h *RoomsHandler) FormatRoomInfo(roomID string) (formatted string, err erro
 			return formatted, err
 		}
 		output = output + "SouthEast Room: " + room.SouthEastID + " - " + linkedroom.Name + " \n"
+	}
+	if room.SouthEastScriptID != "" {
+		output = output + "SouthEast Direction Script: " + room.SouthEastScriptID + "\n"
 	}
 	if len(room.SouthEastItemID) > 0 {
 		itemoutput := ""
@@ -1774,6 +1792,9 @@ func (h *RoomsHandler) FormatRoomInfo(roomID string) (formatted string, err erro
 		}
 		output = output + "South Room: " + room.SouthID + " - " + linkedroom.Name + " \n"
 	}
+	if room.SouthScriptID != "" {
+		output = output + "South Direction Script: " + room.SouthScriptID + "\n"
+	}
 	if len(room.SouthItemID) > 0 {
 		itemoutput := ""
 		for _, item := range room.SouthItemID {
@@ -1788,6 +1809,9 @@ func (h *RoomsHandler) FormatRoomInfo(roomID string) (formatted string, err erro
 			return formatted, err
 		}
 		output = output + "SouthWest Room: " + room.SouthWestID + " - " + linkedroom.Name + " \n"
+	}
+	if room.SouthWestScriptID != "" {
+		output = output + "SouthWest Direction Script: " + room.SouthWestScriptID + "\n"
 	}
 	if len(room.SouthWestItemID) > 0 {
 		itemoutput := ""
@@ -1804,6 +1828,9 @@ func (h *RoomsHandler) FormatRoomInfo(roomID string) (formatted string, err erro
 		}
 		output = output + "West Room: " + room.WestID + " - " + linkedroom.Name + " \n"
 	}
+	if room.WestScriptID != "" {
+		output = output + "West Direction Script: " + room.WestScriptID + "\n"
+	}
 	if len(room.WestItemID) > 0 {
 		itemoutput := ""
 		for _, item := range room.WestItemID {
@@ -1818,6 +1845,9 @@ func (h *RoomsHandler) FormatRoomInfo(roomID string) (formatted string, err erro
 			return formatted, err
 		}
 		output = output + "NorthWest Room: " + room.NorthWestID + " - " + linkedroom.Name + " \n"
+	}
+	if room.NorthWestScriptID != "" {
+		output = output + "NorthWest Direction Script: " + room.NorthWestScriptID + "\n"
 	}
 	if len(room.NorthWestItemID) > 0 {
 		itemoutput := ""

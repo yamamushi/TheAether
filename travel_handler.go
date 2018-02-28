@@ -318,5 +318,25 @@ func (h *TravelHandler) Travel(direction string, s *discordgo.Session, m *discor
 // ExecTravelScript function
 func (h *TravelHandler) ExecTravelScript(scriptID string, user User, m *discordgo.MessageCreate) (err error) {
 
+	// Proof of concept, to be updated later when scripts system is in place!
+	if user.Intelligence < 4 {
+		return errors.New("You are not smart enough to travel here yet")
+	}
+	if user.Strength < 3 {
+		return errors.New("You are not strong enough to travel here yet")
+	}
+	if user.Dexterity < 4 {
+		return errors.New("You are not dexterious enough to travel here yet")
+	}
+	if user.Constitution < 3 {
+		return errors.New("You do not have enough constitution to travel here yet")
+	}
+	if user.Wisdom < 3 {
+		return errors.New("You are not wise enough to travel here yet")
+	}
+	if user.Charisma < 2 {
+		return errors.New("You are not charismatic enough to travel here yet")
+	}
+
 	return nil
 }
