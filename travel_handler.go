@@ -210,33 +210,51 @@ func (h *TravelHandler) Travel(direction string, s *discordgo.Session, m *discor
 	}
 
 	toroom := ""
+	travelscriptID := ""
 	if direction == "up" {
 		toroom = fromroom.UpID
+		travelscriptID = fromroom.UpScriptID
 	} else if direction == "down" {
 		toroom = fromroom.DownID
+		travelscriptID = fromroom.DownScriptID
 	} else if direction == "north" {
 		toroom = fromroom.NorthID
+		travelscriptID = fromroom.NorthScriptID
 	} else if direction == "northeast" {
 		toroom = fromroom.NorthEastID
+		travelscriptID = fromroom.NorthEastScriptID
 	} else if direction == "east" {
 		toroom = fromroom.EastID
+		travelscriptID = fromroom.EastScriptID
 	} else if direction == "southeast" {
 		toroom = fromroom.SouthEastID
+		travelscriptID = fromroom.SouthEastScriptID
 	} else if direction == "south" {
 		toroom = fromroom.SouthID
+		travelscriptID = fromroom.SouthScriptID
 	} else if direction == "southwest" {
 		toroom = fromroom.SouthWestID
+		travelscriptID = fromroom.SouthWestScriptID
 	} else if direction == "west" {
 		toroom = fromroom.WestID
+		travelscriptID = fromroom.WestScriptID
 	} else if direction == "northwest" {
 		toroom = fromroom.NorthWestID
+		travelscriptID = fromroom.NorthWestScriptID
 	} else {
 		return errors.New("Unrecognized direction: " + direction)
-
 	}
 
 	if toroom == "" {
 		return errors.New("There is nowhere to travel in that direction")
+	}
+
+	// Here we run our associated travel script, if one exists for the direction we are traveling
+	if travelscriptID != "" {
+		err = h.ExecTravelScript(travelscriptID, user, m)
+		if err != nil {
+			return errors.New("Cannot travel " + direction + ": " + err.Error())
+		}
 	}
 
 	targetroom, err := h.room.rooms.GetRoomByID(toroom)
@@ -294,5 +312,31 @@ func (h *TravelHandler) Travel(direction string, s *discordgo.Session, m *discor
 	if err != nil {
 		return errors.New("Error removing user record from room: " + err.Error())
 	}
+	return nil
+}
+
+// ExecTravelScript function
+func (h *TravelHandler) ExecTravelScript(scriptID string, user User, m *discordgo.MessageCreate) (err error) {
+
+	// Proof of concept, to be updated later when scripts system is in place!
+	if user.Intelligence < 4 {
+		return errors.New("You are not smart enough to travel here yet")
+	}
+	if user.Strength < 3 {
+		return errors.New("You are not strong enough to travel here yet")
+	}
+	if user.Dexterity < 4 {
+		return errors.New("You are not dexterious enough to travel here yet")
+	}
+	if user.Constitution < 3 {
+		return errors.New("You do not have enough constitution to travel here yet")
+	}
+	if user.Wisdom < 3 {
+		return errors.New("You are not wise enough to travel here yet")
+	}
+	if user.Charisma < 2 {
+		return errors.New("You are not charismatic enough to travel here yet")
+	}
+
 	return nil
 }

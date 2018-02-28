@@ -37,6 +37,9 @@ type User struct {
 
 	QuestFlags []string
 	Statuses   []string
+	Crawling   bool
+	Swimming   bool
+	Flying     bool
 
 	// Body Parts Can Have Individual States
 	REye  string

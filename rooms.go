@@ -41,35 +41,55 @@ type Room struct {
 	TransferRoomID      string
 
 	// Connecting Room ID's
-	UpID     string
-	UpItemID []string
+	UpID          string
+	UpItemID      []string
+	UpScriptID    string
+	UpDescription string
 
-	DownID     string
-	DownItemID []string
+	DownID          string
+	DownItemID      []string
+	DownScriptID    string
+	DownDescription string
 
-	NorthID     string
-	NorthItemID []string
+	NorthID          string
+	NorthItemID      []string
+	NorthScriptID    string
+	NorthDescription string
 
-	NorthEastID     string
-	NorthEastItemID []string
+	NorthEastID          string
+	NorthEastItemID      []string
+	NorthEastScriptID    string
+	NorthEastDescription string
 
-	EastID     string
-	EastItemID []string
+	EastID          string
+	EastItemID      []string
+	EastScriptID    string
+	EastDescription string
 
-	SouthEastID     string
-	SouthEastItemID []string
+	SouthEastID          string
+	SouthEastItemID      []string
+	SouthEastScriptID    string
+	SouthEastDescription string
 
-	SouthID     string
-	SouthItemID []string
+	SouthID          string
+	SouthItemID      []string
+	SouthScriptID    string
+	SouthDescription string
 
-	SouthWestID     string
-	SouthWestItemID []string
+	SouthWestID          string
+	SouthWestItemID      []string
+	SouthWestScriptID    string
+	SouthWestDescription string
 
-	WestID     string
-	WestItemID []string
+	WestID          string
+	WestItemID      []string
+	WestScriptID    string
+	WestDescription string
 
-	NorthWestID     string
-	NorthWestItemID []string
+	NorthWestID          string
+	NorthWestItemID      []string
+	NorthWestScriptID    string
+	NorthWestDescription string
 
 	Items []string
 	NPC   []string
