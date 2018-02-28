@@ -14,7 +14,7 @@ type EventParser struct {
 }
 
 // ParseFormattedEvent function
-func (h *EventParser) ParseFormattedEvent(data string, channelID string, userID string) (parsed Event, err error) {
+func (h *EventParser) ParseFormattedEvent(data string, userID string) (parsed Event, err error) {
 	unmarshallcontainer := Event{}
 	if err := json.Unmarshal([]byte(data), &unmarshallcontainer); err != nil {
 		return unmarshallcontainer, err
@@ -22,7 +22,6 @@ func (h *EventParser) ParseFormattedEvent(data string, channelID string, userID 
 
 	unmarshallcontainer.CreatorID = userID
 	unmarshallcontainer.RunCount = 0
-	unmarshallcontainer.ChannelID = channelID
 
 	//unmarshallcontainer.Data = strings.Replace(unmarshallcontainer.Data, "_user_", "<@"+userID+">", -1)
 	// We will fix this in another parser later, this should not be formatted in this function

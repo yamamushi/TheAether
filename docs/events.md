@@ -1,16 +1,9 @@
-# Events 
-
-The events system is designed to be a flexible method for defining functions within discord that can be used as standalone "read and response" type functions, functions for checking the various attributes and skills of a player, functions for checking world information such as the time of day or weather, or chained together using the scripts system to create more complex interactions with NPC's or Items (though not necessarily limited to those two).
-
-The `events` command is used for managing events (adding, removing, modifying, etc.), and must first be enabled in a room before it can be used with the following command (see the command permissions page for more information):
-
-`~command enable events`
 
 Table of Contents
 =================
 
    * [Events](#events)
-   * [Table of Contents](#table-of-contents)
+      * [Events Command](#events-command)
       * [Fields](#fields)
       * [Event Types](#event-types)
          * [Message Events](#message-events)
@@ -33,6 +26,30 @@ Table of Contents
          * [Control Flow Events](#control-flow-events)
             * [TriggerEvent](#triggerevent)
             * [TimedTriggerEvent](#timedtriggerevent)
+            
+# Events 
+
+The events system is designed to be a flexible method for defining functions within discord that can be used as standalone "read and response" type functions, functions for checking the various attributes and skills of a player, functions for checking world information such as the time of day or weather, or chained together using the scripts system to create more complex interactions with NPC's or Items (though not necessarily limited to those two).
+
+The `events` command is used for managing events (adding, removing, modifying, etc.), and must first be enabled in a room before it can be used with the following command (see the command permissions page for more information):
+
+`~command enable events`
+            
+
+## Events Command
+
+| Command       | Description   | Example Usage  |
+| ------------- | ------------- | ------------- |
+| add |  |  |
+| remove |  |  |
+| list |  |  |
+| info |  |  |
+| enable | | |
+| disable | | |
+| listenabled | | |
+
+[Go to top of page](#table-of-contents)
+
 
 ## Fields
 
@@ -77,7 +94,7 @@ _string array_
 
 As described in the following section, each type of event has varying data fields that are applicable to them. 
 
-[Go to top of page](#events)
+[Go to top of page](#table-of-contents)
 
 
 
@@ -123,7 +140,7 @@ In the following example, the trigger keyword is "hello", to which a response of
 }
 ```
 
-[Go to top of page](#events)
+[Go to top of page](#table-of-contents)
 
 
 #### TimedMessage
@@ -163,7 +180,7 @@ In the following example, the event will be triggered by the keyword "hello", af
 }
 ```
 
-[Go to top of page](#events)
+[Go to top of page](#table-of-contents)
 
 
 #### ReadMessageChoice
@@ -215,7 +232,7 @@ In the following example, the keywords "hello" and "goodbye" will be responded t
 }
 ```
 
-[Go to top of page](#events)
+[Go to top of page](#table-of-contents)
 
 
 #### MessageChoiceTriggerEvent
@@ -265,7 +282,7 @@ In the following example, the keywords "sword" and "dagger" will trigger eventID
 }
 ```
 
-[Go to top of page](#events)
+[Go to top of page](#table-of-contents)
 
 
 
@@ -305,7 +322,7 @@ In the following example...
 }
 ```
 
-[Go to top of page](#events)
+[Go to top of page](#table-of-contents)
 
 
 #### HeightCheck
@@ -342,7 +359,7 @@ In the following example...
 }
 ```
 
-[Go to top of page](#events)
+[Go to top of page](#table-of-contents)
 
 
 #### WeightCheck
@@ -379,7 +396,7 @@ In the following example...
 }
 ```
 
-[Go to top of page](#events)
+[Go to top of page](#table-of-contents)
 
 
 #### AbilityCheck
@@ -416,7 +433,7 @@ In the following example...
 }
 ```
 
-[Go to top of page](#events)
+[Go to top of page](#table-of-contents)
 
 
 #### ReputationCheck
@@ -452,7 +469,7 @@ In the following example...
 }
 ```
 
-[Go to top of page](#events)
+[Go to top of page](#table-of-contents)
 
 
 ### User Interaction Events
@@ -491,7 +508,7 @@ In the following example...
 }
 ```
 
-[Go to top of page](#events)
+[Go to top of page](#table-of-contents)
 
 
 #### ToWallet
@@ -528,7 +545,7 @@ In the following example...
 }
 ```
 
-[Go to top of page](#events)
+[Go to top of page](#table-of-contents)
 
 
 #### FromItem
@@ -565,7 +582,7 @@ In the following example...
 }
 ```
 
-[Go to top of page](#events)
+[Go to top of page](#table-of-contents)
 
 
 #### ToItem
@@ -602,7 +619,7 @@ In the following example...
 }
 ```
 
-[Go to top of page](#events)
+[Go to top of page](#table-of-contents)
 
 
 #### RewardExperience
@@ -639,7 +656,7 @@ In the following example...
 }
 ```
 
-[Go to top of page](#events)
+[Go to top of page](#table-of-contents)
 
 
 ### Control Flow Events
@@ -678,7 +695,7 @@ In the following example...
 }
 ```
 
-[Go to top of page](#events)
+[Go to top of page](#table-of-contents)
 
 
 #### TimedTriggerEvent
@@ -715,6 +732,6 @@ In the following example...
 }
 ```
 
-[Go to top of page](#events)
+[Go to top of page](#table-of-contents)
 
 
