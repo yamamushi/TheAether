@@ -509,6 +509,34 @@ func (h *RoomsHandler) ParseCommand(command []string, s *discordgo.Session, m *d
 		s.ChannelMessageSend(m.ChannelID, "transferroleclear requires an argument - <#room>")
 		return
 	}
+
+	// Set and unset travel scripts
+	if command[1] == "travelscript" {
+		if len(command) == 5 {
+			err := h.SetTravelScript(command[2], command[3], command[4])
+			if err != nil {
+				s.ChannelMessageSend(m.ChannelID, "Error setting travelscript: "+err.Error())
+				return
+			}
+			s.ChannelMessageSend(m.ChannelID, "Travel script set for: "+command[3])
+			return
+		}
+		s.ChannelMessageSend(m.ChannelID, "travelscript requires three arguments - <#room> <direction> <scriptID>")
+		return
+	}
+	if command[1] == "travelscriptclear" {
+		if len(command) == 4 {
+			err := h.ClearTravelScript(command[2], command[3])
+			if err != nil {
+				s.ChannelMessageSend(m.ChannelID, "Error clearing travelscript: "+err.Error())
+				return
+			}
+			s.ChannelMessageSend(m.ChannelID, "Room travelscript cleared for: "+command[3])
+			return
+		}
+		s.ChannelMessageSend(m.ChannelID, "travelscriptclear requires two arguments - <#room> <direction>")
+		return
+	}
 }
 
 // CreateManagementRooms function - Useful for creating default management roles and rooms for new guilds
@@ -2308,6 +2336,88 @@ func (h *RoomsHandler) SyncRoom(roomID string, s *discordgo.Session) (err error)
 		} else {
 			// We don't have extra tasks for extra roles YET
 		}
+	}
+	return nil
+}
+
+// SetTravelScript function
+func (h *RoomsHandler) SetTravelScript(roomID string, direction string, scriptID string) (err error) {
+
+	roomID = CleanChannel(roomID)
+
+	room, err := h.rooms.GetRoomByID(roomID)
+	if err != nil {
+		return err
+	}
+
+	if direction == "up" {
+		room.UpScriptID = scriptID
+	} else if direction == "down" {
+		room.DownScriptID = scriptID
+	} else if direction == "north" {
+		room.NorthScriptID = scriptID
+	} else if direction == "northeast" {
+		room.NorthEastScriptID = scriptID
+	} else if direction == "east" {
+		room.EastScriptID = scriptID
+	} else if direction == "southeast" {
+		room.SouthEastScriptID = scriptID
+	} else if direction == "south" {
+		room.SouthScriptID = scriptID
+	} else if direction == "southwest" {
+		room.SouthWestScriptID = scriptID
+	} else if direction == "west" {
+		room.WestScriptID = scriptID
+	} else if direction == "northwest" {
+		room.NorthWestScriptID = scriptID
+	} else {
+		return errors.New("Unrecognized direction: " + direction)
+	}
+
+	err = h.rooms.SaveRoomToDB(room)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+// ClearTravelScript function
+func (h *RoomsHandler) ClearTravelScript(roomID string, direction string) (err error) {
+
+	roomID = CleanChannel(roomID)
+
+	room, err := h.rooms.GetRoomByID(roomID)
+	if err != nil {
+		return err
+	}
+
+	if direction == "up" {
+		room.UpScriptID = ""
+	} else if direction == "down" {
+		room.DownScriptID = ""
+	} else if direction == "north" {
+		room.NorthScriptID = ""
+	} else if direction == "northeast" {
+		room.NorthEastScriptID = ""
+	} else if direction == "east" {
+		room.EastScriptID = ""
+	} else if direction == "southeast" {
+		room.SouthEastScriptID = ""
+	} else if direction == "south" {
+		room.SouthScriptID = ""
+	} else if direction == "southwest" {
+		room.SouthWestScriptID = ""
+	} else if direction == "west" {
+		room.WestScriptID = ""
+	} else if direction == "northwest" {
+		room.NorthWestScriptID = ""
+	} else {
+		return errors.New("Unrecognized direction: " + direction)
+	}
+
+	err = h.rooms.SaveRoomToDB(room)
+	if err != nil {
+		return err
 	}
 	return nil
 }
