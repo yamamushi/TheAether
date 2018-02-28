@@ -537,6 +537,32 @@ func (h *RoomsHandler) ParseCommand(command []string, s *discordgo.Session, m *d
 		s.ChannelMessageSend(m.ChannelID, "travelscriptclear requires two arguments - <#room> <direction>")
 		return
 	}
+
+	// Set and unset direction descriptions
+	if command[1] == "describedirection" {
+		if len(command) > 4 {
+			description := ""
+			for i, word := range command {
+				if i > 3 {
+					if i == 4 {
+						description = word
+					} else {
+						description = description + " " + word
+					}
+				}
+			}
+			err := h.SetRoomDirectionDescription(command[2], command[3], description)
+			if err != nil {
+				s.ChannelMessageSend(m.ChannelID, "Error setting direction description: "+err.Error())
+				return
+			}
+			s.ChannelMessageSend(m.ChannelID, "Direction description set for: "+command[2]+" - "+command[3])
+			return
+		}
+		s.ChannelMessageSend(m.ChannelID, "describedirection requires three arguments - <#room> <direction> <description>")
+		return
+	}
+
 }
 
 // CreateManagementRooms function - Useful for creating default management roles and rooms for new guilds
@@ -1677,6 +1703,9 @@ func (h *RoomsHandler) FormatRoomInfo(roomID string) (formatted string, err erro
 	output = output + "RoleID: " + roles + "\n\n"
 	output = output + "Description: " + room.Description + "\n\n"
 
+	if room.UpDescription != "" {
+		output = output + "Up Description: " + room.UpDescription + "\n"
+	}
 	if room.UpID != "" {
 		linkedroom, err := h.rooms.GetRoomByID(room.UpID)
 		if err != nil {
@@ -1695,6 +1724,9 @@ func (h *RoomsHandler) FormatRoomInfo(roomID string) (formatted string, err erro
 		output = output + "Up Room Required Items: " + itemoutput + "\n"
 	}
 
+	if room.DownDescription != "" {
+		output = output + "Down Description: " + room.DownDescription + "\n"
+	}
 	if room.DownID != "" {
 		linkedroom, err := h.rooms.GetRoomByID(room.DownID)
 		if err != nil {
@@ -1710,9 +1742,12 @@ func (h *RoomsHandler) FormatRoomInfo(roomID string) (formatted string, err erro
 		for _, item := range room.DownItemID {
 			itemoutput = itemoutput + ", " + item
 		}
-		output = output + "Up Room Required Items: " + itemoutput + "\n"
+		output = output + "Down Room Required Items: " + itemoutput + "\n"
 	}
 
+	if room.NorthDescription != "" {
+		output = output + "North Description: " + room.NorthDescription + "\n"
+	}
 	if room.NorthID != "" {
 		linkedroom, err := h.rooms.GetRoomByID(room.NorthID)
 		if err != nil {
@@ -1728,9 +1763,12 @@ func (h *RoomsHandler) FormatRoomInfo(roomID string) (formatted string, err erro
 		for _, item := range room.NorthItemID {
 			itemoutput = itemoutput + ", " + item
 		}
-		output = output + "Up Room Required Items: " + itemoutput + "\n"
+		output = output + "North Room Required Items: " + itemoutput + "\n"
 	}
 
+	if room.NorthEastDescription != "" {
+		output = output + "NorthEast Description: " + room.NorthEastDescription + "\n"
+	}
 	if room.NorthEastID != "" {
 		linkedroom, err := h.rooms.GetRoomByID(room.NorthEastID)
 		if err != nil {
@@ -1746,9 +1784,12 @@ func (h *RoomsHandler) FormatRoomInfo(roomID string) (formatted string, err erro
 		for _, item := range room.NorthEastItemID {
 			itemoutput = itemoutput + ", " + item
 		}
-		output = output + "Up Room Required Items: " + itemoutput + "\n"
+		output = output + "NorthEast Room Required Items: " + itemoutput + "\n"
 	}
 
+	if room.EastDescription != "" {
+		output = output + "East Description: " + room.EastDescription + "\n"
+	}
 	if room.EastID != "" {
 		linkedroom, err := h.rooms.GetRoomByID(room.EastID)
 		if err != nil {
@@ -1764,9 +1805,12 @@ func (h *RoomsHandler) FormatRoomInfo(roomID string) (formatted string, err erro
 		for _, item := range room.EastItemID {
 			itemoutput = itemoutput + ", " + item
 		}
-		output = output + "Up Room Required Items: " + itemoutput + "\n"
+		output = output + "East Room Required Items: " + itemoutput + "\n"
 	}
 
+	if room.SouthEastDescription != "" {
+		output = output + "SouthEast Description: " + room.SouthEastDescription + "\n"
+	}
 	if room.SouthEastID != "" {
 		linkedroom, err := h.rooms.GetRoomByID(room.SouthEastID)
 		if err != nil {
@@ -1782,9 +1826,12 @@ func (h *RoomsHandler) FormatRoomInfo(roomID string) (formatted string, err erro
 		for _, item := range room.SouthEastItemID {
 			itemoutput = itemoutput + ", " + item
 		}
-		output = output + "Up Room Required Items: " + itemoutput + "\n"
+		output = output + "SouthEast Room Required Items: " + itemoutput + "\n"
 	}
 
+	if room.SouthDescription != "" {
+		output = output + "South Description: " + room.SouthDescription + "\n"
+	}
 	if room.SouthID != "" {
 		linkedroom, err := h.rooms.GetRoomByID(room.SouthID)
 		if err != nil {
@@ -1800,9 +1847,12 @@ func (h *RoomsHandler) FormatRoomInfo(roomID string) (formatted string, err erro
 		for _, item := range room.SouthItemID {
 			itemoutput = itemoutput + ", " + item
 		}
-		output = output + "Up Room Required Items: " + itemoutput + "\n"
+		output = output + "South Room Required Items: " + itemoutput + "\n"
 	}
 
+	if room.SouthWestDescription != "" {
+		output = output + "SouthWest Description: " + room.SouthWestDescription + "\n"
+	}
 	if room.SouthWestID != "" {
 		linkedroom, err := h.rooms.GetRoomByID(room.SouthWestID)
 		if err != nil {
@@ -1818,9 +1868,12 @@ func (h *RoomsHandler) FormatRoomInfo(roomID string) (formatted string, err erro
 		for _, item := range room.SouthWestItemID {
 			itemoutput = itemoutput + ", " + item
 		}
-		output = output + "Up Room Required Items: " + itemoutput + "\n"
+		output = output + "SouthWest Room Required Items: " + itemoutput + "\n"
 	}
 
+	if room.WestDescription != "" {
+		output = output + "West Description: " + room.WestDescription + "\n"
+	}
 	if room.WestID != "" {
 		linkedroom, err := h.rooms.GetRoomByID(room.WestID)
 		if err != nil {
@@ -1836,9 +1889,12 @@ func (h *RoomsHandler) FormatRoomInfo(roomID string) (formatted string, err erro
 		for _, item := range room.WestItemID {
 			itemoutput = itemoutput + ", " + item
 		}
-		output = output + "Up Room Required Items: " + itemoutput + "\n"
+		output = output + "West Room Required Items: " + itemoutput + "\n"
 	}
 
+	if room.NorthWestDescription != "" {
+		output = output + "NorthWest Description: " + room.NorthWestDescription + "\n"
+	}
 	if room.NorthWestID != "" {
 		linkedroom, err := h.rooms.GetRoomByID(room.NorthWestID)
 		if err != nil {
@@ -1854,7 +1910,7 @@ func (h *RoomsHandler) FormatRoomInfo(roomID string) (formatted string, err erro
 		for _, item := range room.NorthWestItemID {
 			itemoutput = itemoutput + ", " + item
 		}
-		output = output + "Up Room Required Items: " + itemoutput + "\n"
+		output = output + "NorthWest Room Required Items: " + itemoutput + "\n"
 	}
 
 	output = output + "\n```\n"
@@ -2081,6 +2137,88 @@ func (h *RoomsHandler) SetRoomDescription(roomID string, description string, s *
 		return err
 	}
 
+	return nil
+}
+
+// GetRoomDirectionDescription function
+func (h *RoomsHandler) GetRoomDirectionDescription(roomID string, direction string) (formatted string, err error) {
+
+	roomID = CleanChannel(roomID)
+
+	room, err := h.rooms.GetRoomByID(roomID)
+	if err != nil {
+		return formatted, nil
+	}
+
+	if direction == "up" {
+		formatted = room.UpDescription
+	} else if direction == "down" {
+		formatted = room.DownDescription
+	} else if direction == "north" {
+		formatted = room.NorthDescription
+	} else if direction == "northeast" {
+		formatted = room.NorthEastDescription
+	} else if direction == "east" {
+		formatted = room.EastDescription
+	} else if direction == "southeast" {
+		formatted = room.SouthEastDescription
+	} else if direction == "south" {
+		formatted = room.SouthDescription
+	} else if direction == "southwest" {
+		formatted = room.SouthWestDescription
+	} else if direction == "west" {
+		formatted = room.WestDescription
+	} else if direction == "northwest" {
+		formatted = room.NorthWestDescription
+	} else {
+		return formatted, errors.New("Unrecognized direction: " + direction)
+	}
+	return formatted, nil
+}
+
+// SetRoomDirectionDescription function
+func (h *RoomsHandler) SetRoomDirectionDescription(roomID string, direction string, description string) (err error) {
+
+	roomID = CleanChannel(roomID)
+
+	room, err := h.rooms.GetRoomByID(roomID)
+	if err != nil {
+		return err
+	}
+
+	// If we gave a "" as the description we want it cleared
+	if description == "\"\"" {
+		description = ""
+	}
+
+	if direction == "up" {
+		room.UpDescription = description
+	} else if direction == "down" {
+		room.DownDescription = description
+	} else if direction == "north" {
+		room.NorthDescription = description
+	} else if direction == "northeast" {
+		room.NorthEastDescription = description
+	} else if direction == "east" {
+		room.EastDescription = description
+	} else if direction == "southeast" {
+		room.SouthEastDescription = description
+	} else if direction == "south" {
+		room.SouthDescription = description
+	} else if direction == "southwest" {
+		room.SouthWestDescription = description
+	} else if direction == "west" {
+		room.WestDescription = description
+	} else if direction == "northwest" {
+		room.NorthWestDescription = description
+	} else {
+		return errors.New("Unrecognized direction: " + direction)
+	}
+
+	err = h.rooms.SaveRoomToDB(room)
+	if err != nil {
+		return err
+	}
 	return nil
 }
 

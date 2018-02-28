@@ -83,8 +83,6 @@ While other discord bots control traveling in a 2-dimensional way (you can play 
 | room add | | |
 | room remove | | |
 | room roles | | |
-| room travelrole |  |  |
-| room travelroleclear |  |  |
 | room view |  |  |
 | room linkrole |  |  |
 | room unlinkrole |  |  |
@@ -92,7 +90,13 @@ While other discord bots control traveling in a 2-dimensional way (you can play 
 | room description |  |  |
 | room guildinvite |  |  |
 | room linkdirection |  |  |
-
+| room transferrole | | |
+| room transferroleclear | | | 
+| room travelrole |  |  |
+| room travelroleclear |  |  |
+| room travelscript | | |
+| room travelscriptclear | | |
+| room describedirection | | | 
 
 ### Cluster Management Commands
 
