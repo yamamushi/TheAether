@@ -18,6 +18,7 @@ type Script struct {
 	CreatorID    string
 	EventIDs     []string // The sequential list of events that comprise a script
 	Synchronized bool
+	KeyValueID   string
 }
 
 // SaveScriptToDB function

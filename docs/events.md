@@ -190,11 +190,14 @@ In the following example, the event will be triggered by the keyword "hello", af
 
 ```json
 {
+  "name": "ExampleTimedMessage",
+  "description": "Trigger a timed response to the word hello",
   "type": "TimedMessage",
   "TypeFlags": [
     "hello",
     "30"
   ],
+  "privateresponse": false,
   "attachable": false,
   "loadonboot": true,
   "cycles": 0,
@@ -241,11 +244,14 @@ In the following example, the keywords "hello" and "goodbye" will be responded t
 
 ```json
 {
+  "name": "ExampleReadMessageChoice",
+  "description": "Trigger responses for hello and bye",
   "type": "ReadMessageChoice",
   "TypeFlags": [
     "hello",
     "bye"
   ],
+  "privateresponse": false,
   "attachable": false,
   "loadonboot": true,
   "cycles": 0,
@@ -291,11 +297,14 @@ In the following example, the keywords "sword" and "dagger" will trigger eventID
 
 ```json
 {
+  "name": "ExampleMessageChoiceTriggerEvent",
+  "description": "Trigger an event in response to the words sword and dagger",
   "type": "MessageChoiceTriggerEvent",
   "TypeFlags": [
     "sword",
     "dagger"
   ],
+  "privateresponse": false,
   "attachable": false,
   "loadonboot": true,
   "cycles": 0,

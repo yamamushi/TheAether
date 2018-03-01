@@ -26,7 +26,7 @@ type Event struct {
 	PrivateResponse bool `json:"privateresponse"` // Whether or not to return a response in a private message
 	Attachable      bool `json:"attachable"`      // Whether or not this event can be attached to a user or not
 	Watchable       bool `json:"watchable"`       // Whether or not this event should be watched or just executed with a passthrough
-	// If it's a passthrough, we may want to write the response to the keyvaluesdb
+	// If it's a passthrough, we want to write the response to the keyvaluesdb
 
 	LoadOnBoot bool     `json:"loadonboot"` // Whether or not to load the event at boot
 	Cycles     int      `json:"cycles"`     // Number of times to run the event, a setting of 0 or less will be parsed as "infinite"
@@ -142,7 +142,6 @@ func (h *EventsDB) GetEventByAttached(eventID string, UserID string) (event Even
 
 	searchstring := eventID + "-" + UserID
 	for _, record := range events {
-
 		if searchstring == record.UserAttached {
 			return record, nil
 		}
