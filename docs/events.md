@@ -55,6 +55,16 @@ The `events` command is used for managing events (adding, removing, modifying, e
 
 All Events share the following field types:
 
+**Name**
+_string_
+
+A _unique_ name for the event. Attempting to save records with duplicate names will return an error.
+
+**Description**
+_string_
+
+A description of 60 characters or less about the event.
+
 **Type**
 _string_
 
@@ -63,7 +73,7 @@ The type name of the event.
 **TypeFlags**
 _string array_
 
-As described in the following section, each type of event has varying fields that are applicable to them. 
+As described in the following section, each type of event has varying fields that are applicable to them.
 
 
 **Attachable**
@@ -75,7 +85,15 @@ If set to _false_ all users will trigger event.
 
 If set to _true_, the event will not execute if it was not registered for the user first. (See the scripting section of the documentation for further information)
 
-**Note:** If an event is *not* attachable, all user calls to it will increment the cycle count (described below).
+    Note: If an event is not attachable, all user calls to it will increment the cycle count (described below).
+
+
+**Watchable**
+_bool_
+
+Whether or not this event, when triggered, should be put into the watch queue or whether it should be triggered using the passthrough data from an event before it.
+
+i.e. If an event is triggered that is supposed to perform a skill check, that should not be a watchable event as we want it to execute immediately rather than wait for user input to proceed. 
 
 
 
@@ -187,7 +205,7 @@ In the following example, the event will be triggered by the keyword "hello", af
 
 The ReadMessageChoice event will respond to a user with a message that corresponds to what the defined keyword is keyed to in the data array.
 
-**Note:** This will only trigger on the **first** keyword match in a message.
+    Note: This will only trigger on the **first keyword match in a message.
 
 **TypeFlags**
 
@@ -201,7 +219,7 @@ The ReadMessageChoice event will respond to a user with a message that correspon
 
 **Data**
 
-**Note:** The number of keywords **must** match the number of responses defined. Or the event will not be registered and will return an error.
+    Note: The number of keywords must match the number of responses defined. Or the event will not be registered and will return an error.
 
 | Data Field # | Description |
 |-----------|-------------|
@@ -239,7 +257,7 @@ In the following example, the keywords "hello" and "goodbye" will be responded t
 
 The MessageChoiceTriggerEvent event will trigger a keyed event when the corresponding keyword is found in a message.
 
-**Note:** This will only trigger on the **first** keyword match in a message.
+    Note: This will only trigger on the first keyword match in a message.
 
 **TypeFlags**
 
@@ -284,7 +302,9 @@ In the following example, the keywords "sword" and "dagger" will trigger eventID
 
 [Go to top of page](#table-of-contents)
 
+## Special Event Types
 
+These events are intended to be used for scripting and not as general purpose events. As such, they can be defined but they cannot be enabled on a per-channel basis.
 
 ### User Attribute Check Events
 
