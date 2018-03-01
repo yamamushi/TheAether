@@ -28,51 +28,49 @@ type Event struct {
 	Watchable       bool `json:"watchable"`       // Whether or not this event should be watched or just executed with a passthrough
 	// If it's a passthrough, we may want to write the response to the keyvaluesdb
 
-	KeyValueID string `json:"keyvalueid"` // If we are writing to a keyvalue, we need to know the ID to write to
-
 	LoadOnBoot bool     `json:"loadonboot"` // Whether or not to load the event at boot
 	Cycles     int      `json:"cycles"`     // Number of times to run the event, a setting of 0 or less will be parsed as "infinite"
 	Data       []string `json:"data"`       // Different types can contain multiple data fields
 
 	// Set when event is registered
 	CreatorID string `json:"creatorid"` // The userID of the creator
-
 	// These are not set by "events add", these must be set with the script manager
 	ParentID       string   `json:"parentid"`       // The id of the parent event if one exists
 	ChildIDs       []string `json:"childids"`       // The ids of the various childs (there can exist multiple children, ie for a multiple choice question)
 	RunCount       int      `json:"runcount"`       // The total number of runs the event has had during this cycle
 	TriggeredEvent bool     `json:"triggeredevent"` // Used to denote whether or not an event is a copy created by a trigger
+	KeyValueID     string   `json:"keyvalueid"`     // If we are writing to a keyvalue, we need to know the ID to write to
 }
 
 // SaveEventToDB function
-func (h *EventsDB) SaveEventToDB(Event Event) (err error) {
+func (h *EventsDB) SaveEventToDB(event Event) (err error) {
 	h.querylocker.Lock()
 	defer h.querylocker.Unlock()
 
 	db := h.db.rawdb.From("Events")
-	err = db.Save(&Event)
+	err = db.Save(&event)
 	return err
 }
 
 // RemoveEventFromDB function
-func (h *EventsDB) RemoveEventFromDB(Event Event) (err error) {
+func (h *EventsDB) RemoveEventFromDB(event Event) (err error) {
 	h.querylocker.Lock()
 	defer h.querylocker.Unlock()
 
 	db := h.db.rawdb.From("Events")
-	err = db.DeleteStruct(&Event)
+	err = db.DeleteStruct(&event)
 	return err
 }
 
 // RemoveEventByID function
-func (h *EventsDB) RemoveEventByID(EventID string) (err error) {
+func (h *EventsDB) RemoveEventByID(eventID string) (err error) {
 
-	Event, err := h.GetEventByID(EventID)
+	event, err := h.GetEventByID(eventID)
 	if err != nil {
 		return err
 	}
 
-	err = h.RemoveEventFromDB(Event)
+	err = h.RemoveEventFromDB(event)
 	if err != nil {
 		return err
 	}
@@ -81,33 +79,41 @@ func (h *EventsDB) RemoveEventByID(EventID string) (err error) {
 }
 
 // GetEventByID function
-func (h *EventsDB) GetEventByID(EventID string) (Event Event, err error) {
+func (h *EventsDB) GetEventByID(eventID string) (event Event, err error) {
+	h.querylocker.Lock()
+	defer h.querylocker.Unlock()
 
-	Events, err := h.GetAllEvents()
+	db := h.db.rawdb.From("Events")
+	err = db.One("ID", eventID, &event)
 	if err != nil {
-		return Event, err
+		return event, err
 	}
+	return event, nil
+}
 
-	for _, record := range Events {
+// GetEventByName function
+func (h *EventsDB) GetEventByName(eventName string) (event Event, err error) {
+	h.querylocker.Lock()
+	defer h.querylocker.Unlock()
 
-		if EventID == record.ID {
-			return record, nil
-		}
+	db := h.db.rawdb.From("Events")
+	err = db.One("Name", eventName, &event)
+	if err != nil {
+		return event, err
 	}
-	return Event, errors.New("No record found")
+	return event, nil
 }
 
 // ValidateEventByID function
-func (h *EventsDB) ValidateEventByID(EventID string) (validated bool) {
-
-	Events, err := h.GetAllEvents()
+func (h *EventsDB) ValidateEventByID(eventID string) (validated bool) {
+	events, err := h.GetAllEvents()
 	if err != nil {
 		return false
 	}
 
-	for _, record := range Events {
+	for _, record := range events {
 
-		if EventID == record.ID {
+		if eventID == record.ID {
 			return true
 		}
 	}
@@ -115,33 +121,31 @@ func (h *EventsDB) ValidateEventByID(EventID string) (validated bool) {
 }
 
 // GetAllEvents function
-func (h *EventsDB) GetAllEvents() (Eventlist []Event, err error) {
+func (h *EventsDB) GetAllEvents() (eventlist []Event, err error) {
 	h.querylocker.Lock()
 	defer h.querylocker.Unlock()
 
 	db := h.db.rawdb.From("Events")
-	err = db.All(&Eventlist)
+	err = db.All(&eventlist)
 	if err != nil {
-		return Eventlist, err
+		return eventlist, err
 	}
-
-	return Eventlist, nil
+	return eventlist, nil
 }
 
 // GetEventByAttached function
-func (h *EventsDB) GetEventByAttached(EventID string, UserID string) (Event Event, err error) {
-
-	Events, err := h.GetAllEvents()
+func (h *EventsDB) GetEventByAttached(eventID string, UserID string) (event Event, err error) {
+	events, err := h.GetAllEvents()
 	if err != nil {
-		return Event, err
+		return event, err
 	}
 
-	searchstring := EventID + "-" + UserID
-	for _, record := range Events {
+	searchstring := eventID + "-" + UserID
+	for _, record := range events {
 
 		if searchstring == record.UserAttached {
 			return record, nil
 		}
 	}
-	return Event, errors.New("No record found")
+	return event, errors.New("No record found")
 }

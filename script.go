@@ -15,8 +15,9 @@ type Script struct {
 	Name        string `storm:"unique"`
 	Description string
 
-	EventIDs []string // The sequential list of events that comprise a script
-
+	CreatorID    string
+	EventIDs     []string // The sequential list of events that comprise a script
+	Synchronized bool
 }
 
 // SaveScriptToDB function
@@ -41,7 +42,6 @@ func (h *ScriptsDB) RemoveScriptFromDB(script Script) (err error) {
 
 // RemoveScriptByID function
 func (h *ScriptsDB) RemoveScriptByID(scriptID string) (err error) {
-
 	script, err := h.GetScriptByID(scriptID)
 	if err != nil {
 		return err
@@ -61,6 +61,19 @@ func (h *ScriptsDB) GetScriptByID(scriptID string) (script Script, err error) {
 
 	db := h.db.rawdb.From("Scripts")
 	err = db.One("ID", scriptID, &script)
+	if err != nil {
+		return script, err
+	}
+	return script, nil
+}
+
+// GetScriptByName function
+func (h *ScriptsDB) GetScriptByName(scriptName string) (script Script, err error) {
+	h.querylocker.Lock()
+	defer h.querylocker.Unlock()
+
+	db := h.db.rawdb.From("Scripts")
+	err = db.One("Name", scriptName, &script)
 	if err != nil {
 		return script, err
 	}

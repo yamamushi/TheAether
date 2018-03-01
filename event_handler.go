@@ -277,7 +277,7 @@ func (h *EventHandler) ListEvents() (formatted string, err error) {
 		return "", err
 	}
 
-	formatted = "```\n"
+	formatted = "```"
 
 	for _, event := range events {
 		channels := ""
@@ -288,8 +288,34 @@ func (h *EventHandler) ListEvents() (formatted string, err error) {
 				channels = channels + ", " + channel
 			}
 		}
-		formatted = formatted + "EventID: " + event.ID + " ChannelID:" + channels + " Type:" + event.Type + " CreatorID:" + event.CreatorID + "\n"
+		formatted = formatted + "\n" + event.ID + " - " + event.Name + ": " + event.Description
 	}
+	formatted = formatted + "\n```\n"
+	return formatted, nil
+}
+
+// EventInfo function
+func (h *EventHandler) EventInfo(eventID string) (formatted string, err error) {
+	event, err := h.eventsdb.GetEventByID(eventID)
+	if err != nil {
+		return "", err
+	}
+
+	formatted = "```"
+	channels := ""
+	for i, channel := range event.Rooms {
+		if i == 0 {
+			channels = channel
+		} else {
+			channels = channels + ", " + channel
+		}
+	}
+	formatted = formatted + "\nEventID: " + event.ID
+	formatted = formatted + "\nName: " + event.Name
+	formatted = formatted + "\nDescription: " + event.Description
+	formatted = formatted + "\nChannelID: " + channels
+	formatted = formatted + "\nType: " + event.Type
+	formatted = formatted + "\nCreatorID: " + event.CreatorID
 	formatted = formatted + "\n```\n"
 	return formatted, nil
 }
@@ -395,15 +421,24 @@ func (h *EventHandler) LoadEvent(eventID string) (err error) {
 
 	// Refer to the github wiki page on Events for information on types
 	for _, room := range event.Rooms {
-		if event.Type == "ReadMessage" {
-			h.WatchEvent(h.UnfoldReadMessageEvent, event.ID, room)
-		} else if event.Type == "TimedMessage" {
-			h.WatchEvent(h.UnfoldTimedMessageEvent, event.ID, room)
-		} else if event.Type == "ReadMessageChoice" {
-			h.WatchEvent(h.UnfoldReadMessageChoiceEvent, event.ID, room)
-		} else if event.Type == "MessageChoiceTriggerEvent" {
-			h.WatchEvent(h.UnfoldMessageChoiceTriggerEvent, event.ID, room)
+		err = h.AddEventToWatchList(event, room)
+		if err != nil {
+			return err
 		}
+	}
+	return nil
+}
+
+// AddEventToWatchList function
+func (h *EventHandler) AddEventToWatchList(event Event, roomID string) (err error) {
+	if event.Type == "ReadMessage" {
+		h.WatchEvent(h.UnfoldReadMessageEvent, event.ID, roomID)
+	} else if event.Type == "TimedMessage" {
+		h.WatchEvent(h.UnfoldTimedMessageEvent, event.ID, roomID)
+	} else if event.Type == "ReadMessageChoice" {
+		h.WatchEvent(h.UnfoldReadMessageChoiceEvent, event.ID, roomID)
+	} else if event.Type == "MessageChoiceTriggerEvent" {
+		h.WatchEvent(h.UnfoldMessageChoiceTriggerEvent, event.ID, roomID)
 	}
 	return nil
 }
@@ -433,6 +468,7 @@ func (h *EventHandler) UnWatchEvent(ChannelID string, EventID string) {
 
 		if channel.String() == ChannelID && eventID.String() == EventID {
 			h.WatchList.Remove(e)
+			h.RemoveEventFromRoom(EventID, ChannelID)
 		}
 	}
 }
@@ -733,7 +769,7 @@ func (h *EventHandler) UnfoldReadMessageChoiceEvent(eventID string, s *discordgo
 	}
 }
 
-// UnfoldMessageChoiceTriggerEvent functio
+// UnfoldMessageChoiceTriggerEvent function
 func (h *EventHandler) UnfoldMessageChoiceTriggerEvent(eventID string, s *discordgo.Session, m *discordgo.MessageCreate) {
 	// Ignore all messages created by the bot itself
 	if m.Author.ID == s.State.User.ID {

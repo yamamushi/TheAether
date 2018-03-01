@@ -80,3 +80,15 @@ func (h *KeyValuesDB) GetAllKeyValues() (keyValuelist []KeyValue, err error) {
 	}
 	return keyValuelist, nil
 }
+
+// Init function
+func (h *KeyValuesDB) Init() (err error) {
+	err = h.db.rawdb.Drop("KeyValues")
+	if err != nil {
+		if err.Error() == "bucket not found" {
+			return nil
+		}
+		return err
+	}
+	return nil
+}

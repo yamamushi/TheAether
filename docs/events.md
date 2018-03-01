@@ -26,15 +26,14 @@ Table of Contents
          * [Control Flow Events](#control-flow-events)
             * [TriggerEvent](#triggerevent)
             * [TimedTriggerEvent](#timedtriggerevent)
-            
-# Events 
+
+# Events
 
 The events system is designed to be a flexible method for defining functions within discord that can be used as standalone "read and response" type functions, functions for checking the various attributes and skills of a player, functions for checking world information such as the time of day or weather, or chained together using the scripts system to create more complex interactions with NPC's or Items (though not necessarily limited to those two).
 
 The `events` command is used for managing events (adding, removing, modifying, etc.), and must first be enabled in a room before it can be used with the following command (see the command permissions page for more information):
 
 `~command enable events`
-            
 
 ## Events Command
 
@@ -75,11 +74,16 @@ _string array_
 
 As described in the following section, each type of event has varying fields that are applicable to them.
 
+**PrivateResponse**
+_bool_
+
+Whether or not to send a return message as a private message rather than a public one.
+
 
 **Attachable**
 _bool_
 
-Whether or not an event can be attached to a user or not. You would set this to true if this event is supposed to be tied to a user as part of a conversation (so that others in the room cannot trigger it). 
+Whether or not an event can be attached to a user or not. You would set this to true if this event is supposed to be tied to a user as part of a conversation (so that others in the room cannot trigger it).
 
 If set to _false_ all users will trigger event.
 
@@ -87,13 +91,12 @@ If set to _true_, the event will not execute if it was not registered for the us
 
     Note: If an event is not attachable, all user calls to it will increment the cycle count (described below).
 
-
 **Watchable**
 _bool_
 
 Whether or not this event, when triggered, should be put into the watch queue or whether it should be triggered using the passthrough data from an event before it.
 
-i.e. If an event is triggered that is supposed to perform a skill check, that should not be a watchable event as we want it to execute immediately rather than wait for user input to proceed. 
+i.e. If an event is triggered that is supposed to perform a skill check, that should not be a watchable event as we want it to execute immediately rather than wait for user input to proceed.
 
 
 
@@ -145,10 +148,13 @@ In the following example, the trigger keyword is "hello", to which a response of
 
 ```json
 {
+  "name": "ExampleReadMessage",
+  "description": "Trigger a response to the word hello",
   "type": "ReadMessage",
-  "TypeFlags": [
+  "typeflags": [
     "hello"
   ],
+  "privateresponse": false,
   "attachable": false,
   "loadonboot": true,
   "cycles": 0,
