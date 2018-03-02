@@ -38,6 +38,12 @@ func (h *EventParser) ParseFormattedEvent(data string, userID string) (parsed Ev
 	if err == nil {
 		return parsed, errors.New("Event with name: " + unmarshallcontainer.Name + " already exists")
 	}
+	if unmarshallcontainer.IsScriptEvent {
+		return parsed, errors.New("Event cannot have scriptevent defined")
+	}
+	if unmarshallcontainer.EventMessagesID != "" {
+		return parsed, errors.New("You cannot define an eventmessagesid")
+	}
 
 	// Generate and assign an ID to this event
 	id := strings.Split(GetUUIDv2(), "-")

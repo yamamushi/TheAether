@@ -55,62 +55,57 @@ The `events` command is used for managing events (adding, removing, modifying, e
 All Events share the following field types:
 
 **Name**
+
 _string_
 
 A _unique_ name for the event. Attempting to save records with duplicate names will return an error.
 
 **Description**
+
 _string_
 
 A description of 60 characters or less about the event.
 
 **Type**
+
 _string_
 
 The type name of the event.
 
 **TypeFlags**
+
 _string array_
 
 As described in the following section, each type of event has varying fields that are applicable to them.
 
 **PrivateResponse**
+
 _bool_
 
 Whether or not to send a return message as a private message rather than a public one.
 
-
-**Attachable**
-_bool_
-
-Whether or not an event can be attached to a user or not. You would set this to true if this event is supposed to be tied to a user as part of a conversation (so that others in the room cannot trigger it).
-
-If set to _false_ all users will trigger event.
-
-If set to _true_, the event will not execute if it was not registered for the user first. (See the scripting section of the documentation for further information)
-
-    Note: If an event is not attachable, all user calls to it will increment the cycle count (described below).
-
 **Watchable**
+
 _bool_
 
 Whether or not this event, when triggered, should be put into the watch queue or whether it should be triggered using the passthrough data from an event before it.
 
 i.e. If an event is triggered that is supposed to perform a skill check, that should not be a watchable event as we want it to execute immediately rather than wait for user input to proceed.
 
-
-
 **LoadOnBoot**
+
 _bool_
 
 If set to true, the event will be loaded every time the bot starts up.
 
 **Cycles**
+
 _int_
 
 Number of Runs. A setting of 0 is for infinite/indefinite runs (when you want to attach an event to an NPC, for example, as a general greeting).
 
 **Data**
+
 _string array_
 
 As described in the following section, each type of event has varying data fields that are applicable to them. 
@@ -155,7 +150,6 @@ In the following example, the trigger keyword is "hello", to which a response of
     "hello"
   ],
   "privateresponse": false,
-  "attachable": false,
   "loadonboot": true,
   "cycles": 0,
   "data": [
@@ -198,7 +192,6 @@ In the following example, the event will be triggered by the keyword "hello", af
     "30"
   ],
   "privateresponse": false,
-  "attachable": false,
   "loadonboot": true,
   "cycles": 0,
   "data": [
@@ -252,7 +245,6 @@ In the following example, the keywords "hello" and "goodbye" will be responded t
     "bye"
   ],
   "privateresponse": false,
-  "attachable": false,
   "loadonboot": true,
   "cycles": 0,
   "data": [
@@ -305,7 +297,6 @@ In the following example, the keywords "sword" and "dagger" will trigger eventID
     "dagger"
   ],
   "privateresponse": false,
-  "attachable": false,
   "loadonboot": true,
   "cycles": 0,
   "data": [
@@ -348,7 +339,6 @@ In the following example...
   "TypeFlags": [
     "nil"
   ],
-  "attachable": false,
   "loadonboot": true,
   "cycles": 0,
   "data": [
@@ -385,7 +375,6 @@ In the following example...
   "TypeFlags": [
     "nil"
   ],
-  "attachable": false,
   "loadonboot": true,
   "cycles": 0,
   "data": [
@@ -422,7 +411,6 @@ In the following example...
   "TypeFlags": [
     "nil"
   ],
-  "attachable": false,
   "loadonboot": true,
   "cycles": 0,
   "data": [
@@ -459,7 +447,6 @@ In the following example...
   "TypeFlags": [
     "nil"
   ],
-  "attachable": false,
   "loadonboot": true,
   "cycles": 0,
   "data": [
@@ -495,7 +482,6 @@ In the following example...
   "TypeFlags": [
     "nil"
   ],
-  "attachable": false,
   "loadonboot": true,
   "cycles": 0,
   "data": [
@@ -534,7 +520,6 @@ In the following example...
   "TypeFlags": [
     "nil"
   ],
-  "attachable": false,
   "loadonboot": true,
   "cycles": 0,
   "data": [
@@ -571,7 +556,6 @@ In the following example...
   "TypeFlags": [
     "nil"
   ],
-  "attachable": false,
   "loadonboot": true,
   "cycles": 0,
   "data": [
@@ -608,7 +592,6 @@ In the following example...
   "TypeFlags": [
     "nil"
   ],
-  "attachable": false,
   "loadonboot": true,
   "cycles": 0,
   "data": [
@@ -645,7 +628,6 @@ In the following example...
   "TypeFlags": [
     "nil"
   ],
-  "attachable": false,
   "loadonboot": true,
   "cycles": 0,
   "data": [
@@ -682,7 +664,6 @@ In the following example...
   "TypeFlags": [
     "nil"
   ],
-  "attachable": false,
   "loadonboot": true,
   "cycles": 0,
   "data": [
@@ -721,7 +702,6 @@ In the following example...
   "TypeFlags": [
     "nil"
   ],
-  "attachable": false,
   "loadonboot": true,
   "cycles": 0,
   "data": [
@@ -758,7 +738,6 @@ In the following example...
   "TypeFlags": [
     "nil"
   ],
-  "attachable": false,
   "loadonboot": true,
   "cycles": 0,
   "data": [

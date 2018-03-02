@@ -9,12 +9,12 @@ import (
 
 // ScriptHandler struct
 type ScriptHandler struct {
-	scriptsdb    *ScriptsDB
-	db           *DBHandler
-	registry     *CommandRegistry
-	conf         *Config
-	eventhandler *EventHandler
-	keyvaluesdb  *KeyValuesDB
+	scriptsdb       *ScriptsDB
+	db              *DBHandler
+	registry        *CommandRegistry
+	conf            *Config
+	eventhandler    *EventHandler
+	eventmessagesdb *EventMessagesDB
 }
 
 // Init function
@@ -119,6 +119,19 @@ func (h *ScriptHandler) ParseCommand(input []string, s *discordgo.Session, m *di
 		s.ChannelMessageSend(m.ChannelID, "Script executed successfully: "+arguments[0])
 		return
 	}
+	if command == "remove" {
+		if len(arguments) < 1 {
+			s.ChannelMessageSend(m.ChannelID, "Command 'remove' expects an arguments: <scriptID>")
+			return
+		}
+		err := h.RemoveScript(arguments[0])
+		if err != nil {
+			s.ChannelMessageSend(m.ChannelID, "Error removing script: "+err.Error())
+			return
+		}
+		s.ChannelMessageSend(m.ChannelID, "Script Removed")
+		return
+	}
 	/*
 	   if argument == "remove" {
 	       if len(payload) < 1 {
@@ -161,7 +174,7 @@ func (h *ScriptHandler) AddScript(scriptName string, userID string, description 
 	// Generate and assign an ID to this event
 	scriptID = strings.Split(GetUUIDv2(), "-")[0]
 	keyvalueID := strings.Split(GetUUIDv2(), "-")[0]
-	newscript := Script{ID: scriptID, Name: scriptName, CreatorID: userID, Description: description, KeyValueID: keyvalueID}
+	newscript := Script{ID: scriptID, Name: scriptName, CreatorID: userID, Description: description, EventMessagesID: keyvalueID}
 
 	err = h.scriptsdb.SaveScriptToDB(newscript)
 	if err != nil {
@@ -184,11 +197,6 @@ func (h *ScriptHandler) SetRootEvent(scriptID string, eventID string) (err error
 
 	// Set the root eventID
 	script.EventIDs = []string{rootEvent.ID}
-
-	err = h.scriptsdb.SaveScriptToDB(script)
-	if err != nil {
-		return err
-	}
 
 	// First we get the events from the root event
 	eventlist, err := h.GetDataEvents(rootEvent.ID)
@@ -216,6 +224,44 @@ func (h *ScriptHandler) SetRootEvent(scriptID string, eventID string) (err error
 			}
 		}
 	}
+	// Now that we have an event list, we want to clone it for our script
+
+	var clonedEventList []string
+	for _, eventID := range script.EventIDs {
+
+		event, err := h.eventhandler.eventsdb.GetEventByID(eventID)
+		if err != nil {
+			return err
+		}
+
+		clonedEvent := event
+
+		newEventID := strings.Split(GetUUIDv2(), "-")[0]
+		clonedEvent.ID = newEventID
+		clonedEvent.EventMessagesID = script.EventMessagesID
+		clonedEvent.IsScriptEvent = true
+		clonedEvent.ParentScript = event.ID
+
+		err = h.eventhandler.eventsdb.SaveEventToDB(clonedEvent)
+		if err != nil {
+			return err
+		}
+
+		clonedEventList = append(clonedEventList, clonedEvent.ID)
+	}
+
+	script.EventIDs = clonedEventList
+
+	err = h.scriptsdb.SaveScriptToDB(script)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+// RemoveScript function
+func (h *ScriptHandler) RemoveScript(scriptID string) (err error) {
 	return nil
 }
 
@@ -278,41 +324,17 @@ func (h *ScriptHandler) ExecuteScript(scriptID string, s *discordgo.Session, m *
 		return false, err
 	}
 
-	// Now we setup any attachable events we have in the event list
-	for _, eventID := range script.EventIDs {
-		checkevent, err := h.eventhandler.eventsdb.GetEventByID(eventID)
-		if err != nil {
-			return false, errors.New("Could not find child event: " + err.Error())
-		}
-
-		if checkevent.Attachable {
-			// We want to see if there's a record already existing for us
-			_, err = h.eventhandler.eventsdb.GetEventByAttached(checkevent.ID, m.Author.ID)
-			if err != nil {
-				// If we didn't find a record, one wasn't registered and we need to create one
-				userattachedevent, err := h.eventhandler.CreateAttachedEvent(checkevent, m.Author.ID)
-				if err == nil {
-					userattachedevent.KeyValueID = script.KeyValueID
-					err = h.eventhandler.eventsdb.SaveEventToDB(userattachedevent)
-					if err != nil {
-						return false, errors.New("Could not save attached event: " + userattachedevent.ID + " Error: " + err.Error())
-					}
-				}
-			}
-		}
-	}
-
 	//fmt.Println("parsing event: " + rootEvent.ID)
 	if rootEvent.Watchable {
 		//fmt.Println("Adding to watchlist: " + rootEvent.ID)
-		err = h.eventhandler.AddEventToWatchList(rootEvent, m.ChannelID, script.KeyValueID)
+		err = h.eventhandler.AddEventToWatchList(rootEvent, m.ChannelID, script.EventMessagesID)
 		if err != nil {
 			return false, err
 		}
 	} else {
 		//fmt.Println("Launching root event: " + rootEvent.ID)
 		// If we aren't watching the event, we'd like to get the key value response from it
-		h.eventhandler.LaunchChildEvent("RootEvent", rootEvent.ID, script.KeyValueID, s, m)
+		h.eventhandler.LaunchChildEvent("RootEvent", rootEvent.ID, script.EventMessagesID, s, m)
 	}
 
 	return false, nil

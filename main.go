@@ -76,10 +76,10 @@ func main() {
 	}
 
 	fmt.Println("Creating KeyValue Store")
-	keyvaluesdb := KeyValuesDB{db: &dbhandler}
-	err = keyvaluesdb.Init()
+	eventmessagesdb := EventMessagesDB{db: &dbhandler}
+	err = eventmessagesdb.Init()
 	if err != nil {
-		fmt.Println("Error initializing KeyValue Store: " + err.Error())
+		fmt.Println("Error initializing EventMessages Store: " + err.Error())
 		return
 	}
 

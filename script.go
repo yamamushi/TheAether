@@ -15,10 +15,10 @@ type Script struct {
 	Name        string `storm:"unique"`
 	Description string
 
-	CreatorID    string
-	EventIDs     []string // The sequential list of events that comprise a script
-	Synchronized bool
-	KeyValueID   string
+	CreatorID       string
+	EventIDs        []string // The sequential list of events that comprise a script
+	Synchronized    bool
+	EventMessagesID string
 }
 
 // SaveScriptToDB function
