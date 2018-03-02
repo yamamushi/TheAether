@@ -75,6 +75,14 @@ func main() {
 		return
 	}
 
+	fmt.Println("Creating KeyValue Store")
+	eventmessagesdb := EventMessagesDB{db: &dbhandler}
+	err = eventmessagesdb.Init()
+	if err != nil {
+		fmt.Println("Error initializing EventMessages Store: " + err.Error())
+		return
+	}
+
 	// Create a new Discord session using the provided bot token.
 	dg, err := discordgo.New("Bot " + conf.MainConfig.Token)
 	if err != nil {
@@ -193,6 +201,15 @@ func main() {
 	}
 	dg.AddHandler(eventshandler.Read)
 	dg.AddHandler(eventshandler.ReadEvents)
+
+	fmt.Println("\n|| Initializing Scripting Handler ||\n ")
+	scripthandler := ScriptHandler{conf: &conf, registry: commandhandler.registry, db: &dbhandler, eventhandler: &eventshandler}
+	err = scripthandler.Init()
+	if err != nil {
+		fmt.Println("Error starting scripting handler: " + err.Error())
+		return
+	}
+	dg.AddHandler(scripthandler.Read)
 
 	// Now we create and initialize our main handler
 	fmt.Println("\n|| Initializing Main Handler ||\n ")

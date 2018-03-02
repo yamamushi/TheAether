@@ -14,7 +14,7 @@ type EventParser struct {
 }
 
 // ParseFormattedEvent function
-func (h *EventParser) ParseFormattedEvent(data string, channelID string, userID string) (parsed Event, err error) {
+func (h *EventParser) ParseFormattedEvent(data string, userID string) (parsed Event, err error) {
 	unmarshallcontainer := Event{}
 	if err := json.Unmarshal([]byte(data), &unmarshallcontainer); err != nil {
 		return unmarshallcontainer, err
@@ -22,15 +22,32 @@ func (h *EventParser) ParseFormattedEvent(data string, channelID string, userID 
 
 	unmarshallcontainer.CreatorID = userID
 	unmarshallcontainer.RunCount = 0
-	unmarshallcontainer.ChannelID = channelID
-
-	//unmarshallcontainer.Data = strings.Replace(unmarshallcontainer.Data, "_user_", "<@"+userID+">", -1)
-	// We will fix this in another parser later, this should not be formatted in this function
+	if unmarshallcontainer.Name == "" {
+		return parsed, errors.New("Event requires a name")
+	}
+	if len(unmarshallcontainer.Name) > 20 {
+		return parsed, errors.New("Name must not exceed 20 characters")
+	}
+	if unmarshallcontainer.Description == "" {
+		return parsed, errors.New("Event requires a description")
+	}
+	if len(unmarshallcontainer.Description) > 60 {
+		return parsed, errors.New("Description must not exceed 60 characters")
+	}
+	_, err = h.eventsdb.GetEventByName(unmarshallcontainer.Name)
+	if err == nil {
+		return parsed, errors.New("Event with name: " + unmarshallcontainer.Name + " already exists")
+	}
+	if unmarshallcontainer.IsScriptEvent {
+		return parsed, errors.New("Event cannot have scriptevent defined")
+	}
+	if unmarshallcontainer.EventMessagesID != "" {
+		return parsed, errors.New("You cannot define an eventmessagesid")
+	}
 
 	// Generate and assign an ID to this event
 	id := strings.Split(GetUUIDv2(), "-")
 	unmarshallcontainer.ID = id[0]
-
 	return unmarshallcontainer, nil
 }
 
@@ -58,6 +75,20 @@ func (h *EventParser) ValidateEvent(event Event) (err error) {
 		return h.ValidateMessageChoiceTriggerEvent(event)
 	}
 	return nil
+}
+
+// HasEventsInData function
+func (h *EventParser) HasEventsInData(event Event) (hasevents bool) {
+	if event.Type == "ReadMessage" {
+		return false
+	} else if event.Type == "TimedMessage" {
+		return false
+	} else if event.Type == "ReadMessageChoice" {
+		return false
+	} else if event.Type == "MessageChoiceTriggerEvent" {
+		return true
+	}
+	return false
 }
 
 // ValidateReadMessage function

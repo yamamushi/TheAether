@@ -1,16 +1,9 @@
-# Events 
-
-The events system is designed to be a flexible method for defining functions within discord that can be used as standalone "read and response" type functions, functions for checking the various attributes and skills of a player, functions for checking world information such as the time of day or weather, or chained together using the scripts system to create more complex interactions with NPC's or Items (though not necessarily limited to those two).
-
-The `events` command is used for managing events (adding, removing, modifying, etc.), and must first be enabled in a room before it can be used with the following command (see the command permissions page for more information):
-
-`~command enable events`
 
 Table of Contents
 =================
 
    * [Events](#events)
-   * [Table of Contents](#table-of-contents)
+      * [Events Command](#events-command)
       * [Fields](#fields)
       * [Event Types](#event-types)
          * [Message Events](#message-events)
@@ -34,50 +27,90 @@ Table of Contents
             * [TriggerEvent](#triggerevent)
             * [TimedTriggerEvent](#timedtriggerevent)
 
+# Events
+
+The events system is designed to be a flexible method for defining functions within discord that can be used as standalone "read and response" type functions, functions for checking the various attributes and skills of a player, functions for checking world information such as the time of day or weather, or chained together using the scripts system to create more complex interactions with NPC's or Items (though not necessarily limited to those two).
+
+The `events` command is used for managing events (adding, removing, modifying, etc.), and must first be enabled in a room before it can be used with the following command (see the command permissions page for more information):
+
+`~command enable events`
+
+## Events Command
+
+| Command       | Description   | Example Usage  |
+| ------------- | ------------- | ------------- |
+| add |  |  |
+| remove |  |  |
+| list |  |  |
+| info |  |  |
+| enable | | |
+| disable | | |
+| listenabled | | |
+
+[Go to top of page](#table-of-contents)
+
+
 ## Fields
 
 All Events share the following field types:
 
+**Name**
+
+_string_
+
+A _unique_ name for the event. Attempting to save records with duplicate names will return an error.
+
+**Description**
+
+_string_
+
+A description of 60 characters or less about the event.
+
 **Type**
+
 _string_
 
 The type name of the event.
 
 **TypeFlags**
+
 _string array_
 
-As described in the following section, each type of event has varying fields that are applicable to them. 
+As described in the following section, each type of event has varying fields that are applicable to them.
 
+**PrivateResponse**
 
-**Attachable**
 _bool_
 
-Whether or not an event can be attached to a user or not. You would set this to true if this event is supposed to be tied to a user as part of a conversation (so that others in the room cannot trigger it). 
+Whether or not to send a return message as a private message rather than a public one.
 
-If set to _false_ all users will trigger event.
+**Watchable**
 
-If set to _true_, the event will not execute if it was not registered for the user first. (See the scripting section of the documentation for further information)
+_bool_
 
-**Note:** If an event is *not* attachable, all user calls to it will increment the cycle count (described below).
+Whether or not this event, when triggered, should be put into the watch queue or whether it should be triggered using the passthrough data from an event before it.
 
-
+i.e. If an event is triggered that is supposed to perform a skill check, that should not be a watchable event as we want it to execute immediately rather than wait for user input to proceed.
 
 **LoadOnBoot**
+
 _bool_
 
 If set to true, the event will be loaded every time the bot starts up.
 
 **Cycles**
+
 _int_
 
 Number of Runs. A setting of 0 is for infinite/indefinite runs (when you want to attach an event to an NPC, for example, as a general greeting).
 
 **Data**
+
 _string array_
 
 As described in the following section, each type of event has varying data fields that are applicable to them. 
 
-[Go to top of page](#events)
+[Go to top of page](#table-of-contents)
 
 
 
@@ -110,11 +143,13 @@ In the following example, the trigger keyword is "hello", to which a response of
 
 ```json
 {
+  "name": "ExampleReadMessage",
+  "description": "Trigger a response to the word hello",
   "type": "ReadMessage",
-  "TypeFlags": [
+  "typeflags": [
     "hello"
   ],
-  "attachable": false,
+  "privateresponse": false,
   "loadonboot": true,
   "cycles": 0,
   "data": [
@@ -123,7 +158,7 @@ In the following example, the trigger keyword is "hello", to which a response of
 }
 ```
 
-[Go to top of page](#events)
+[Go to top of page](#table-of-contents)
 
 
 #### TimedMessage
@@ -149,12 +184,14 @@ In the following example, the event will be triggered by the keyword "hello", af
 
 ```json
 {
+  "name": "ExampleTimedMessage",
+  "description": "Trigger a timed response to the word hello",
   "type": "TimedMessage",
   "TypeFlags": [
     "hello",
     "30"
   ],
-  "attachable": false,
+  "privateresponse": false,
   "loadonboot": true,
   "cycles": 0,
   "data": [
@@ -163,14 +200,14 @@ In the following example, the event will be triggered by the keyword "hello", af
 }
 ```
 
-[Go to top of page](#events)
+[Go to top of page](#table-of-contents)
 
 
 #### ReadMessageChoice
 
 The ReadMessageChoice event will respond to a user with a message that corresponds to what the defined keyword is keyed to in the data array.
 
-**Note:** This will only trigger on the **first** keyword match in a message.
+    Note: This will only trigger on the **first keyword match in a message.
 
 **TypeFlags**
 
@@ -184,7 +221,7 @@ The ReadMessageChoice event will respond to a user with a message that correspon
 
 **Data**
 
-**Note:** The number of keywords **must** match the number of responses defined. Or the event will not be registered and will return an error.
+    Note: The number of keywords must match the number of responses defined. Or the event will not be registered and will return an error.
 
 | Data Field # | Description |
 |-----------|-------------|
@@ -200,12 +237,14 @@ In the following example, the keywords "hello" and "goodbye" will be responded t
 
 ```json
 {
+  "name": "ExampleReadMessageChoice",
+  "description": "Trigger responses for hello and bye",
   "type": "ReadMessageChoice",
   "TypeFlags": [
     "hello",
     "bye"
   ],
-  "attachable": false,
+  "privateresponse": false,
   "loadonboot": true,
   "cycles": 0,
   "data": [
@@ -215,14 +254,14 @@ In the following example, the keywords "hello" and "goodbye" will be responded t
 }
 ```
 
-[Go to top of page](#events)
+[Go to top of page](#table-of-contents)
 
 
 #### MessageChoiceTriggerEvent
 
 The MessageChoiceTriggerEvent event will trigger a keyed event when the corresponding keyword is found in a message.
 
-**Note:** This will only trigger on the **first** keyword match in a message.
+    Note: This will only trigger on the first keyword match in a message.
 
 **TypeFlags**
 
@@ -250,12 +289,14 @@ In the following example, the keywords "sword" and "dagger" will trigger eventID
 
 ```json
 {
+  "name": "ExampleMessageChoiceTriggerEvent",
+  "description": "Trigger an event in response to the words sword and dagger",
   "type": "MessageChoiceTriggerEvent",
   "TypeFlags": [
     "sword",
     "dagger"
   ],
-  "attachable": false,
+  "privateresponse": false,
   "loadonboot": true,
   "cycles": 0,
   "data": [
@@ -265,9 +306,11 @@ In the following example, the keywords "sword" and "dagger" will trigger eventID
 }
 ```
 
-[Go to top of page](#events)
+[Go to top of page](#table-of-contents)
 
+## Special Event Types
 
+These events are intended to be used for scripting and not as general purpose events. As such, they can be defined but they cannot be enabled on a per-channel basis.
 
 ### User Attribute Check Events
 
@@ -296,7 +339,6 @@ In the following example...
   "TypeFlags": [
     "nil"
   ],
-  "attachable": false,
   "loadonboot": true,
   "cycles": 0,
   "data": [
@@ -305,7 +347,7 @@ In the following example...
 }
 ```
 
-[Go to top of page](#events)
+[Go to top of page](#table-of-contents)
 
 
 #### HeightCheck
@@ -333,7 +375,6 @@ In the following example...
   "TypeFlags": [
     "nil"
   ],
-  "attachable": false,
   "loadonboot": true,
   "cycles": 0,
   "data": [
@@ -342,7 +383,7 @@ In the following example...
 }
 ```
 
-[Go to top of page](#events)
+[Go to top of page](#table-of-contents)
 
 
 #### WeightCheck
@@ -370,7 +411,6 @@ In the following example...
   "TypeFlags": [
     "nil"
   ],
-  "attachable": false,
   "loadonboot": true,
   "cycles": 0,
   "data": [
@@ -379,7 +419,7 @@ In the following example...
 }
 ```
 
-[Go to top of page](#events)
+[Go to top of page](#table-of-contents)
 
 
 #### AbilityCheck
@@ -407,7 +447,6 @@ In the following example...
   "TypeFlags": [
     "nil"
   ],
-  "attachable": false,
   "loadonboot": true,
   "cycles": 0,
   "data": [
@@ -416,7 +455,7 @@ In the following example...
 }
 ```
 
-[Go to top of page](#events)
+[Go to top of page](#table-of-contents)
 
 
 #### ReputationCheck
@@ -443,7 +482,6 @@ In the following example...
   "TypeFlags": [
     "nil"
   ],
-  "attachable": false,
   "loadonboot": true,
   "cycles": 0,
   "data": [
@@ -452,7 +490,7 @@ In the following example...
 }
 ```
 
-[Go to top of page](#events)
+[Go to top of page](#table-of-contents)
 
 
 ### User Interaction Events
@@ -482,7 +520,6 @@ In the following example...
   "TypeFlags": [
     "nil"
   ],
-  "attachable": false,
   "loadonboot": true,
   "cycles": 0,
   "data": [
@@ -491,7 +528,7 @@ In the following example...
 }
 ```
 
-[Go to top of page](#events)
+[Go to top of page](#table-of-contents)
 
 
 #### ToWallet
@@ -519,7 +556,6 @@ In the following example...
   "TypeFlags": [
     "nil"
   ],
-  "attachable": false,
   "loadonboot": true,
   "cycles": 0,
   "data": [
@@ -528,7 +564,7 @@ In the following example...
 }
 ```
 
-[Go to top of page](#events)
+[Go to top of page](#table-of-contents)
 
 
 #### FromItem
@@ -556,7 +592,6 @@ In the following example...
   "TypeFlags": [
     "nil"
   ],
-  "attachable": false,
   "loadonboot": true,
   "cycles": 0,
   "data": [
@@ -565,7 +600,7 @@ In the following example...
 }
 ```
 
-[Go to top of page](#events)
+[Go to top of page](#table-of-contents)
 
 
 #### ToItem
@@ -593,7 +628,6 @@ In the following example...
   "TypeFlags": [
     "nil"
   ],
-  "attachable": false,
   "loadonboot": true,
   "cycles": 0,
   "data": [
@@ -602,7 +636,7 @@ In the following example...
 }
 ```
 
-[Go to top of page](#events)
+[Go to top of page](#table-of-contents)
 
 
 #### RewardExperience
@@ -630,7 +664,6 @@ In the following example...
   "TypeFlags": [
     "nil"
   ],
-  "attachable": false,
   "loadonboot": true,
   "cycles": 0,
   "data": [
@@ -639,7 +672,7 @@ In the following example...
 }
 ```
 
-[Go to top of page](#events)
+[Go to top of page](#table-of-contents)
 
 
 ### Control Flow Events
@@ -669,7 +702,6 @@ In the following example...
   "TypeFlags": [
     "nil"
   ],
-  "attachable": false,
   "loadonboot": true,
   "cycles": 0,
   "data": [
@@ -678,7 +710,7 @@ In the following example...
 }
 ```
 
-[Go to top of page](#events)
+[Go to top of page](#table-of-contents)
 
 
 #### TimedTriggerEvent
@@ -706,7 +738,6 @@ In the following example...
   "TypeFlags": [
     "nil"
   ],
-  "attachable": false,
   "loadonboot": true,
   "cycles": 0,
   "data": [
@@ -715,6 +746,6 @@ In the following example...
 }
 ```
 
-[Go to top of page](#events)
+[Go to top of page](#table-of-contents)
 
 

@@ -30,14 +30,18 @@ type User struct {
 	HairStyle      string
 	Height         string
 
-	Stamina int64
-	Mana    int64
-	Sanity  int64
-	Focus   int64
+	Stamina   int64
+	Mana      int64
+	Sanity    int64
+	Focus     int64
+	Fortitude int64
 
 	QuestFlags []string
 	Statuses   []string
 	Crawling   bool
+	Crouching  bool
+	Standing   bool
+	Sitting    bool
 	Swimming   bool
 	Flying     bool
 
@@ -56,6 +60,8 @@ type User struct {
 	LLeg  string
 	LFoot string
 
+	RingSize int
+
 	Email string
 
 	Registered         string
@@ -67,6 +73,9 @@ type User struct {
 	RoomID  string `storm:"index"` // ChannelID of the users current room
 
 	ItemsMap []string // An ID pointing to the item in the database
+
+	LastActions     []string
+	LastActionTimes []time.Time
 
 	Strength     int
 	Dexterity    int

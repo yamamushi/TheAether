@@ -2,6 +2,7 @@ package main
 
 import (
 	"container/list"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"github.com/bwmarrin/discordgo"
@@ -31,9 +32,10 @@ type EventHandler struct {
 
 // EventCallback struct
 type EventCallback struct {
-	ChannelID string
-	EventID   string
-	Handler   func(string, *discordgo.Session, *discordgo.MessageCreate)
+	ChannelID       string
+	EventID         string
+	EventMessagesID string
+	Handler         func(string, string, *discordgo.Session, *discordgo.MessageCreate)
 }
 
 // Init function
@@ -125,12 +127,12 @@ func (h *EventHandler) ParseCommand(input []string, s *discordgo.Session, m *dis
 		return
 	}
 	if argument == "enable" {
-		if len(payload) < 1 {
-			s.ChannelMessageSend(m.ChannelID, "Command 'enable' expects an argument: <EventID>")
+		if len(payload) < 2 {
+			s.ChannelMessageSend(m.ChannelID, "Command 'enable' expects two arguments: <EventID> <channel>")
 			return
 		}
-		payload[0] = CleanChannel(payload[0])
-		err := h.EnableEvent(payload[0], m.Author.ID, m.ChannelID, s)
+		payload[1] = CleanChannel(payload[1])
+		err := h.EnableEvent(payload[0], payload[1], "")
 		if err != nil {
 			s.ChannelMessageSend(m.ChannelID, "Error enabling event: "+err.Error())
 			return
@@ -139,16 +141,16 @@ func (h *EventHandler) ParseCommand(input []string, s *discordgo.Session, m *dis
 		return
 	}
 	if argument == "disable" {
-		if len(payload) < 1 {
-			s.ChannelMessageSend(m.ChannelID, "Command 'disable' expects an argument	: <EventID>")
+		if len(payload) < 2 {
+			s.ChannelMessageSend(m.ChannelID, "Command 'disable' expects two arguments: <EventID> <channel>")
 			return
 		}
-		err := h.DisableEvent(payload[0], m.Author.ID, s)
+		err := h.DisableEvent(payload[0], payload[1], "")
 		if err != nil {
-			s.ChannelMessageSend(m.ChannelID, "Error unwatched event: "+err.Error())
+			s.ChannelMessageSend(m.ChannelID, "Error unwatching event: "+err.Error())
 			return
 		}
-		s.ChannelMessageSend(m.ChannelID, "Event removed from watchlist!")
+		s.ChannelMessageSend(m.ChannelID, "Event disabled for: "+payload[1])
 		return
 	}
 	if argument == "list" {
@@ -196,21 +198,21 @@ func (h *EventHandler) ParseCommand(input []string, s *discordgo.Session, m *dis
 }
 
 // EnableEvent function
-func (h *EventHandler) EnableEvent(eventID, userID string, channelID string, s *discordgo.Session) (err error) {
-	user, err := h.user.GetUser(userID, s, channelID)
-	if err != nil {
-		return err
-	}
-
+func (h *EventHandler) EnableEvent(eventID, channelID string, keyvalueid string) (err error) {
+	channelID = CleanChannel(channelID)
 	event, err := h.eventsdb.GetEventByID(eventID)
 	if err != nil {
 		return err
 	}
 
-	if user.ID == event.CreatorID || user.CheckRole("builder") {
-		h.LoadEvent(eventID)
-	} else {
-		return errors.New("You do not have permission to enable this event only the creator or a builder are allowed to")
+	err = h.AddEventToRoom(event.ID, channelID)
+	if err != nil {
+		return err
+	}
+
+	err = h.LoadEvent(event.ID, keyvalueid)
+	if err != nil {
+		return err
 	}
 	return nil
 }
@@ -226,26 +228,24 @@ func (h *EventHandler) EventToScript(eventID string) (script string, err error) 
 	if err != nil {
 		return "", err
 	}
-	return script, nil
+	pretty, err := json.MarshalIndent(script, "", "\t")
+	if err != nil {
+		return "", err
+	}
+	return string(pretty), nil
 }
 
 // DisableEvent function
-func (h *EventHandler) DisableEvent(eventID string, userID string, s *discordgo.Session) (err error) {
+func (h *EventHandler) DisableEvent(eventID string, channelID string, keyvalueid string) (err error) {
 	event, err := h.eventsdb.GetEventByID(eventID)
 	if err != nil {
 		return err
 	}
-
-	user, err := h.user.GetUser(userID, s, event.ChannelID)
+	err = h.RemoveEventFromRoom(eventID, channelID)
 	if err != nil {
 		return err
 	}
-
-	if user.ID == event.CreatorID || user.CheckRole("builder") {
-		h.UnWatchEvent(event.ChannelID, event.ID)
-	} else {
-		return errors.New("You do not have permission to disable this event only the creator or a builder are allowed to")
-	}
+	h.UnWatchEvent(channelID, event.ID, keyvalueid)
 	return nil
 }
 
@@ -262,11 +262,14 @@ func (h *EventHandler) RemoveEvent(eventID string, userID string, s *discordgo.S
 	}
 
 	if user.ID == event.CreatorID || user.CheckRole("admin") {
+		// Unwatch this event in all rooms
+		for _, roomID := range event.Rooms {
+			h.UnWatchEvent(roomID, eventID, "")
+		}
 		err = h.eventsdb.RemoveEventByID(eventID)
 		if err != nil {
 			return err
 		}
-		h.UnWatchEvent(channelID, eventID)
 	} else {
 		return errors.New("You do not have permission to remove this event only the creator or an admin are allowed to")
 	}
@@ -280,11 +283,48 @@ func (h *EventHandler) ListEvents() (formatted string, err error) {
 		return "", err
 	}
 
-	formatted = "```\n"
+	formatted = "```"
 
 	for _, event := range events {
-		formatted = formatted + "EventID: " + event.ID + " ChannelID:" + event.ChannelID + " Type:" + event.Type + " CreatorID:" + event.CreatorID + "\n"
+		// We don't want to see events in scripts
+		if !event.IsScriptEvent {
+			channels := ""
+			for i, channel := range event.Rooms {
+				if i == 0 {
+					channels = channel
+				} else {
+					channels = channels + ", " + channel
+				}
+			}
+			formatted = formatted + "\n" + event.ID + " - " + event.Name + ": " + event.Description
+		}
 	}
+	formatted = formatted + "\n```\n"
+	return formatted, nil
+}
+
+// EventInfo function
+func (h *EventHandler) EventInfo(eventID string) (formatted string, err error) {
+	event, err := h.eventsdb.GetEventByID(eventID)
+	if err != nil {
+		return "", err
+	}
+
+	formatted = "```"
+	channels := ""
+	for i, channel := range event.Rooms {
+		if i == 0 {
+			channels = channel
+		} else {
+			channels = channels + ", " + channel
+		}
+	}
+	formatted = formatted + "\nEventID: " + event.ID
+	formatted = formatted + "\nName: " + event.Name
+	formatted = formatted + "\nDescription: " + event.Description
+	formatted = formatted + "\nChannelID: " + channels
+	formatted = formatted + "\nType: " + event.Type
+	formatted = formatted + "\nCreatorID: " + event.CreatorID
 	formatted = formatted + "\n```\n"
 	return formatted, nil
 }
@@ -300,7 +340,7 @@ func (h *EventHandler) RegisterEvent(payload string, s *discordgo.Session, m *di
 	payload = strings.TrimSuffix(payload, "\n")
 	payload = strings.Trim(payload, "```")
 
-	createdEvent, err := h.parser.ParseFormattedEvent(payload, m.ChannelID, m.Author.ID)
+	createdEvent, err := h.parser.ParseFormattedEvent(payload, m.Author.ID)
 	if err != nil {
 		return "", err
 	}
@@ -330,8 +370,7 @@ func (h *EventHandler) LoadEventsAtBoot() (err error) {
 
 	for _, event := range events {
 		if event.LoadOnBoot {
-			fmt.Println("Event Loaded: " + event.ID)
-			err = h.LoadEvent(event.ID)
+			err = h.LoadEvent(event.ID, "")
 			if err != nil {
 				return err
 			}
@@ -340,50 +379,106 @@ func (h *EventHandler) LoadEventsAtBoot() (err error) {
 	return nil
 }
 
+// AddEventToRoom function
+func (h *EventHandler) AddEventToRoom(eventID string, roomID string) (err error) {
+	roomID = CleanChannel(roomID)
+
+	event, err := h.eventsdb.GetEventByID(eventID)
+	if err != nil {
+		return err
+	}
+
+	for _, room := range event.Rooms {
+		if room == roomID {
+			return nil // We don't want to add a record more than once
+		}
+	}
+	event.Rooms = append(event.Rooms, roomID)
+
+	err = h.eventsdb.SaveEventToDB(event)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+// RemoveEventFromRoom function
+func (h *EventHandler) RemoveEventFromRoom(eventID string, roomID string) (err error) {
+	roomID = CleanChannel(roomID)
+
+	event, err := h.eventsdb.GetEventByID(eventID)
+	if err != nil {
+		return err
+	}
+
+	event.Rooms = RemoveStringFromSlice(event.Rooms, roomID)
+
+	err = h.eventsdb.SaveEventToDB(event)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
 // LoadEvent function
-func (h *EventHandler) LoadEvent(eventID string) (err error) {
+func (h *EventHandler) LoadEvent(eventID string, keyvalueid string) (err error) {
 	event, err := h.eventsdb.GetEventByID(eventID)
 	if err != nil {
 		return err
 	}
 
 	// Refer to the github wiki page on Events for information on types
+	for _, room := range event.Rooms {
+		err = h.AddEventToWatchList(event, room, keyvalueid)
+		if err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+// AddEventToWatchList function
+func (h *EventHandler) AddEventToWatchList(event Event, roomID string, eventmessagesid string) (err error) {
 	if event.Type == "ReadMessage" {
-		h.WatchEvent(h.UnfoldReadMessageEvent, event.ID, event.ChannelID)
+		h.WatchEvent(h.UnfoldReadMessageEvent, eventmessagesid, event.ID, roomID)
 	} else if event.Type == "TimedMessage" {
-		h.WatchEvent(h.UnfoldTimedMessageEvent, event.ID, event.ChannelID)
+		h.WatchEvent(h.UnfoldTimedMessageEvent, eventmessagesid, event.ID, roomID)
 	} else if event.Type == "ReadMessageChoice" {
-		h.WatchEvent(h.UnfoldReadMessageChoiceEvent, event.ID, event.ChannelID)
+		h.WatchEvent(h.UnfoldReadMessageChoiceEvent, eventmessagesid, event.ID, roomID)
 	} else if event.Type == "MessageChoiceTriggerEvent" {
-		h.WatchEvent(h.UnfoldMessageChoiceTriggerEvent, event.ID, event.ChannelID)
+		h.WatchEvent(h.UnfoldMessageChoiceTriggerEvent, eventmessagesid, event.ID, roomID)
 	}
 	return nil
 }
 
 // WatchEvent function
-func (h *EventHandler) WatchEvent(Handler func(string, *discordgo.Session, *discordgo.MessageCreate), EventID string, ChannelID string) {
+func (h *EventHandler) WatchEvent(Handler func(string, string, *discordgo.Session, *discordgo.MessageCreate), EventMessagesID string, EventID string, ChannelID string) {
+	// Make sure we don't duplicate events in the watch list
 	for e := h.WatchList.Front(); e != nil; e = e.Next() {
 		r := reflect.ValueOf(e.Value)
+		eventmessagesid := reflect.Indirect(r).FieldByName("EventMessagesID")
 		eventID := reflect.Indirect(r).FieldByName("EventID")
 		channel := reflect.Indirect(r).FieldByName("ChannelID")
-		if channel.String() == ChannelID && eventID.String() == EventID {
+		if channel.String() == ChannelID && eventID.String() == EventID && eventmessagesid.String() == EventMessagesID {
 			return
 		}
 	}
-	item := EventCallback{ChannelID: ChannelID, EventID: EventID, Handler: Handler}
+	item := EventCallback{ChannelID: ChannelID, EventID: EventID, Handler: Handler, EventMessagesID: EventMessagesID}
 	h.WatchList.PushBack(item)
 }
 
 // UnWatchEvent function
-func (h *EventHandler) UnWatchEvent(ChannelID string, EventID string) {
+func (h *EventHandler) UnWatchEvent(ChannelID string, EventID string, EventMessagesID string) {
 	// Clear usermanager element by iterating
 	for e := h.WatchList.Front(); e != nil; e = e.Next() {
 		r := reflect.ValueOf(e.Value)
+		eventmessagesid := reflect.Indirect(r).FieldByName("EventMessagesID")
 		channel := reflect.Indirect(r).FieldByName("ChannelID")
 		eventID := reflect.Indirect(r).FieldByName("EventID")
 
-		if channel.String() == ChannelID && eventID.String() == EventID {
+		if channel.String() == ChannelID && eventID.String() == EventID && eventmessagesid.String() == EventMessagesID {
 			h.WatchList.Remove(e)
+			h.RemoveEventFromRoom(EventID, ChannelID)
 		}
 	}
 }
@@ -393,14 +488,93 @@ func (h *EventHandler) ListEnabled(channelID string) (formatted string, err erro
 	formatted = "```\n"
 	for e := h.WatchList.Front(); e != nil; e = e.Next() {
 		r := reflect.ValueOf(e.Value)
+		eventmessagesid := reflect.Indirect(r).FieldByName("EventMessagesID")
 		eventID := reflect.Indirect(r).FieldByName("EventID")
 		channel := reflect.Indirect(r).FieldByName("ChannelID")
 		if channel.String() == channelID {
-			formatted = formatted + "ID: " + eventID.String() + "\n"
+			formatted = formatted + "ID: " + eventID.String() + " EventMessagesID: " + eventmessagesid.String() + "\n"
 		}
 	}
 	formatted = formatted + "\n```\n"
 	return formatted, nil
+}
+
+// LaunchChildEvent function
+func (h *EventHandler) LaunchChildEvent(parenteventID string, childeventID string, eventmessagesid string, s *discordgo.Session, m *discordgo.MessageCreate) {
+	// First we load the keyed eventID in the data array
+	if childeventID != "nil" {
+		triggeredevent, err := h.eventsdb.GetEventByID(childeventID)
+		if err != nil {
+			s.ChannelMessageSend(m.ChannelID, "Error triggering keyed event - Source: "+
+				parenteventID+" Trigger: "+childeventID+" Error: "+err.Error())
+			return
+		}
+
+		if triggeredevent.Watchable {
+			err = h.AddEventToWatchList(triggeredevent, m.ChannelID, eventmessagesid)
+			if err != nil {
+				s.ChannelMessageSend(m.ChannelID, "Error watching keyed event - Source: "+
+					parenteventID+" Trigger: "+childeventID+" Error: "+err.Error())
+				return
+			}
+		} else {
+			// If we aren't adding the event to the watchlist, we want to passthrough and trigger it immediately with a 2 second time delay
+			time.Sleep(time.Duration(time.Second * 2))
+			if triggeredevent.Type == "ReadMessage" {
+				h.UnfoldReadMessageEvent(triggeredevent.ID, eventmessagesid, s, m)
+			} else if triggeredevent.Type == "TimedMessage" {
+				h.UnfoldTimedMessageEvent(triggeredevent.ID, eventmessagesid, s, m)
+			} else if triggeredevent.Type == "ReadMessageChoice" {
+				h.UnfoldReadMessageChoiceEvent(triggeredevent.ID, eventmessagesid, s, m)
+			} else if triggeredevent.Type == "MessageChoiceTriggerEvent" {
+				h.UnfoldMessageChoiceTriggerEvent(triggeredevent.ID, eventmessagesid, s, m)
+			}
+		}
+	}
+}
+
+// CheckCycles function
+func (h *EventHandler) CheckCycles(event Event, eventmessagesid string, s *discordgo.Session, m *discordgo.MessageCreate) {
+	// We need to check if the cycles are indefinite or not
+	if event.Cycles > 0 {
+		// We increment our run count and save the event to the db
+		event.RunCount = event.RunCount + 1
+		err := h.eventsdb.SaveEventToDB(event)
+		if err != nil {
+			s.ChannelMessageSend(m.ChannelID, "Error saving event: "+event.ID+" Error: "+err.Error())
+			return
+		}
+		// Then we check to see if we hit our cycle limit and if so then remove the event from the db
+		if event.RunCount >= event.Cycles {
+			// Now we disable the event if it is past the run cycle count
+			err = h.DisableEvent(event.ID, m.ChannelID, eventmessagesid)
+			if err != nil {
+				s.ChannelMessageSend(m.ChannelID, "Error disabling event: "+event.ID+" Error: "+err.Error())
+				return
+			}
+			// Reset the runcount and save it to disk
+			event.RunCount = 0
+			err = h.eventsdb.SaveEventToDB(event)
+			if err != nil {
+				s.ChannelMessageSend(m.ChannelID, "Error saving event after cycles: "+event.ID+" Error: "+err.Error())
+				return
+			}
+			return
+		}
+	}
+}
+
+// IsValidEventMessage function
+func (h *EventHandler) IsValidEventMessage(s *discordgo.Session, m *discordgo.MessageCreate) (valid bool) {
+	// Ignore all messages created by the bot itself
+	if m.Author.ID == s.State.User.ID {
+		return false
+	}
+	// Ignore bots
+	if m.Author.Bot {
+		return false
+	}
+	return true
 }
 
 // ReadEvents function
@@ -417,14 +591,18 @@ func (h *EventHandler) ReadEvents(s *discordgo.Session, m *discordgo.MessageCrea
 			arglist := reflect.Indirect(r).FieldByName("EventID")
 			eventid := arglist.String()
 
+			eventmessagesid := reflect.Indirect(r).FieldByName("EventMessagesID")
+			eventmessageid := eventmessagesid.String()
+
 			// We now type the interface to the handler type
 			//v := reflect.ValueOf(handler)
-			rargs := make([]reflect.Value, 3)
+			rargs := make([]reflect.Value, 4)
 
 			//var sizeofargs = len(rargs)
 			rargs[0] = reflect.ValueOf(eventid)
-			rargs[1] = reflect.ValueOf(s)
-			rargs[2] = reflect.ValueOf(m)
+			rargs[1] = reflect.ValueOf(eventmessageid)
+			rargs[2] = reflect.ValueOf(s)
+			rargs[3] = reflect.ValueOf(m)
 
 			go handler.Call(rargs)
 			//handlerid := reflect.Indirect(r).FieldByName("HandlerID").String()
@@ -433,21 +611,8 @@ func (h *EventHandler) ReadEvents(s *discordgo.Session, m *discordgo.MessageCrea
 	}
 }
 
-// CreateAttachedEvent function
-func (h *EventHandler) CreateAttachedEvent(event Event, userID string) (attachedevent Event, err error) {
-	// If we didn't find an event we need to save a new one in the db for this user
-	id := strings.Split(GetUUIDv2(), "-")
-	event.UserAttached = event.ID + "-" + userID // We key the new event with the root Event ID and the User ID
-	event.ID = id[0]                             // Give this new event a new ID or it will overwrite the root record
-	err = h.eventsdb.SaveEventToDB(event)
-	if err != nil {
-		return attachedevent, err
-	}
-	return event, nil
-}
-
 // UnfoldReadMessageEvent function
-func (h *EventHandler) UnfoldReadMessageEvent(eventID string, s *discordgo.Session, m *discordgo.MessageCreate) {
+func (h *EventHandler) UnfoldReadMessageEvent(eventID string, eventmessagesid string, s *discordgo.Session, m *discordgo.MessageCreate) {
 	// Ignore all messages created by the bot itself
 	if m.Author.ID == s.State.User.ID {
 		return
@@ -463,27 +628,6 @@ func (h *EventHandler) UnfoldReadMessageEvent(eventID string, s *discordgo.Sessi
 		return
 	}
 
-	// We need to determine if the event is attachable or not first
-	if event.Attachable {
-		// If the event is attachable, then this is not the event we want to trigger, we want to retrieve the users attached event
-		event, err = h.eventsdb.GetEventByAttached(event.ID, m.Author.ID)
-		if err != nil {
-			return // If we didn't find a record, one wasn't registered and we want to silently fail
-			/*
-				if err.Error() == "No record found" {
-					event, err = h.CreateAttachedEvent(event, m.Author.ID)
-					if err != nil {
-						s.ChannelMessageSend(m.ChannelID, "Error creating user attached event - Error: "+err.Error())
-						return
-					}
-				} else {
-					s.ChannelMessageSend(m.ChannelID, "Error loading user attached event - Error: "+err.Error())
-					return
-				}
-			*/
-		}
-	} // Now we have the event attached to the user and can proceed with parsing it
-
 	keyword := event.TypeFlags[0]
 	messageContent := strings.Fields(strings.ToLower(m.Content))
 
@@ -491,38 +635,10 @@ func (h *EventHandler) UnfoldReadMessageEvent(eventID string, s *discordgo.Sessi
 		// We don't need to check for the userID here because that's what checking for event.Attachable did
 		if messagefield == keyword {
 			// First we send the data
-			s.ChannelMessageSend(event.ChannelID, FormatEventMessage(event.Data[0], m.Author.ID, m.ChannelID))
+			s.ChannelMessageSend(m.ChannelID, FormatEventMessage(event.Data[0], m.Author.ID, m.ChannelID))
 
 			// We need to check if the cycles are indefinite or not
-			if event.Cycles > 0 {
-				// We increment our run count and save the event to the db
-				event.RunCount = event.RunCount + 1
-				err = h.eventsdb.SaveEventToDB(event)
-				if err != nil {
-					s.ChannelMessageSend(m.ChannelID, "Error saving event: "+eventID+" Error: "+err.Error())
-					return
-				}
-				// Then we check to see if we hit our cycle limit and if so then remove the event from the db
-				if event.RunCount >= event.Cycles {
-					// If this is an attached event we need to remove it from the DB after cleanup
-					if event.UserAttached != "" {
-						err = h.eventsdb.RemoveEventFromDB(event)
-						if err != nil {
-							s.ChannelMessageSend(m.ChannelID, "Error removing user attached event: "+eventID+" Error: "+err.Error())
-							return
-						}
-					}
-					// If it is a root event instead, then we need to clear the runcount and unwatch it instead of deleting it
-					event.RunCount = 0
-					err = h.eventsdb.SaveEventToDB(event)
-					if err != nil {
-						s.ChannelMessageSend(m.ChannelID, "Error saving event: "+eventID+" Error: "+err.Error())
-						return
-					}
-					h.UnWatchEvent(m.ChannelID, event.ID)
-					return
-				}
-			}
+			h.CheckCycles(event, eventmessagesid, s, m)
 			return
 		}
 	}
@@ -530,7 +646,7 @@ func (h *EventHandler) UnfoldReadMessageEvent(eventID string, s *discordgo.Sessi
 }
 
 // UnfoldTimedMessageEvent function
-func (h *EventHandler) UnfoldTimedMessageEvent(eventID string, s *discordgo.Session, m *discordgo.MessageCreate) {
+func (h *EventHandler) UnfoldTimedMessageEvent(eventID string, eventmessagesid string, s *discordgo.Session, m *discordgo.MessageCreate) {
 	// Ignore all messages created by the bot itself
 	if m.Author.ID == s.State.User.ID {
 		return
@@ -545,27 +661,6 @@ func (h *EventHandler) UnfoldTimedMessageEvent(eventID string, s *discordgo.Sess
 		s.ChannelMessageSend(m.ChannelID, "Error loading event "+eventID+": Error: "+err.Error())
 		return
 	}
-
-	// We need to determine if the event is attachable or not first
-	if event.Attachable {
-		// If the event is attachable, then this is not the event we want to trigger, we want to retrieve the users attached event
-		event, err = h.eventsdb.GetEventByAttached(event.ID, m.Author.ID)
-		if err != nil {
-			return // If we didn't find a record, one wasn't registered and we want to silently fail
-			/*
-				if err.Error() == "No record found" {
-					event, err = h.CreateAttachedEvent(event, m.Author.ID)
-					if err != nil {
-						s.ChannelMessageSend(m.ChannelID, "Error creating user attached event - Error: "+err.Error())
-						return
-					}
-				} else {
-					s.ChannelMessageSend(m.ChannelID, "Error loading user attached event - Error: "+err.Error())
-					return
-				}
-			*/
-		}
-	} // Now we have the event attached to the user and can proceed with parsing it
 
 	keyword := event.TypeFlags[0]
 	timeout, _ := strconv.Atoi(event.TypeFlags[1]) // We don't bother checking for an error here because that was handled during the event registration.
@@ -576,38 +671,10 @@ func (h *EventHandler) UnfoldTimedMessageEvent(eventID string, s *discordgo.Sess
 			// First we want to sleep for our timeout period
 			time.Sleep(time.Duration(timeout) * time.Second)
 			// Now we send the data
-			s.ChannelMessageSend(event.ChannelID, FormatEventMessage(event.Data[0], m.Author.ID, m.ChannelID))
+			s.ChannelMessageSend(m.ChannelID, FormatEventMessage(event.Data[0], m.Author.ID, m.ChannelID))
 
 			// We need to check if the cycles are indefinite or not
-			if event.Cycles > 0 {
-				// We increment our run count and save the event to the db
-				event.RunCount = event.RunCount + 1
-				err = h.eventsdb.SaveEventToDB(event)
-				if err != nil {
-					s.ChannelMessageSend(m.ChannelID, "Error saving event: "+eventID+" Error: "+err.Error())
-					return
-				}
-				// Then we check to see if we hit our cycle limit and if so then remove the event from the db
-				if event.RunCount >= event.Cycles {
-					// If this is an attached event we need to remove it from the DB after cleanup
-					if event.UserAttached != "" {
-						err = h.eventsdb.RemoveEventFromDB(event)
-						if err != nil {
-							s.ChannelMessageSend(m.ChannelID, "Error removing user attached event: "+eventID+" Error: "+err.Error())
-							return
-						}
-					}
-					// If it is a root event instead, then we need to clear the runcount and unwatch it instead of deleting it
-					event.RunCount = 0
-					err = h.eventsdb.SaveEventToDB(event)
-					if err != nil {
-						s.ChannelMessageSend(m.ChannelID, "Error saving event: "+eventID+" Error: "+err.Error())
-						return
-					}
-					h.UnWatchEvent(m.ChannelID, event.ID)
-					return
-				}
-			}
+			h.CheckCycles(event, eventmessagesid, s, m)
 			return
 		}
 	}
@@ -615,7 +682,7 @@ func (h *EventHandler) UnfoldTimedMessageEvent(eventID string, s *discordgo.Sess
 }
 
 // UnfoldReadMessageChoiceEvent function
-func (h *EventHandler) UnfoldReadMessageChoiceEvent(eventID string, s *discordgo.Session, m *discordgo.MessageCreate) {
+func (h *EventHandler) UnfoldReadMessageChoiceEvent(eventID string, eventmessagesid string, s *discordgo.Session, m *discordgo.MessageCreate) {
 	// Ignore all messages created by the bot itself
 	if m.Author.ID == s.State.User.ID {
 		return
@@ -630,15 +697,6 @@ func (h *EventHandler) UnfoldReadMessageChoiceEvent(eventID string, s *discordgo
 		s.ChannelMessageSend(m.ChannelID, "Error loading event "+eventID+": Error: "+err.Error())
 		return
 	}
-
-	// We need to determine if the event is attachable or not first
-	if event.Attachable {
-		// If the event is attachable, then this is not the event we want to trigger, we want to retrieve the users attached event
-		event, err = h.eventsdb.GetEventByAttached(event.ID, m.Author.ID)
-		if err != nil {
-			return // If we didn't find a record, one wasn't registered and we want to silently fail
-		}
-	} // Now we have the event attached to the user and can proceed with parsing it
 
 	messageContent := strings.Fields(strings.ToLower(m.Content))
 
@@ -646,52 +704,20 @@ func (h *EventHandler) UnfoldReadMessageChoiceEvent(eventID string, s *discordgo
 		for _, message := range messageContent {
 			if field == message {
 				// First we send the data that is keyed to the field
-				s.ChannelMessageSend(event.ChannelID, FormatEventMessage(event.Data[i], m.Author.ID, m.ChannelID))
+				s.ChannelMessageSend(m.ChannelID, FormatEventMessage(event.Data[i], m.Author.ID, m.ChannelID))
 
 				// We need to check if the cycles are indefinite or not
-				if event.Cycles > 0 {
-					// We increment our run count and save the event to the db
-					event.RunCount = event.RunCount + 1
-					err = h.eventsdb.SaveEventToDB(event)
-					if err != nil {
-						s.ChannelMessageSend(m.ChannelID, "Error saving event: "+eventID+" Error: "+err.Error())
-						return
-					}
-					// Then we check to see if we hit our cycle limit and if so then remove the event from the db
-					if event.RunCount >= event.Cycles {
-						// If this is an attached event we need to remove it from the DB after cleanup
-						if event.UserAttached != "" {
-							err = h.eventsdb.RemoveEventFromDB(event)
-							if err != nil {
-								s.ChannelMessageSend(m.ChannelID, "Error removing user attached event: "+eventID+" Error: "+err.Error())
-								return
-							}
-						}
-						// If it is a root event instead, then we need to clear the runcount and unwatch it instead of deleting it
-						event.RunCount = 0
-						err = h.eventsdb.SaveEventToDB(event)
-						if err != nil {
-							s.ChannelMessageSend(m.ChannelID, "Error saving event: "+eventID+" Error: "+err.Error())
-							return
-						}
-						h.UnWatchEvent(m.ChannelID, event.ID)
-						return
-					}
-				}
+				h.CheckCycles(event, eventmessagesid, s, m)
 				return
 			}
 		}
 	}
 }
 
-// UnfoldMessageChoiceTriggerEvent functio
-func (h *EventHandler) UnfoldMessageChoiceTriggerEvent(eventID string, s *discordgo.Session, m *discordgo.MessageCreate) {
-	// Ignore all messages created by the bot itself
-	if m.Author.ID == s.State.User.ID {
-		return
-	}
-	// Ignore bots
-	if m.Author.Bot {
+// UnfoldMessageChoiceTriggerEvent function
+func (h *EventHandler) UnfoldMessageChoiceTriggerEvent(eventID string, eventmessagesid string, s *discordgo.Session, m *discordgo.MessageCreate) {
+
+	if !h.IsValidEventMessage(s, m) {
 		return
 	}
 
@@ -701,55 +727,17 @@ func (h *EventHandler) UnfoldMessageChoiceTriggerEvent(eventID string, s *discor
 		return
 	}
 
-	// We need to determine if the event is attachable or not first
-	if event.Attachable {
-		// If the event is attachable, then this is not the event we want to trigger, we want to retrieve the users attached event
-		event, err = h.eventsdb.GetEventByAttached(event.ID, m.Author.ID)
-		if err != nil {
-			return // If we didn't find a record, one wasn't registered and we want to silently fail
-		}
-	} // Now we have the event attached to the user and can proceed with parsing it
-
 	messageContent := strings.Fields(strings.ToLower(m.Content))
 
 	for i, field := range event.TypeFlags {
 		for _, message := range messageContent {
 			if field == message {
 				// First we load the keyed eventID in the data array
-				if field != "nil" {
-					h.LoadEvent(event.Data[i]) // We want to ignore errors on this
+				if event.Data[i] != "nil" {
+					go h.LaunchChildEvent(event.ID, event.Data[i], eventmessagesid, s, m)
 				}
-
 				// We need to check if the cycles are indefinite or not
-				if event.Cycles > 0 {
-					// We increment our run count and save the event to the db
-					event.RunCount = event.RunCount + 1
-					err = h.eventsdb.SaveEventToDB(event)
-					if err != nil {
-						s.ChannelMessageSend(m.ChannelID, "Error saving event: "+eventID+" Error: "+err.Error())
-						return
-					}
-					// Then we check to see if we hit our cycle limit and if so then remove the event from the db
-					if event.RunCount >= event.Cycles {
-						// If this is an attached event we need to remove it from the DB after cleanup
-						if event.UserAttached != "" {
-							err = h.eventsdb.RemoveEventFromDB(event)
-							if err != nil {
-								s.ChannelMessageSend(m.ChannelID, "Error removing user attached event: "+eventID+" Error: "+err.Error())
-								return
-							}
-						}
-						// If it is a root event instead, then we need to clear the runcount and unwatch it instead of deleting it
-						event.RunCount = 0
-						err = h.eventsdb.SaveEventToDB(event)
-						if err != nil {
-							s.ChannelMessageSend(m.ChannelID, "Error saving event: "+eventID+" Error: "+err.Error())
-							return
-						}
-						h.UnWatchEvent(m.ChannelID, event.ID)
-						return
-					}
-				}
+				h.CheckCycles(event, eventmessagesid, s, m)
 				return
 			}
 		}

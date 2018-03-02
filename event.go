@@ -1,7 +1,6 @@
 package main
 
 import (
-	"errors"
 	"sync"
 )
 
@@ -15,56 +14,66 @@ type EventsDB struct {
 type Event struct {
 	ID string `json:"id"`
 
-	ChannelID    string `json:"rooms"`
-	UserAttached string `json:"AttachedUserId"` // The ID of a user if the event is tied to one through a cycle count
+	Name        string   `json:"name" storm:"unique"` // Names must be unique
+	Description string   `json:"description"`         // 60 characters or less
+	Rooms       []string `json:"rooms"`
 
 	Type      string   `json:"type"`
 	TypeFlags []string `json:"typeflags"`
 
-	Attachable bool `json:"attachable"` // Whether or not this event can be attached to a
-	// user or not (general room events vs direct conversation events)
+	PrivateResponse bool `json:"privateresponse"` // Whether or not to return a response in a private message
+	Watchable       bool `json:"watchable"`       // Whether or not this event should be watched or just executed with a passthrough
+	// If it's a passthrough, we want to write the response to the keyvaluesdb
+	FinalizeOutput bool `json:"finalizeoutput"` // If set to true, we want to notify the keyvalue that our output is finalized
+
 	LoadOnBoot bool     `json:"loadonboot"` // Whether or not to load the event at boot
 	Cycles     int      `json:"cycles"`     // Number of times to run the event, a setting of 0 or less will be parsed as "infinite"
 	Data       []string `json:"data"`       // Different types can contain multiple data fields
 
 	// Set when event is registered
 	CreatorID string `json:"creatorid"` // The userID of the creator
-
 	// These are not set by "events add", these must be set with the script manager
-	ParentID string   `json:"parentid"` // The id of the parent event if one exists
-	ChildIDs []string `json:"childids"` // The ids of the various childs (there can exist multiple children, ie for a multiple choice question)
-	RunCount int      `json:"runcount"` // The total number of runs the event has had during this cycle
+	ParentID       string   `json:"parentid"`       // The id of the parent event if one exists
+	ChildIDs       []string `json:"childids"`       // The ids of the various childs (there can exist multiple children, ie for a multiple choice question)
+	RunCount       int      `json:"runcount"`       // The total number of runs the event has had during this cycle
+	TriggeredEvent bool     `json:"triggeredevent"` // Used to denote whether or not an event is a copy created by a trigger
+
+	// Used for scripting
+	LinkedEvent     bool   `json:"linkedevent"`     // If we are linked, we want to read data from the keyvalue and not passthrough data
+	EventMessagesID string `json:"eventmessagesid"` // If we are writing to a keyvalue, we need to know the ID to write to
+	IsScriptEvent   bool   `json:"isscriptevent"`   // If set to true, this event belongs to a script and should not be manually modified
+	ParentScript    string `json:"parentscript"`
 }
 
 // SaveEventToDB function
-func (h *EventsDB) SaveEventToDB(Event Event) (err error) {
+func (h *EventsDB) SaveEventToDB(event Event) (err error) {
 	h.querylocker.Lock()
 	defer h.querylocker.Unlock()
 
 	db := h.db.rawdb.From("Events")
-	err = db.Save(&Event)
+	err = db.Save(&event)
 	return err
 }
 
 // RemoveEventFromDB function
-func (h *EventsDB) RemoveEventFromDB(Event Event) (err error) {
+func (h *EventsDB) RemoveEventFromDB(event Event) (err error) {
 	h.querylocker.Lock()
 	defer h.querylocker.Unlock()
 
 	db := h.db.rawdb.From("Events")
-	err = db.DeleteStruct(&Event)
+	err = db.DeleteStruct(&event)
 	return err
 }
 
 // RemoveEventByID function
-func (h *EventsDB) RemoveEventByID(EventID string) (err error) {
+func (h *EventsDB) RemoveEventByID(eventID string) (err error) {
 
-	Event, err := h.GetEventByID(EventID)
+	event, err := h.GetEventByID(eventID)
 	if err != nil {
 		return err
 	}
 
-	err = h.RemoveEventFromDB(Event)
+	err = h.RemoveEventFromDB(event)
 	if err != nil {
 		return err
 	}
@@ -73,33 +82,41 @@ func (h *EventsDB) RemoveEventByID(EventID string) (err error) {
 }
 
 // GetEventByID function
-func (h *EventsDB) GetEventByID(EventID string) (Event Event, err error) {
+func (h *EventsDB) GetEventByID(eventID string) (event Event, err error) {
+	h.querylocker.Lock()
+	defer h.querylocker.Unlock()
 
-	Events, err := h.GetAllEvents()
+	db := h.db.rawdb.From("Events")
+	err = db.One("ID", eventID, &event)
 	if err != nil {
-		return Event, err
+		return event, err
 	}
+	return event, nil
+}
 
-	for _, record := range Events {
+// GetEventByName function
+func (h *EventsDB) GetEventByName(eventName string) (event Event, err error) {
+	h.querylocker.Lock()
+	defer h.querylocker.Unlock()
 
-		if EventID == record.ID {
-			return record, nil
-		}
+	db := h.db.rawdb.From("Events")
+	err = db.One("Name", eventName, &event)
+	if err != nil {
+		return event, err
 	}
-	return Event, errors.New("No record found")
+	return event, nil
 }
 
 // ValidateEventByID function
-func (h *EventsDB) ValidateEventByID(EventID string) (validated bool) {
-
-	Events, err := h.GetAllEvents()
+func (h *EventsDB) ValidateEventByID(eventID string) (validated bool) {
+	events, err := h.GetAllEvents()
 	if err != nil {
 		return false
 	}
 
-	for _, record := range Events {
+	for _, record := range events {
 
-		if EventID == record.ID {
+		if eventID == record.ID {
 			return true
 		}
 	}
@@ -107,33 +124,14 @@ func (h *EventsDB) ValidateEventByID(EventID string) (validated bool) {
 }
 
 // GetAllEvents function
-func (h *EventsDB) GetAllEvents() (Eventlist []Event, err error) {
+func (h *EventsDB) GetAllEvents() (eventlist []Event, err error) {
 	h.querylocker.Lock()
 	defer h.querylocker.Unlock()
 
 	db := h.db.rawdb.From("Events")
-	err = db.All(&Eventlist)
+	err = db.All(&eventlist)
 	if err != nil {
-		return Eventlist, err
+		return eventlist, err
 	}
-
-	return Eventlist, nil
-}
-
-// GetEventByAttached function
-func (h *EventsDB) GetEventByAttached(EventID string, UserID string) (Event Event, err error) {
-
-	Events, err := h.GetAllEvents()
-	if err != nil {
-		return Event, err
-	}
-
-	searchstring := EventID + "-" + UserID
-	for _, record := range Events {
-
-		if searchstring == record.UserAttached {
-			return record, nil
-		}
-	}
-	return Event, errors.New("No record found")
+	return eventlist, nil
 }
