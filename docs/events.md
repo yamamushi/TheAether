@@ -2,15 +2,17 @@
 Table of Contents
 =================
 
+   * [Table of Contents](#table-of-contents)
    * [Events](#events)
       * [Events Command](#events-command)
       * [Fields](#fields)
       * [Event Types](#event-types)
          * [Message Events](#message-events)
             * [ReadMessage](#readmessage)
-            * [TimedMessage](#timedmessage)
+            * [ReadTimedMessage](#readtimedmessage)
             * [ReadMessageChoice](#readmessagechoice)
-            * [MessageChoiceTriggerEvent](#messagechoicetriggerevent)
+            * [ReadMessageChoiceTriggerEvent](#readmessagechoicetriggerevent)
+      * [Special Event Types](#special-event-types)
          * [User Attribute Check Events](#user-attribute-check-events)
             * [SkillCheck](#skillcheck)
             * [HeightCheck](#heightcheck)
@@ -26,6 +28,15 @@ Table of Contents
          * [Control Flow Events](#control-flow-events)
             * [TriggerEvent](#triggerevent)
             * [TimedTriggerEvent](#timedtriggerevent)
+            * [SendMessage](#sendmessage)
+            * [TimedSendMessage](#timedsendmessage)
+            * [ReadMessageTriggerSuccessFail](#readmessagetriggersuccessfail)
+            * [TriggerSuccess](#triggersuccess)
+            * [TriggerFailure](#triggerfailure)
+            * [SendMessageTriggerEvent](#sendmessagetriggerevent)
+            * [TriggerFailureSendError](#triggerfailuresenderror)
+            * [MessageChoiceDefault](#messagechoicedefault)
+            * [MessageChoiceDefaultEvent](#messagechoicedefaultevent)
 
 # Events
 
