@@ -51,6 +51,37 @@ func (h *EventParser) ParseFormattedEvent(data string, userID string) (parsed Ev
 	return unmarshallcontainer, nil
 }
 
+// VerifyUpdateEvent function
+func (h *EventParser) VerifyUpdateEvent(data string, userID string) (parsed Event, err error) {
+	unmarshallcontainer := Event{}
+	if err := json.Unmarshal([]byte(data), &unmarshallcontainer); err != nil {
+		return unmarshallcontainer, err
+	}
+
+	unmarshallcontainer.CreatorID = userID
+	unmarshallcontainer.RunCount = 0
+	if unmarshallcontainer.Name == "" {
+		return parsed, errors.New("Event requires a name")
+	}
+	if len(unmarshallcontainer.Name) > 30 {
+		return parsed, errors.New("Name must not exceed 30 characters")
+	}
+	if unmarshallcontainer.Description == "" {
+		return parsed, errors.New("Event requires a description")
+	}
+	if len(unmarshallcontainer.Description) > 60 {
+		return parsed, errors.New("Description must not exceed 60 characters")
+	}
+	if unmarshallcontainer.IsScriptEvent {
+		return parsed, errors.New("Event cannot have scriptevent defined")
+	}
+	if unmarshallcontainer.LoadOnBoot {
+		return parsed, errors.New("Event cannot manually be loaded on boot")
+	}
+
+	return unmarshallcontainer, nil
+}
+
 // EventToJSON function
 func (h *EventParser) EventToJSON(event Event) (formatted string, err error) {
 	marshalledevent, err := json.Marshal(event)

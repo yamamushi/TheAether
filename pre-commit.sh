@@ -3,6 +3,16 @@
 # and make it executable with chmod +x .git/hooks/pre-commit
 set -e
 
+
+branch_name=$(git symbolic-ref -q HEAD)
+branch_name=${branch_name##refs/heads/}
+branch_name=${branch_name:-HEAD}
+
+if [ $branch_name == "master" ]; then
+    echo "cannot commit on master branch"
+    exit
+fi
+
 echo "Downloading test suites"
 go get -v github.com/golang/lint/golint
 go get github.com/gordonklaus/ineffassign

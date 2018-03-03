@@ -484,7 +484,7 @@ func (h *ScriptHandler) LoadScript(scriptName string) (err error) {
 
 	for _, file := range files {
 		if strings.Contains(file.Name(), ".event") {
-			data, err := ioutil.ReadFile(file.Name())
+			data, err := ioutil.ReadFile("scripts/" + scriptName + "/" + file.Name())
 			if err != nil {
 				return errors.New("Error reading file: " + file.Name() + " - " + err.Error())
 			}

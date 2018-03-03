@@ -28,7 +28,7 @@ type User struct {
 	Gender         string
 	HairColor      string
 	HairStyle      string
-	Height         string
+	Height         int //height in cm
 
 	Stamina   int64
 	Mana      int64

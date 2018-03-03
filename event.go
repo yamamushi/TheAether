@@ -65,6 +65,15 @@ func (h *EventsDB) RemoveEventFromDB(event Event) (err error) {
 	return err
 }
 
+// UpdateEventInDB function
+func (h *EventsDB) UpdateEventInDB(event Event) (err error) {
+	h.querylocker.Lock()
+	defer h.querylocker.Unlock()
+
+	err = h.db.rawdb.Update(&event)
+	return err
+}
+
 // RemoveEventByID function
 func (h *EventsDB) RemoveEventByID(eventID string) (err error) {
 

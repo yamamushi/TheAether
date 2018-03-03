@@ -46,6 +46,14 @@ The `events` command is used for managing events (adding, removing, modifying, e
 | enable | | |
 | disable | | |
 | listenabled | | |
+| script | | |
+| info | | |
+| update | | |
+| loadfromdisk | accepts force as an argument to force load from disk overwriting existing records | |
+| savetodisk | | |
+| save | | save <eventID>|
+
+
 
 [Go to top of page](#table-of-contents)
 
@@ -966,7 +974,7 @@ In the following example, the event will send `Hello @user!` and trigger the eve
 
 **Example Event Definition**:
 
-In the following example, the event will trigger a failure status along with the message "Another day!" in the output. 
+In the following example, the event will trigger a failure status along with the message "Another day!" in the output.
 
 ```json
 {
