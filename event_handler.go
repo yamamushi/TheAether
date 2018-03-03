@@ -6,6 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"github.com/bwmarrin/discordgo"
+	"io/ioutil"
 	"reflect"
 	"strings"
 	"time"
@@ -196,7 +197,55 @@ func (h *EventHandler) ParseCommand(input []string, s *discordgo.Session, m *dis
 		}
 	}
 	if argument == "update" {
-
+		if len(payload) < 2 {
+			s.ChannelMessageSend(m.ChannelID, "Command 'update' expects two arguments: <eventID> <payload>")
+			return
+		}
+		// We pass in the full message here because we intend to unpack it later
+		err := h.UpdateEvent(payload[0], m.Content, s, m)
+		if err != nil {
+			s.ChannelMessageSend(m.ChannelID, "Error registering new event: "+err.Error())
+			return
+		}
+		s.ChannelMessageSend(m.ChannelID, "Event updated")
+		return
+	}
+	if argument == "loadfromdisk" {
+		force := false
+		if len(payload) > 0 {
+			if payload[0] == "force" {
+				force = true
+			}
+		}
+		err := h.LoadEventsFromDisk(force)
+		if err != nil {
+			s.ChannelMessageSend(m.ChannelID, "Error loading events from disk: "+err.Error())
+			return
+		}
+		s.ChannelMessageSend(m.ChannelID, "Events loaded from disk")
+		return
+	}
+	if argument == "savetodisk" {
+		err := h.SaveEvents()
+		if err != nil {
+			s.ChannelMessageSend(m.ChannelID, "Error saving events: "+err.Error())
+			return
+		}
+		s.ChannelMessageSend(m.ChannelID, "Events saved to disk")
+		return
+	}
+	if argument == "save" {
+		if len(payload) < 1 {
+			s.ChannelMessageSend(m.ChannelID, "Command 'save' expects an argument: <eventID>")
+			return
+		}
+		err := h.SaveEventToDisk(payload[0])
+		if err != nil {
+			s.ChannelMessageSend(m.ChannelID, "Error saving event: "+err.Error())
+			return
+		}
+		s.ChannelMessageSend(m.ChannelID, "Event saved to disk")
+		return
 	}
 }
 
@@ -217,6 +266,76 @@ func (h *EventHandler) EnableEvent(eventID, channelID string, keyvalueid string)
 	if err != nil {
 		return err
 	}
+	return nil
+}
+
+// SaveEvents function
+func (h *EventHandler) SaveEvents() (err error) {
+	events, err := h.eventsdb.GetAllEvents()
+	if err != nil {
+		return err
+	}
+	CreateDirIfNotExist("events")
+
+	for _, event := range events {
+		if !event.IsScriptEvent {
+			err = h.SaveEventToDisk(event.ID)
+			if err != nil {
+				return err
+			}
+		}
+	}
+	return nil
+}
+
+// LoadEventsFromDisk function
+func (h *EventHandler) LoadEventsFromDisk(force bool) (err error) {
+	files, err := ioutil.ReadDir("events/")
+	if err != nil {
+		return errors.New("Error reading directory: " + err.Error())
+	}
+
+	for _, file := range files {
+		if strings.Contains(file.Name(), ".event") {
+			data, err := ioutil.ReadFile("events/" + file.Name())
+			if err != nil {
+				return errors.New("Error reading file: " + file.Name() + " - " + err.Error())
+			}
+
+			event, err := h.UnmarshalEvent(data)
+			if err != nil {
+				return errors.New("Error unpacking file: " + file.Name() + " - " + err.Error())
+			}
+
+			if force {
+				// Remove then save to disk
+				h.eventsdb.RemoveEventByID(event.ID)
+				err = h.eventsdb.SaveEventToDB(event)
+				if err != nil {
+					return err
+				}
+			} else {
+				// Only save if doesn't exist already
+				_, err = h.eventsdb.GetEventByID(event.ID)
+				if err != nil {
+					err = h.eventsdb.SaveEventToDB(event)
+					if err != nil {
+						return err
+					}
+				}
+			}
+		}
+	}
+	return nil
+}
+
+// SaveEventToDisk function
+func (h *EventHandler) SaveEventToDisk(eventID string) (err error) {
+	formattedjson, err := h.EventToJSONString(eventID)
+	if err != nil {
+		return err
+	}
+	_ = ioutil.WriteFile("events/"+eventID+".event", []byte(formattedjson), 0644)
 	return nil
 }
 
@@ -326,6 +445,36 @@ func (h *EventHandler) EventInfo(eventID string) (formatted string, err error) {
 	formatted = formatted + "\nCreatorID: " + event.CreatorID
 	formatted = formatted + "\n```\n"
 	return formatted, nil
+}
+
+// UpdateEvent function
+func (h *EventHandler) UpdateEvent(eventID string, payload string, s *discordgo.Session, m *discordgo.MessageCreate) (err error) {
+
+	payload = strings.TrimPrefix(payload, "~events update "+eventID+" ") // This all will need to be updated later, this is just
+	payload = strings.TrimPrefix(payload, "\n")                          // A lazy way of cleaning the command
+	payload = strings.TrimPrefix(payload, "```")
+	payload = strings.TrimPrefix(payload, "\n")
+	payload = strings.TrimSuffix(payload, "\n")
+	payload = strings.TrimSuffix(payload, "```")
+	payload = strings.TrimSuffix(payload, "\n")
+	payload = strings.Trim(payload, "```")
+
+	createdEvent, err := h.parser.VerifyUpdateEvent(payload, m.Author.ID)
+	if err != nil {
+		return err
+	}
+
+	// After our json is parsed, we need to validate the event to make sure it will run correctly
+	err = h.parser.ValidateEvent(createdEvent)
+	if err != nil {
+		return err
+	}
+
+	err = h.eventsdb.SaveEventToDB(createdEvent)
+	if err != nil {
+		return err
+	}
+	return nil
 }
 
 // RegisterEvent function
@@ -460,6 +609,10 @@ func (h *EventHandler) AddEventToWatchList(event Event, roomID string, eventmess
 		h.WatchEvent(h.UnfoldSendMessageTriggerEvent, eventmessagesid, event.ID, roomID)
 	} else if event.Type == "TriggerFailureSendError" {
 		h.WatchEvent(h.UnfoldTriggerFailureSendError, eventmessagesid, event.ID, roomID)
+	} else if event.Type == "MessageChoiceDefaultEvent" {
+		h.WatchEvent(h.UnfoldMessageChoiceDefaultEvent, eventmessagesid, event.ID, roomID)
+	} else if event.Type == "MessageChoiceDefault" {
+		h.WatchEvent(h.UnfoldMessageChoiceDefault, eventmessagesid, event.ID, roomID)
 	}
 	return nil
 }
@@ -562,6 +715,10 @@ func (h *EventHandler) LaunchChildEvent(parenteventID string, childeventID strin
 				h.UnfoldSendMessageTriggerEvent(triggeredevent.ID, eventmessagesid, s, m)
 			} else if triggeredevent.Type == "TriggerFailureSendError" {
 				h.UnfoldTriggerFailureSendError(triggeredevent.ID, eventmessagesid, s, m)
+			} else if triggeredevent.Type == "MessageChoiceDefaultEvent" {
+				h.UnfoldMessageChoiceDefaultEvent(triggeredevent.ID, eventmessagesid, s, m)
+			} else if triggeredevent.Type == "MessageChoiceDefault" {
+				h.UnfoldMessageChoiceDefault(triggeredevent.ID, eventmessagesid, s, m)
 			}
 		}
 	}

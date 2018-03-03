@@ -67,3 +67,4 @@ pkg/
 
 # Ignoring scripts until this system is stabilized and feature complete
 scripts/
+events/ 
