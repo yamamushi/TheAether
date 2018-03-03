@@ -17,10 +17,9 @@ type Script struct {
 
 	Executable bool
 
-	CreatorID       string
-	EventIDs        []string // The sequential list of events that comprise a script
-	Synchronized    bool
-	EventMessagesID string
+	CreatorID    string
+	EventIDs     []string // The sequential list of events that comprise a script
+	Synchronized bool
 }
 
 // SaveScriptToDB function

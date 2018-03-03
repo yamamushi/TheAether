@@ -43,52 +43,52 @@ type Room struct {
 	// Connecting Room ID's
 	UpID          string
 	UpItemID      []string
-	UpScriptID    string
+	UpScriptName  string
 	UpDescription string
 
 	DownID          string
 	DownItemID      []string
-	DownScriptID    string
+	DownScriptName  string
 	DownDescription string
 
 	NorthID          string
 	NorthItemID      []string
-	NorthScriptID    string
+	NorthScriptName  string
 	NorthDescription string
 
 	NorthEastID          string
 	NorthEastItemID      []string
-	NorthEastScriptID    string
+	NorthEastScriptName  string
 	NorthEastDescription string
 
 	EastID          string
 	EastItemID      []string
-	EastScriptID    string
+	EastScriptName  string
 	EastDescription string
 
 	SouthEastID          string
 	SouthEastItemID      []string
-	SouthEastScriptID    string
+	SouthEastScriptName  string
 	SouthEastDescription string
 
 	SouthID          string
 	SouthItemID      []string
-	SouthScriptID    string
+	SouthScriptName  string
 	SouthDescription string
 
 	SouthWestID          string
 	SouthWestItemID      []string
-	SouthWestScriptID    string
+	SouthWestScriptName  string
 	SouthWestDescription string
 
 	WestID          string
 	WestItemID      []string
-	WestScriptID    string
+	WestScriptName  string
 	WestDescription string
 
 	NorthWestID          string
 	NorthWestItemID      []string
-	NorthWestScriptID    string
+	NorthWestScriptName  string
 	NorthWestDescription string
 
 	Items []string

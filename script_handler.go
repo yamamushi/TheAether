@@ -1,11 +1,15 @@
 package main
 
 import (
+	"encoding/json"
 	"errors"
 	"fmt"
 	"github.com/bwmarrin/discordgo"
+	"io/ioutil"
+	"os"
 	"strconv"
 	"strings"
+	"time"
 )
 
 // ScriptHandler struct
@@ -16,6 +20,8 @@ type ScriptHandler struct {
 	conf            *Config
 	eventhandler    *EventHandler
 	eventmessagesdb *EventMessagesDB
+	roomshandler    *RoomsHandler
+	travelhandler   *TravelHandler
 }
 
 // Init function
@@ -23,6 +29,8 @@ func (h *ScriptHandler) Init() (err error) {
 	fmt.Println("Registering Script Handler Command")
 	h.scriptsdb = new(ScriptsDB)
 	h.scriptsdb.db = h.db
+	h.roomshandler.scripts = h
+	h.travelhandler.scripts = h
 	h.RegisterCommand()
 	return nil
 }
@@ -142,6 +150,19 @@ func (h *ScriptHandler) ParseCommand(input []string, s *discordgo.Session, m *di
 		s.ChannelMessageSend(m.ChannelID, "Script list: \n"+scriptlist)
 		return
 	}
+	if command == "save" {
+		if len(arguments) < 1 {
+			s.ChannelMessageSend(m.ChannelID, "Command 'save' expects an arguments: <scriptName>")
+			return
+		}
+		err := h.SaveScript(arguments[0])
+		if err != nil {
+			s.ChannelMessageSend(m.ChannelID, "Error saving script: "+err.Error())
+			return
+		}
+		s.ChannelMessageSend(m.ChannelID, "Script saved to disk")
+		return
+	}
 	/*
 	   if argument == "remove" {
 	       if len(payload) < 1 {
@@ -187,7 +208,6 @@ func (h *ScriptHandler) GetFormattedScriptList() (formattedlist string, err erro
 		formattedlist = formattedlist + "ID: " + script.ID + "\n "
 		formattedlist = formattedlist + "Desc: " + script.Description + "\n "
 		formattedlist = formattedlist + "Creator: " + script.CreatorID + "\n "
-		formattedlist = formattedlist + "EventMsgID: " + script.EventMessagesID + "\n "
 		formattedlist = formattedlist + "Executable: " + strconv.FormatBool(script.Executable) + "\n "
 		formattedlist = formattedlist + "------------------------\n "
 	}
@@ -204,24 +224,13 @@ func (h *ScriptHandler) AddScript(scriptName string, userID string, description 
 
 	// Generate and assign an ID to this event
 	scriptID = strings.Split(GetUUIDv2(), "-")[0]
-	eventmessagesID := strings.Split(GetUUIDv2(), "-")[0]
-	newscript := Script{ID: scriptID, Name: scriptName, CreatorID: userID, Description: description, EventMessagesID: eventmessagesID}
+	newscript := Script{ID: scriptID, Name: scriptName, CreatorID: userID, Description: description}
 
 	err = h.scriptsdb.SaveScriptToDB(newscript)
 	if err != nil {
 		return scriptID, err
 	}
 
-	eventmessage := EventMessageContainer{ID: eventmessagesID, ScriptID: scriptID}
-	err = h.eventmessagesdb.SaveEventMessageToDB(eventmessage)
-	if err != nil {
-		return scriptID, err
-	}
-
-	_, err = h.eventmessagesdb.GetEventMessageByID(eventmessagesID)
-	if err != nil {
-		return scriptID, err
-	}
 	return scriptID, nil
 }
 
@@ -331,7 +340,6 @@ func (h *ScriptHandler) CloneEvents(scriptName string, rooteventID string) (err 
 
 		newEventID := strings.Split(GetUUIDv2(), "-")[0]
 		clonedEvent.ID = newEventID
-		clonedEvent.EventMessagesID = script.EventMessagesID
 		clonedEvent.IsScriptEvent = true
 		clonedEvent.OriginalID = event.ID
 
@@ -398,6 +406,127 @@ func (h *ScriptHandler) RepairEvents(scriptName string) (err error) {
 	return nil
 }
 
+// SaveScript function
+func (h *ScriptHandler) SaveScript(scriptName string) (err error) {
+	script, err := h.scriptsdb.GetScriptByName(scriptName)
+	if err != nil {
+		return err
+	}
+	if _, err := os.Stat("scripts" + scriptName); err == nil {
+		return errors.New("script directory already exists - failing")
+	}
+	CreateDirIfNotExist("scripts")
+	CreateDirIfNotExist("scripts/" + scriptName)
+
+	for _, eventID := range script.EventIDs {
+		formattedjson, err := h.eventhandler.EventToJSONString(eventID)
+		if err != nil {
+			return err
+		}
+
+		//fmt.Println(formattedjson)
+		err = ioutil.WriteFile("scripts/"+scriptName+"/"+eventID+".event", []byte(formattedjson), 0644)
+		if err != nil {
+			return err
+		}
+	}
+
+	jsonscript, err := h.ScriptToJSONString(scriptName)
+	if err != nil {
+		return err
+	}
+	err = ioutil.WriteFile("scripts/"+scriptName+"/"+scriptName+".script", []byte(jsonscript), 0644)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+// ScriptToJSONString function
+func (h *ScriptHandler) ScriptToJSONString(scriptName string) (jsonscript string, err error) {
+	script, err := h.scriptsdb.GetScriptByName(scriptName)
+	if err != nil {
+		return "", err
+	}
+
+	jsonscript, err = h.ScriptToJSON(script)
+	if err != nil {
+		return "", err
+	}
+
+	return jsonscript, nil
+}
+
+// ScriptToJSON function
+func (h *ScriptHandler) ScriptToJSON(script Script) (formatted string, err error) {
+	marshalledevent, err := json.Marshal(script)
+	if err != nil {
+		return "", err
+	}
+	formatted = string(marshalledevent)
+	return formatted, nil
+}
+
+// LoadScript function
+func (h *ScriptHandler) LoadScript(scriptName string) (err error) {
+	_, err = h.scriptsdb.GetScriptByName(scriptName)
+	if err == nil {
+		return errors.New("script with name " + scriptName + " already exists in database - failing")
+	}
+	if _, err := os.Stat("scripts/" + scriptName); os.IsNotExist(err) {
+		return errors.New("script directory does not exist - failing")
+	}
+
+	files, err := ioutil.ReadDir("scripts/" + scriptName)
+	if err != nil {
+		return errors.New("Error reading directory: " + err.Error())
+	}
+
+	for _, file := range files {
+		if strings.Contains(file.Name(), ".event") {
+			data, err := ioutil.ReadFile(file.Name())
+			if err != nil {
+				return errors.New("Error reading file: " + file.Name() + " - " + err.Error())
+			}
+
+			event, err := h.eventhandler.UnmarshalEvent(data)
+			if err != nil {
+				return errors.New("Error unpacking file: " + file.Name() + " - " + err.Error())
+			}
+
+			err = h.eventhandler.eventsdb.SaveEventToDB(event)
+			if err != nil {
+				return err
+			}
+		} else if strings.Contains(file.Name(), ".script") {
+			data, err := ioutil.ReadFile(file.Name())
+			if err != nil {
+				return errors.New("Error reading file: " + file.Name() + " - " + err.Error())
+			}
+
+			script, err := h.UnmarshalScript(data)
+			if err != nil {
+				return errors.New("Error unpacking file: " + file.Name() + " - " + err.Error())
+			}
+
+			err = h.scriptsdb.SaveScriptToDB(script)
+			if err != nil {
+				return err
+			}
+		}
+	}
+
+	return nil
+}
+
+// UnmarshalScript function
+func (h *ScriptHandler) UnmarshalScript(data []byte) (script Script, err error) {
+	if err := json.Unmarshal(data, &script); err != nil {
+		return script, err
+	}
+	return script, nil
+}
+
 // RemoveScript function
 func (h *ScriptHandler) RemoveScript(scriptName string) (err error) {
 	script, err := h.scriptsdb.GetScriptByName(scriptName)
@@ -421,11 +550,12 @@ func (h *ScriptHandler) RemoveScript(scriptName string) (err error) {
 		}
 
 		for _, channelid := range event.Rooms {
-			err = h.eventhandler.DisableEvent(eventid, channelid, event.EventMessagesID)
+			err = h.eventhandler.DisableEvent(eventid, channelid)
 			if err != nil {
 				fmt.Println("Disable event failure")
 				return err
 			}
+			h.eventhandler.UnWatchEvent("", eventid, "")
 		}
 		err = h.eventhandler.eventsdb.RemoveEventFromDB(event)
 		if err != nil {
@@ -433,9 +563,6 @@ func (h *ScriptHandler) RemoveScript(scriptName string) (err error) {
 			return err
 		}
 	}
-
-	// We need to remove the event message, however one may not exist
-	_ = h.eventmessagesdb.RemoveEventMessageByID(script.EventMessagesID)
 
 	err = h.scriptsdb.RemoveScriptByID(script.ID)
 	if err != nil {
@@ -511,8 +638,10 @@ func (h *ScriptHandler) ExecuteScript(scriptName string, s *discordgo.Session, m
 		return false, err
 	}
 
-	// We want to clear the container
-	err = h.eventmessagesdb.ClearEventMessage(script.EventMessagesID, script.ID)
+	// We need to create a container for our event messages
+	eventmessagesID := strings.Split(GetUUIDv2(), "-")[0]
+	eventmessage := EventMessageContainer{ID: eventmessagesID, ScriptID: script.ID}
+	err = h.eventmessagesdb.SaveEventMessageToDB(eventmessage)
 	if err != nil {
 		return false, err
 	}
@@ -520,15 +649,60 @@ func (h *ScriptHandler) ExecuteScript(scriptName string, s *discordgo.Session, m
 	//fmt.Println("parsing event: " + rootEvent.ID)
 	if rootEvent.Watchable {
 		//fmt.Println("Adding to watchlist: " + rootEvent.ID)
-		err = h.eventhandler.AddEventToWatchList(rootEvent, m.ChannelID, script.EventMessagesID)
+		err = h.eventhandler.AddEventToWatchList(rootEvent, m.ChannelID, eventmessagesID)
 		if err != nil {
 			return false, err
 		}
 	} else {
 		//fmt.Println("Launching root event: " + rootEvent.ID)
 		// If we aren't watching the event, we'd like to get the key value response from it
-		h.eventhandler.LaunchChildEvent("RootEvent", rootEvent.ID, script.EventMessagesID, s, m)
+		h.eventhandler.LaunchChildEvent("RootEvent", rootEvent.ID, eventmessagesID, s, m)
 	}
 
-	return false, nil
+	// Now we page the event message container looking for
+	for true {
+		time.Sleep(time.Duration(time.Second * 3))
+		eventmessage, err = h.eventmessagesdb.GetEventMessageByID(eventmessagesID)
+		if err != nil {
+			return false, err
+		}
+		if eventmessage.EventsComplete {
+			break
+		}
+	}
+
+	// Final cleanup to ensure all of our events are disabled
+	for _, eventid := range script.EventIDs {
+		event, err := h.eventhandler.eventsdb.GetEventByID(eventid)
+		if err != nil {
+			return false, err
+		}
+
+		h.eventhandler.DisableEvent(event.ID, m.ChannelID)
+		h.eventhandler.UnWatchEvent(m.ChannelID, event.ID, eventmessagesID)
+		h.eventhandler.eventsdb.SaveEventToDB(event)
+		h.eventhandler.eventmessages.TerminateEvents(eventmessagesID)
+	}
+
+	eventmessage, err = h.eventmessagesdb.GetEventMessageByID(eventmessagesID)
+	if err != nil {
+		return false, err
+	}
+	err = h.eventmessagesdb.RemoveEventMessageByID(eventmessagesID)
+	if err != nil {
+		return false, err
+	}
+
+	if eventmessage.CheckError {
+		err = errors.New(eventmessage.ErrorMessage)
+	}
+
+	if eventmessage.CheckSuccess {
+		if eventmessage.Successful {
+			return true, err
+		}
+		return false, err
+	}
+
+	return false, err
 }

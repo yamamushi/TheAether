@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"github.com/bwmarrin/discordgo"
 	"math/rand"
+	"os"
 	"strconv"
 	"strings"
 	"time"
@@ -474,7 +475,7 @@ func RollDice(faces int, count int) (rolls []int) {
 	for i := 0; i < count; i++ {
 		roll := randomGen.Intn(faces)
 		if roll == 0 {
-			roll = 1
+			roll = count // Always set the roll to at least the minimum die count
 		}
 		rolls = append(rolls, roll)
 	}
@@ -512,7 +513,7 @@ func IsJSON(str string) bool {
 	return json.Unmarshal([]byte(str), &js) == nil
 }
 
-// AppendIfMissingString functiohn
+// AppendIfMissingString function
 func AppendIfMissingString(slice []string, i string) []string {
 	for _, ele := range slice {
 		if ele == i {
@@ -520,4 +521,15 @@ func AppendIfMissingString(slice []string, i string) []string {
 		}
 	}
 	return append(slice, i)
+}
+
+// CreateDirIfNotExist function
+func CreateDirIfNotExist(dir string) (err error) {
+	if _, err := os.Stat(dir); os.IsNotExist(err) {
+		err = os.MkdirAll(dir, 0755)
+		if err != nil {
+			return err
+		}
+	}
+	return nil
 }

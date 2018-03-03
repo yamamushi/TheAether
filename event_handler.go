@@ -2,11 +2,11 @@ package main
 
 import (
 	"container/list"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"github.com/bwmarrin/discordgo"
 	"reflect"
-	"strconv"
 	"strings"
 	"time"
 )
@@ -25,8 +25,9 @@ type EventHandler struct {
 	dg        *discordgo.Session
 	logger    *Logger
 
-	eventsdb *EventsDB
-	parser   *EventParser
+	eventsdb      *EventsDB
+	parser        *EventParser
+	eventmessages *EventMessagesDB
 }
 
 // EventCallback struct
@@ -144,7 +145,7 @@ func (h *EventHandler) ParseCommand(input []string, s *discordgo.Session, m *dis
 			s.ChannelMessageSend(m.ChannelID, "Command 'disable' expects two arguments: <EventID> <channel>")
 			return
 		}
-		err := h.DisableEvent(payload[0], payload[1], "")
+		err := h.DisableEvent(payload[0], payload[1])
 		if err != nil {
 			s.ChannelMessageSend(m.ChannelID, "Error unwatching event: "+err.Error())
 			return
@@ -180,7 +181,7 @@ func (h *EventHandler) ParseCommand(input []string, s *discordgo.Session, m *dis
 			s.ChannelMessageSend(m.ChannelID, "Command 'script' expects an argument: <eventID>")
 			return
 		}
-		script, err := h.EventToScript(payload[0])
+		script, err := h.EventToJSONString(payload[0])
 		if err != nil {
 			s.ChannelMessageSend(m.ChannelID, "Error retrieving script: "+err.Error())
 			return
@@ -193,6 +194,9 @@ func (h *EventHandler) ParseCommand(input []string, s *discordgo.Session, m *dis
 			s.ChannelMessageSend(m.ChannelID, "Command 'info' expects an argument")
 			return
 		}
+	}
+	if argument == "update" {
+
 	}
 }
 
@@ -216,8 +220,8 @@ func (h *EventHandler) EnableEvent(eventID, channelID string, keyvalueid string)
 	return nil
 }
 
-// EventToScript function
-func (h *EventHandler) EventToScript(eventID string) (script string, err error) {
+// EventToJSONString function
+func (h *EventHandler) EventToJSONString(eventID string) (script string, err error) {
 	event, err := h.eventsdb.GetEventByID(eventID)
 	if err != nil {
 		return "", err
@@ -232,8 +236,8 @@ func (h *EventHandler) EventToScript(eventID string) (script string, err error) 
 }
 
 // DisableEvent function
-func (h *EventHandler) DisableEvent(eventID string, channelID string, keyvalueid string) (err error) {
-	event, err := h.eventsdb.GetEventByID(eventID)
+func (h *EventHandler) DisableEvent(eventID string, channelID string) (err error) {
+	_, err = h.eventsdb.GetEventByID(eventID)
 	if err != nil {
 		return err
 	}
@@ -241,7 +245,6 @@ func (h *EventHandler) DisableEvent(eventID string, channelID string, keyvalueid
 	if err != nil {
 		return err
 	}
-	h.UnWatchEvent(channelID, event.ID, keyvalueid)
 	return nil
 }
 
@@ -436,13 +439,27 @@ func (h *EventHandler) LoadEvent(eventID string, keyvalueid string) (err error) 
 // AddEventToWatchList function
 func (h *EventHandler) AddEventToWatchList(event Event, roomID string, eventmessagesid string) (err error) {
 	if event.Type == "ReadMessage" {
-		h.WatchEvent(h.UnfoldReadMessageEvent, eventmessagesid, event.ID, roomID)
-	} else if event.Type == "TimedMessage" {
-		h.WatchEvent(h.UnfoldTimedMessageEvent, eventmessagesid, event.ID, roomID)
+		h.WatchEvent(h.UnfoldReadMessage, eventmessagesid, event.ID, roomID)
+	} else if event.Type == "ReadTimedMessage" {
+		h.WatchEvent(h.UnfoldReadTimedMessage, eventmessagesid, event.ID, roomID)
 	} else if event.Type == "ReadMessageChoice" {
-		h.WatchEvent(h.UnfoldReadMessageChoiceEvent, eventmessagesid, event.ID, roomID)
-	} else if event.Type == "MessageChoiceTriggerEvent" {
-		h.WatchEvent(h.UnfoldMessageChoiceTriggerEvent, eventmessagesid, event.ID, roomID)
+		h.WatchEvent(h.UnfoldReadMessageChoiceTriggerMessage, eventmessagesid, event.ID, roomID)
+	} else if event.Type == "ReadMessageChoiceTriggerEvent" {
+		h.WatchEvent(h.UnfoldReadMessageChoiceTriggerEvent, eventmessagesid, event.ID, roomID)
+	} else if event.Type == "SendMessage" {
+		h.WatchEvent(h.UnfoldSendMessage, eventmessagesid, event.ID, roomID)
+	} else if event.Type == "TimedSendMessage" {
+		h.WatchEvent(h.UnfoldTimedSendMessage, eventmessagesid, event.ID, roomID)
+	} else if event.Type == "MessageTriggerSuccessFail" {
+		h.WatchEvent(h.UnfoldReadMessageTriggerSuccessFail, eventmessagesid, event.ID, roomID)
+	} else if event.Type == "TriggerSuccess" {
+		h.WatchEvent(h.UnfoldTriggerSuccess, eventmessagesid, event.ID, roomID)
+	} else if event.Type == "TriggerFailure" {
+		h.WatchEvent(h.UnfoldTriggerFailure, eventmessagesid, event.ID, roomID)
+	} else if event.Type == "SendMessageTriggerEvent" {
+		h.WatchEvent(h.UnfoldSendMessageTriggerEvent, eventmessagesid, event.ID, roomID)
+	} else if event.Type == "TriggerFailureSendError" {
+		h.WatchEvent(h.UnfoldTriggerFailureSendError, eventmessagesid, event.ID, roomID)
 	}
 	return nil
 }
@@ -472,9 +489,16 @@ func (h *EventHandler) UnWatchEvent(ChannelID string, EventID string, EventMessa
 		channel := reflect.Indirect(r).FieldByName("ChannelID")
 		eventID := reflect.Indirect(r).FieldByName("EventID")
 
-		if channel.String() == ChannelID && eventID.String() == EventID && eventmessagesid.String() == EventMessagesID {
-			h.WatchList.Remove(e)
-			h.RemoveEventFromRoom(EventID, ChannelID)
+		if ChannelID == "" || EventMessagesID == "" {
+			if eventID.String() == EventID {
+				h.WatchList.Remove(e)
+				h.RemoveEventFromRoom(EventID, ChannelID)
+			}
+		} else {
+			if channel.String() == ChannelID && eventID.String() == EventID && eventmessagesid.String() == EventMessagesID {
+				h.WatchList.Remove(e)
+				h.RemoveEventFromRoom(EventID, ChannelID)
+			}
 		}
 	}
 }
@@ -517,19 +541,34 @@ func (h *EventHandler) LaunchChildEvent(parenteventID string, childeventID strin
 			// If we aren't adding the event to the watchlist, we want to passthrough and trigger it immediately with a 2 second time delay
 			time.Sleep(time.Duration(time.Second * 2))
 			if triggeredevent.Type == "ReadMessage" {
-				h.UnfoldReadMessageEvent(triggeredevent.ID, eventmessagesid, s, m)
-			} else if triggeredevent.Type == "TimedMessage" {
-				h.UnfoldTimedMessageEvent(triggeredevent.ID, eventmessagesid, s, m)
+				h.UnfoldReadMessage(triggeredevent.ID, eventmessagesid, s, m)
+			} else if triggeredevent.Type == "ReadTimedMessage" {
+				h.UnfoldTimedSendMessage(triggeredevent.ID, eventmessagesid, s, m)
 			} else if triggeredevent.Type == "ReadMessageChoice" {
-				h.UnfoldReadMessageChoiceEvent(triggeredevent.ID, eventmessagesid, s, m)
-			} else if triggeredevent.Type == "MessageChoiceTriggerEvent" {
-				h.UnfoldMessageChoiceTriggerEvent(triggeredevent.ID, eventmessagesid, s, m)
+				h.UnfoldReadMessageChoiceTriggerMessage(triggeredevent.ID, eventmessagesid, s, m)
+			} else if triggeredevent.Type == "ReadMessageChoiceTriggerEvent" {
+				h.UnfoldReadMessageChoiceTriggerEvent(triggeredevent.ID, eventmessagesid, s, m)
+			} else if triggeredevent.Type == "SendMessage" {
+				h.UnfoldSendMessage(triggeredevent.ID, eventmessagesid, s, m)
+			} else if triggeredevent.Type == "TimedSendMessage" {
+				h.UnfoldTimedSendMessage(triggeredevent.ID, eventmessagesid, s, m)
+			} else if triggeredevent.Type == "MessageTriggerSuccessFail" {
+				h.UnfoldReadMessageTriggerSuccessFail(triggeredevent.ID, eventmessagesid, s, m)
+			} else if triggeredevent.Type == "TriggerSuccess" {
+				h.UnfoldTriggerSuccess(triggeredevent.ID, eventmessagesid, s, m)
+			} else if triggeredevent.Type == "TriggerFailure" {
+				h.UnfoldTriggerFailure(triggeredevent.ID, eventmessagesid, s, m)
+			} else if triggeredevent.Type == "SendMessageTriggerEvent" {
+				h.UnfoldSendMessageTriggerEvent(triggeredevent.ID, eventmessagesid, s, m)
+			} else if triggeredevent.Type == "TriggerFailureSendError" {
+				h.UnfoldTriggerFailureSendError(triggeredevent.ID, eventmessagesid, s, m)
 			}
 		}
 	}
 }
 
 // CheckCycles function
+/*
 func (h *EventHandler) CheckCycles(event Event, eventmessagesid string, s *discordgo.Session, m *discordgo.MessageCreate) {
 	// We need to check if the cycles are indefinite or not
 	if event.Cycles > 0 {
@@ -543,7 +582,8 @@ func (h *EventHandler) CheckCycles(event Event, eventmessagesid string, s *disco
 		// Then we check to see if we hit our cycle limit and if so then remove the event from the db
 		if event.RunCount >= event.Cycles {
 			// Now we disable the event if it is past the run cycle count
-			err = h.DisableEvent(event.ID, m.ChannelID, eventmessagesid)
+			h.UnWatchEvent(m.ChannelID, event.ID, eventmessagesid)
+			err = h.DisableEvent(event.ID, m.ChannelID)
 			if err != nil {
 				s.ChannelMessageSend(m.ChannelID, "Error disabling event: "+event.ID+" Error: "+err.Error())
 				return
@@ -559,6 +599,7 @@ func (h *EventHandler) CheckCycles(event Event, eventmessagesid string, s *disco
 		}
 	}
 }
+*/
 
 // IsValidEventMessage function
 func (h *EventHandler) IsValidEventMessage(s *discordgo.Session, m *discordgo.MessageCreate) (valid bool) {
@@ -607,135 +648,10 @@ func (h *EventHandler) ReadEvents(s *discordgo.Session, m *discordgo.MessageCrea
 	}
 }
 
-// UnfoldReadMessageEvent function
-func (h *EventHandler) UnfoldReadMessageEvent(eventID string, eventmessagesid string, s *discordgo.Session, m *discordgo.MessageCreate) {
-	// Ignore all messages created by the bot itself
-	if m.Author.ID == s.State.User.ID {
-		return
+// UnmarshalEvent function
+func (h *EventHandler) UnmarshalEvent(data []byte) (event Event, err error) {
+	if err := json.Unmarshal(data, &event); err != nil {
+		return event, err
 	}
-	// Ignore bots
-	if m.Author.Bot {
-		return
-	}
-
-	event, err := h.eventsdb.GetEventByID(eventID)
-	if err != nil {
-		s.ChannelMessageSend(m.ChannelID, "Error loading event: "+eventID+" Error: "+err.Error())
-		return
-	}
-
-	keyword := event.TypeFlags[0]
-	messageContent := strings.Fields(strings.ToLower(m.Content))
-
-	for _, messagefield := range messageContent {
-		// We don't need to check for the userID here because that's what checking for event.Attachable did
-		if messagefield == keyword {
-			// First we send the data
-			s.ChannelMessageSend(m.ChannelID, FormatEventMessage(event.Data[0], m.Author.ID, m.ChannelID))
-
-			// We need to check if the cycles are indefinite or not
-			h.CheckCycles(event, eventmessagesid, s, m)
-			return
-		}
-	}
-	return
-}
-
-// UnfoldTimedMessageEvent function
-func (h *EventHandler) UnfoldTimedMessageEvent(eventID string, eventmessagesid string, s *discordgo.Session, m *discordgo.MessageCreate) {
-	// Ignore all messages created by the bot itself
-	if m.Author.ID == s.State.User.ID {
-		return
-	}
-	// Ignore bots
-	if m.Author.Bot {
-		return
-	}
-
-	event, err := h.eventsdb.GetEventByID(eventID)
-	if err != nil {
-		s.ChannelMessageSend(m.ChannelID, "Error loading event "+eventID+": Error: "+err.Error())
-		return
-	}
-
-	keyword := event.TypeFlags[0]
-	timeout, _ := strconv.Atoi(event.TypeFlags[1]) // We don't bother checking for an error here because that was handled during the event registration.
-	messageContent := strings.Fields(strings.ToLower(m.Content))
-
-	for _, messagefield := range messageContent {
-		if messagefield == keyword {
-			// First we want to sleep for our timeout period
-			time.Sleep(time.Duration(timeout) * time.Second)
-			// Now we send the data
-			s.ChannelMessageSend(m.ChannelID, FormatEventMessage(event.Data[0], m.Author.ID, m.ChannelID))
-
-			// We need to check if the cycles are indefinite or not
-			h.CheckCycles(event, eventmessagesid, s, m)
-			return
-		}
-	}
-	return
-}
-
-// UnfoldReadMessageChoiceEvent function
-func (h *EventHandler) UnfoldReadMessageChoiceEvent(eventID string, eventmessagesid string, s *discordgo.Session, m *discordgo.MessageCreate) {
-	// Ignore all messages created by the bot itself
-	if m.Author.ID == s.State.User.ID {
-		return
-	}
-	// Ignore bots
-	if m.Author.Bot {
-		return
-	}
-
-	event, err := h.eventsdb.GetEventByID(eventID)
-	if err != nil {
-		s.ChannelMessageSend(m.ChannelID, "Error loading event "+eventID+": Error: "+err.Error())
-		return
-	}
-
-	messageContent := strings.Fields(strings.ToLower(m.Content))
-
-	for i, field := range event.TypeFlags {
-		for _, message := range messageContent {
-			if field == message {
-				// First we send the data that is keyed to the field
-				s.ChannelMessageSend(m.ChannelID, FormatEventMessage(event.Data[i], m.Author.ID, m.ChannelID))
-
-				// We need to check if the cycles are indefinite or not
-				h.CheckCycles(event, eventmessagesid, s, m)
-				return
-			}
-		}
-	}
-}
-
-// UnfoldMessageChoiceTriggerEvent function
-func (h *EventHandler) UnfoldMessageChoiceTriggerEvent(eventID string, eventmessagesid string, s *discordgo.Session, m *discordgo.MessageCreate) {
-
-	if !h.IsValidEventMessage(s, m) {
-		return
-	}
-
-	event, err := h.eventsdb.GetEventByID(eventID)
-	if err != nil {
-		s.ChannelMessageSend(m.ChannelID, "Error loading event "+eventID+": Error: "+err.Error())
-		return
-	}
-
-	messageContent := strings.Fields(strings.ToLower(m.Content))
-
-	for i, field := range event.TypeFlags {
-		for _, message := range messageContent {
-			if field == message {
-				// First we load the keyed eventID in the data array
-				if event.Data[i] != "nil" {
-					go h.LaunchChildEvent(event.ID, event.Data[i], eventmessagesid, s, m)
-				}
-				// We need to check if the cycles are indefinite or not
-				h.CheckCycles(event, eventmessagesid, s, m)
-				return
-			}
-		}
-	}
+	return event, nil
 }
