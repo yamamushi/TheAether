@@ -14,9 +14,8 @@ type EventsDB struct {
 type Event struct {
 	ID string `json:"id"`
 
-	Name        string   `json:"name"`
-	Description string   `json:"description"` // 60 characters or less
-	Rooms       []string `json:"rooms"`
+	Name        string `json:"name"`
+	Description string `json:"description"` // 60 characters or less
 
 	Type      string   `json:"type"`
 	TypeFlags []string `json:"typeflags"`
@@ -26,23 +25,24 @@ type Event struct {
 	// If it's a passthrough, we want to write the response to the keyvaluesdb
 	FinalizeOutput bool `json:"finalizeoutput"` // If set to true, we want to notify the keyvalue that our output is finalized
 
-	LoadOnBoot bool     `json:"loadonboot"` // Whether or not to load the event at boot
-	Cycles     int      `json:"cycles"`     // Number of times to run the event, a setting of 0 or less will be parsed as "infinite"
-	Data       []string `json:"data"`       // Different types can contain multiple data fields
+	LoadOnBoot bool `json:"-"` // Whether or not to load the event at boot
+	//	Cycles     int      `json:"cycles"`     // Number of times to run the event, a setting of 0 or less will be parsed as "infinite"
+	Data []string `json:"data"` // Different types can contain multiple data fields
 
 	// Set when event is registered
 	CreatorID string `json:"creatorid"` // The userID of the creator
 	// These are not set by "events add", these must be set with the script manager
-	ParentID       string   `json:"parentid"`       // The id of the parent event if one exists
-	ChildIDs       []string `json:"childids"`       // The ids of the various childs (there can exist multiple children, ie for a multiple choice question)
-	RunCount       int      `json:"runcount"`       // The total number of runs the event has had during this cycle
-	TriggeredEvent bool     `json:"triggeredevent"` // Used to denote whether or not an event is a copy created by a trigger
+	Rooms          []string `json:"rooms"`
+	ParentID       string   `json:"-"` // The id of the parent event if one exists
+	ChildIDs       []string `json:"-"` // The ids of the various childs (there can exist multiple children, ie for a multiple choice question)
+	RunCount       int      `json:"-"` // The total number of runs the event has had during this cycle
+	TriggeredEvent bool     `json:"-"` // Used to denote whether or not an event is a copy created by a trigger
 
 	// Used for scripting
-	LinkedEvent     bool   `json:"linkedevent"`     // If we are linked, we want to read data from the keyvalue and not passthrough data
-	EventMessagesID string `json:"eventmessagesid"` // If we are writing to a keyvalue, we need to know the ID to write to
-	IsScriptEvent   bool   `json:"isscriptevent"`   // If set to true, this event belongs to a script and should not be manually modified
-	OriginalID      string `json:"originalid"`
+	LinkedEvent bool `json:"-"` // If we are linked, we want to read data from the keyvalue and not passthrough data
+
+	IsScriptEvent bool   `json:"-"` // If set to true, this event belongs to a script and should not be manually modified
+	OriginalID    string `json:"-"`
 }
 
 // SaveEventToDB function

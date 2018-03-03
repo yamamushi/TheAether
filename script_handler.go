@@ -6,6 +6,7 @@ import (
 	"github.com/bwmarrin/discordgo"
 	"strconv"
 	"strings"
+	"time"
 )
 
 // ScriptHandler struct
@@ -16,6 +17,8 @@ type ScriptHandler struct {
 	conf            *Config
 	eventhandler    *EventHandler
 	eventmessagesdb *EventMessagesDB
+	roomshandler    *RoomsHandler
+	travelhandler   *TravelHandler
 }
 
 // Init function
@@ -23,6 +26,8 @@ func (h *ScriptHandler) Init() (err error) {
 	fmt.Println("Registering Script Handler Command")
 	h.scriptsdb = new(ScriptsDB)
 	h.scriptsdb.db = h.db
+	h.roomshandler.scripts = h
+	h.travelhandler.scripts = h
 	h.RegisterCommand()
 	return nil
 }
@@ -187,7 +192,6 @@ func (h *ScriptHandler) GetFormattedScriptList() (formattedlist string, err erro
 		formattedlist = formattedlist + "ID: " + script.ID + "\n "
 		formattedlist = formattedlist + "Desc: " + script.Description + "\n "
 		formattedlist = formattedlist + "Creator: " + script.CreatorID + "\n "
-		formattedlist = formattedlist + "EventMsgID: " + script.EventMessagesID + "\n "
 		formattedlist = formattedlist + "Executable: " + strconv.FormatBool(script.Executable) + "\n "
 		formattedlist = formattedlist + "------------------------\n "
 	}
@@ -204,24 +208,13 @@ func (h *ScriptHandler) AddScript(scriptName string, userID string, description 
 
 	// Generate and assign an ID to this event
 	scriptID = strings.Split(GetUUIDv2(), "-")[0]
-	eventmessagesID := strings.Split(GetUUIDv2(), "-")[0]
-	newscript := Script{ID: scriptID, Name: scriptName, CreatorID: userID, Description: description, EventMessagesID: eventmessagesID}
+	newscript := Script{ID: scriptID, Name: scriptName, CreatorID: userID, Description: description}
 
 	err = h.scriptsdb.SaveScriptToDB(newscript)
 	if err != nil {
 		return scriptID, err
 	}
 
-	eventmessage := EventMessageContainer{ID: eventmessagesID, ScriptID: scriptID}
-	err = h.eventmessagesdb.SaveEventMessageToDB(eventmessage)
-	if err != nil {
-		return scriptID, err
-	}
-
-	_, err = h.eventmessagesdb.GetEventMessageByID(eventmessagesID)
-	if err != nil {
-		return scriptID, err
-	}
 	return scriptID, nil
 }
 
@@ -331,7 +324,6 @@ func (h *ScriptHandler) CloneEvents(scriptName string, rooteventID string) (err 
 
 		newEventID := strings.Split(GetUUIDv2(), "-")[0]
 		clonedEvent.ID = newEventID
-		clonedEvent.EventMessagesID = script.EventMessagesID
 		clonedEvent.IsScriptEvent = true
 		clonedEvent.OriginalID = event.ID
 
@@ -421,11 +413,12 @@ func (h *ScriptHandler) RemoveScript(scriptName string) (err error) {
 		}
 
 		for _, channelid := range event.Rooms {
-			err = h.eventhandler.DisableEvent(eventid, channelid, event.EventMessagesID)
+			err = h.eventhandler.DisableEvent(eventid, channelid)
 			if err != nil {
 				fmt.Println("Disable event failure")
 				return err
 			}
+			h.eventhandler.UnWatchEvent("", eventid, "")
 		}
 		err = h.eventhandler.eventsdb.RemoveEventFromDB(event)
 		if err != nil {
@@ -433,9 +426,6 @@ func (h *ScriptHandler) RemoveScript(scriptName string) (err error) {
 			return err
 		}
 	}
-
-	// We need to remove the event message, however one may not exist
-	_ = h.eventmessagesdb.RemoveEventMessageByID(script.EventMessagesID)
 
 	err = h.scriptsdb.RemoveScriptByID(script.ID)
 	if err != nil {
@@ -511,8 +501,10 @@ func (h *ScriptHandler) ExecuteScript(scriptName string, s *discordgo.Session, m
 		return false, err
 	}
 
-	// We want to clear the container
-	err = h.eventmessagesdb.ClearEventMessage(script.EventMessagesID, script.ID)
+	// We need to create a container for our event messages
+	eventmessagesID := strings.Split(GetUUIDv2(), "-")[0]
+	eventmessage := EventMessageContainer{ID: eventmessagesID, ScriptID: script.ID}
+	err = h.eventmessagesdb.SaveEventMessageToDB(eventmessage)
 	if err != nil {
 		return false, err
 	}
@@ -520,14 +512,55 @@ func (h *ScriptHandler) ExecuteScript(scriptName string, s *discordgo.Session, m
 	//fmt.Println("parsing event: " + rootEvent.ID)
 	if rootEvent.Watchable {
 		//fmt.Println("Adding to watchlist: " + rootEvent.ID)
-		err = h.eventhandler.AddEventToWatchList(rootEvent, m.ChannelID, script.EventMessagesID)
+		err = h.eventhandler.AddEventToWatchList(rootEvent, m.ChannelID, eventmessagesID)
 		if err != nil {
 			return false, err
 		}
 	} else {
 		//fmt.Println("Launching root event: " + rootEvent.ID)
 		// If we aren't watching the event, we'd like to get the key value response from it
-		h.eventhandler.LaunchChildEvent("RootEvent", rootEvent.ID, script.EventMessagesID, s, m)
+		h.eventhandler.LaunchChildEvent("RootEvent", rootEvent.ID, eventmessagesID, s, m)
+	}
+
+	// Now we page the event message container looking for
+	for true {
+		time.Sleep(time.Duration(time.Second * 3))
+		eventmessage, err = h.eventmessagesdb.GetEventMessageByID(eventmessagesID)
+		if err != nil {
+			return false, err
+		}
+		if eventmessage.EventsComplete {
+			break
+		}
+	}
+
+	// Final cleanup to ensure all of our events are disabled
+	for _, eventid := range script.EventIDs {
+		event, err := h.eventhandler.eventsdb.GetEventByID(eventid)
+		if err != nil {
+			return false, err
+		}
+
+		h.eventhandler.DisableEvent(event.ID, m.ChannelID)
+		h.eventhandler.UnWatchEvent(m.ChannelID, event.ID, eventmessagesID)
+		h.eventhandler.eventsdb.SaveEventToDB(event)
+		h.eventhandler.eventmessages.TerminateEvents(eventmessagesID)
+	}
+
+	eventmessage, err = h.eventmessagesdb.GetEventMessageByID(eventmessagesID)
+	if err != nil {
+		return false, err
+	}
+	err = h.eventmessagesdb.RemoveEventMessageByID(eventmessagesID)
+	if err != nil {
+		return false, err
+	}
+
+	if eventmessage.CheckSuccess {
+		if eventmessage.Successful {
+			return false, nil
+		}
+		return true, nil
 	}
 
 	return false, nil

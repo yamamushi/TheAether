@@ -155,9 +155,9 @@ In the following example, the trigger keyword is "hello", to which a response of
 [Go to top of page](#table-of-contents)
 
 
-#### TimedMessage
+#### ReadTimedMessage
 
-A TimedMessage event will respond to a user after the configured timeout when the defined keyword is defined in a message.
+A ReadTimedMessage event will respond to a user after the configured timeout when the defined keyword is defined in a message.
 
 **TypeFlags**
 
@@ -180,7 +180,7 @@ In the following example, the event will be triggered by the keyword "hello", af
 {
   "name": "ExampleTimedMessage",
   "description": "Trigger a timed response to the word hello",
-  "type": "TimedMessage",
+  "type": "ReadTimedMessage",
   "TypeFlags": [
     "hello",
     "30"
@@ -251,9 +251,9 @@ In the following example, the keywords "hello" and "goodbye" will be responded t
 [Go to top of page](#table-of-contents)
 
 
-#### MessageChoiceTriggerEvent
+#### ReadMessageChoiceTriggerEvent
 
-The MessageChoiceTriggerEvent event will trigger a keyed event when the corresponding keyword is found in a message.
+The ReadMessageChoiceTriggerEvent event will trigger a keyed event when the corresponding keyword is found in a message.
 
     Note: This will only trigger on the first keyword match in a message.
 
@@ -285,7 +285,7 @@ In the following example, the keywords "sword" and "dagger" will trigger eventID
 {
   "name": "ExampleMessageChoiceTriggerEvent",
   "description": "Trigger an event in response to the words sword and dagger",
-  "type": "MessageChoiceTriggerEvent",
+  "type": "ReadMessageChoiceTriggerEvent",
   "TypeFlags": [
     "sword",
     "dagger"
@@ -732,7 +732,6 @@ In the following example...
   "TypeFlags": [
     "nil"
   ],
-  "loadonboot": true,
   "cycles": 0,
   "data": [
     "nil"
@@ -743,3 +742,191 @@ In the following example...
 [Go to top of page](#table-of-contents)
 
 
+
+#### SendMessage
+
+
+**TypeFlags**
+
+| TypeFlag Field # | Description |
+|-----------|-------------|
+| 0 |  n/a |
+
+**Data**
+
+| Data Field # | Description |
+|-----------|-------------|
+| 0 | Message to send |
+
+**Example Event Definition**:
+
+In the following example...
+
+```json
+{
+  "type": "SendMessage",
+  "cycles": 0,
+  "data": [
+    "Hello _user_!"
+  ]
+}
+```
+
+[Go to top of page](#table-of-contents)
+
+
+#### TimedSendMessage
+
+
+**TypeFlags**
+
+| TypeFlag Field # | Description |
+|-----------|-------------|
+| 0 |  Time in seconds to sleep for (max 300) |
+
+**Data**
+
+| Data Field # | Description |
+|-----------|-------------|
+| 0 | Message to send |
+
+**Example Event Definition**:
+
+In the following example, the event will wait for 5 seconds before sending `Hello @user!` to the user.
+
+```json
+{
+  "type": "TimedSendMessage",
+  "cycles": 0,
+  "TypeFlags": [
+    "5"
+  ],
+  "data": [
+    "Hello _user_!"
+  ]
+}
+```
+
+[Go to top of page](#table-of-contents)
+
+
+#### ReadMessageTriggerSuccessFail
+
+
+**TypeFlags**
+
+| TypeFlag Field # | Description |
+|-----------|-------------|
+| 0 |  Message to parse for |
+
+**Data**
+
+| Data Field # | Description |
+|-----------|-------------|
+| 0 | n/a |
+
+**Example Event Definition**:
+
+In the following example, the event will search for the word `hello` in the first message it receives from the user. If the message does not have a match, it will return a failure otherwise it will return true.
+
+```json
+{
+  "type": "ReadMessageTriggerSuccessFail",
+  "cycles": 0,
+  "TypeFlags": [
+    "hello"
+  ]
+}
+```
+
+[Go to top of page](#table-of-contents)
+
+
+#### TriggerSuccess
+
+
+**TypeFlags**
+
+| TypeFlag Field # | Description |
+|-----------|-------------|
+| 0 |  n/a |
+
+**Data**
+
+| Data Field # | Description |
+|-----------|-------------|
+| 0 | n/a |
+
+**Example Event Definition**:
+
+In the following example, the event will return an instant succes on the script it is being run from. It has no text output for the user.
+
+```json
+{
+  "type": "TriggerSuccess"
+}
+```
+
+[Go to top of page](#table-of-contents)
+
+
+#### TriggerFailure
+
+
+**TypeFlags**
+
+| TypeFlag Field # | Description |
+|-----------|-------------|
+| 0 |  n/a |
+
+**Data**
+
+| Data Field # | Description |
+|-----------|-------------|
+| 0 | n/a |
+
+**Example Event Definition**:
+
+In the following example, the event will return an instant failure on the script it is being run from. It has no text output for the user.
+
+```json
+{
+  "type": "TriggerFailure"
+}
+```
+
+[Go to top of page](#table-of-contents)
+
+
+#### SendMessageTriggerEvent
+
+
+**TypeFlags**
+
+| TypeFlag Field # | Description |
+|-----------|-------------|
+| 0 |  Message to send to user |
+
+**Data**
+
+| Data Field # | Description |
+|-----------|-------------|
+| 0 | eventID to trigger |
+
+**Example Event Definition**:
+
+In the following example, the event will send `Hello @user!` and trigger the eventID `5dd4d56f` immediately.
+
+```json
+{
+  "type": "SendMessageTriggerEvent",
+  "TypeFlags": [
+    "Hello _user_!"
+  ],
+  "data": [
+    "5dd4d56f"
+  ]
+}
+```
+
+[Go to top of page](#table-of-contents)

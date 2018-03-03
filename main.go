@@ -75,13 +75,6 @@ func main() {
 		return
 	}
 
-	fmt.Println("Initializing EventMessages Database")
-	eventmessagesdb := EventMessagesDB{db: &dbhandler}
-	if err != nil {
-		fmt.Println("Error initializing EventMessages Store: " + err.Error())
-		return
-	}
-
 	// Create a new Discord session using the provided bot token.
 	dg, err := discordgo.New("Bot " + conf.MainConfig.Token)
 	if err != nil {
@@ -189,10 +182,19 @@ func main() {
 		return
 	}
 
+	fmt.Println("\n|| Starting Scripting Systems ||\n ")
+
+	fmt.Println("Initializing Event Messages")
+	eventmessagesdb := EventMessagesDB{db: &dbhandler}
+	if err != nil {
+		fmt.Println("Error initializing EventMessages Store: " + err.Error())
+		return
+	}
+
 	// Setup our Events Handler now that first rooms are operational
-	fmt.Println("\n|| Standing Up Events Handler ||\n ")
+	fmt.Println("Standing Up Events Handler")
 	eventshandler := EventHandler{conf: &conf, registry: commandhandler.registry, callback: &callbackhandler, db: &dbhandler,
-		user: &userhandler, dg: dg, logger: &logger}
+		user: &userhandler, dg: dg, logger: &logger, eventmessages: &eventmessagesdb}
 	err = eventshandler.Init()
 	if err != nil {
 		fmt.Println("Error starting events handler: " + err.Error())
@@ -201,9 +203,9 @@ func main() {
 	dg.AddHandler(eventshandler.Read)
 	dg.AddHandler(eventshandler.ReadEvents)
 
-	fmt.Println("\n|| Initializing Scripting Handler ||\n ")
+	fmt.Println("Starting Scripting Handler")
 	scripthandler := ScriptHandler{conf: &conf, registry: commandhandler.registry, db: &dbhandler, eventhandler: &eventshandler,
-		eventmessagesdb: &eventmessagesdb}
+		eventmessagesdb: &eventmessagesdb, roomshandler: &roomshandler, travelhandler: &travelhandler}
 	err = scripthandler.Init()
 	if err != nil {
 		fmt.Println("Error starting scripting handler: " + err.Error())

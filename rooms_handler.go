@@ -22,6 +22,7 @@ type RoomsHandler struct {
 	ch       *ChannelHandler
 	rooms    *Rooms
 	guilds   *GuildsManager
+	scripts  *ScriptHandler
 
 	roomsynclocker sync.RWMutex
 }
@@ -521,7 +522,7 @@ func (h *RoomsHandler) ParseCommand(command []string, s *discordgo.Session, m *d
 			s.ChannelMessageSend(m.ChannelID, "Travel script set for: "+command[3])
 			return
 		}
-		s.ChannelMessageSend(m.ChannelID, "travelscript requires three arguments - <#room> <direction> <scriptID>")
+		s.ChannelMessageSend(m.ChannelID, "travelscript requires three arguments - <#room> <direction> <scriptName>")
 		return
 	}
 	if command[1] == "travelscriptclear" {
@@ -1713,8 +1714,8 @@ func (h *RoomsHandler) FormatRoomInfo(roomID string) (formatted string, err erro
 		}
 		output = output + "Up Room: " + room.UpID + " - " + linkedroom.Name + " \n"
 	}
-	if room.UpScriptID != "" {
-		output = output + "Up Direction Script: " + room.UpScriptID + "\n"
+	if room.UpScriptName != "" {
+		output = output + "Up Direction Script: " + room.UpScriptName + "\n"
 	}
 	if len(room.UpItemID) > 0 {
 		itemoutput := ""
@@ -1734,8 +1735,8 @@ func (h *RoomsHandler) FormatRoomInfo(roomID string) (formatted string, err erro
 		}
 		output = output + "Down Room: " + room.DownID + " - " + linkedroom.Name + " \n"
 	}
-	if room.DownScriptID != "" {
-		output = output + "Down Direction Script: " + room.DownScriptID + "\n"
+	if room.DownScriptName != "" {
+		output = output + "Down Direction Script: " + room.DownScriptName + "\n"
 	}
 	if len(room.DownItemID) > 0 {
 		itemoutput := ""
@@ -1755,8 +1756,8 @@ func (h *RoomsHandler) FormatRoomInfo(roomID string) (formatted string, err erro
 		}
 		output = output + "North Room: " + room.NorthID + " - " + linkedroom.Name + " \n"
 	}
-	if room.NorthScriptID != "" {
-		output = output + "North Direction Script: " + room.NorthScriptID + "\n"
+	if room.NorthScriptName != "" {
+		output = output + "North Direction Script: " + room.NorthScriptName + "\n"
 	}
 	if len(room.NorthItemID) > 0 {
 		itemoutput := ""
@@ -1776,8 +1777,8 @@ func (h *RoomsHandler) FormatRoomInfo(roomID string) (formatted string, err erro
 		}
 		output = output + "NorthEast Room: " + room.NorthEastID + " - " + linkedroom.Name + " \n"
 	}
-	if room.NorthEastScriptID != "" {
-		output = output + "NorthEast Direction Script: " + room.NorthEastScriptID + "\n"
+	if room.NorthEastScriptName != "" {
+		output = output + "NorthEast Direction Script: " + room.NorthEastScriptName + "\n"
 	}
 	if len(room.NorthEastItemID) > 0 {
 		itemoutput := ""
@@ -1797,8 +1798,8 @@ func (h *RoomsHandler) FormatRoomInfo(roomID string) (formatted string, err erro
 		}
 		output = output + "East Room: " + room.EastID + " - " + linkedroom.Name + " \n"
 	}
-	if room.EastScriptID != "" {
-		output = output + "East Direction Script: " + room.EastScriptID + "\n"
+	if room.EastScriptName != "" {
+		output = output + "East Direction Script: " + room.EastScriptName + "\n"
 	}
 	if len(room.EastItemID) > 0 {
 		itemoutput := ""
@@ -1818,8 +1819,8 @@ func (h *RoomsHandler) FormatRoomInfo(roomID string) (formatted string, err erro
 		}
 		output = output + "SouthEast Room: " + room.SouthEastID + " - " + linkedroom.Name + " \n"
 	}
-	if room.SouthEastScriptID != "" {
-		output = output + "SouthEast Direction Script: " + room.SouthEastScriptID + "\n"
+	if room.SouthEastScriptName != "" {
+		output = output + "SouthEast Direction Script: " + room.SouthEastScriptName + "\n"
 	}
 	if len(room.SouthEastItemID) > 0 {
 		itemoutput := ""
@@ -1839,8 +1840,8 @@ func (h *RoomsHandler) FormatRoomInfo(roomID string) (formatted string, err erro
 		}
 		output = output + "South Room: " + room.SouthID + " - " + linkedroom.Name + " \n"
 	}
-	if room.SouthScriptID != "" {
-		output = output + "South Direction Script: " + room.SouthScriptID + "\n"
+	if room.SouthScriptName != "" {
+		output = output + "South Direction Script: " + room.SouthScriptName + "\n"
 	}
 	if len(room.SouthItemID) > 0 {
 		itemoutput := ""
@@ -1860,8 +1861,8 @@ func (h *RoomsHandler) FormatRoomInfo(roomID string) (formatted string, err erro
 		}
 		output = output + "SouthWest Room: " + room.SouthWestID + " - " + linkedroom.Name + " \n"
 	}
-	if room.SouthWestScriptID != "" {
-		output = output + "SouthWest Direction Script: " + room.SouthWestScriptID + "\n"
+	if room.SouthWestScriptName != "" {
+		output = output + "SouthWest Direction Script: " + room.SouthWestScriptName + "\n"
 	}
 	if len(room.SouthWestItemID) > 0 {
 		itemoutput := ""
@@ -1881,8 +1882,8 @@ func (h *RoomsHandler) FormatRoomInfo(roomID string) (formatted string, err erro
 		}
 		output = output + "West Room: " + room.WestID + " - " + linkedroom.Name + " \n"
 	}
-	if room.WestScriptID != "" {
-		output = output + "West Direction Script: " + room.WestScriptID + "\n"
+	if room.WestScriptName != "" {
+		output = output + "West Direction Script: " + room.WestScriptName + "\n"
 	}
 	if len(room.WestItemID) > 0 {
 		itemoutput := ""
@@ -1902,8 +1903,8 @@ func (h *RoomsHandler) FormatRoomInfo(roomID string) (formatted string, err erro
 		}
 		output = output + "NorthWest Room: " + room.NorthWestID + " - " + linkedroom.Name + " \n"
 	}
-	if room.NorthWestScriptID != "" {
-		output = output + "NorthWest Direction Script: " + room.NorthWestScriptID + "\n"
+	if room.NorthWestScriptName != "" {
+		output = output + "NorthWest Direction Script: " + room.NorthWestScriptName + "\n"
 	}
 	if len(room.NorthWestItemID) > 0 {
 		itemoutput := ""
@@ -2509,7 +2510,7 @@ func (h *RoomsHandler) SyncRoom(roomID string, s *discordgo.Session) (err error)
 }
 
 // SetTravelScript function
-func (h *RoomsHandler) SetTravelScript(roomID string, direction string, scriptID string) (err error) {
+func (h *RoomsHandler) SetTravelScript(roomID string, direction string, scriptName string) (err error) {
 
 	roomID = CleanChannel(roomID)
 
@@ -2518,26 +2519,32 @@ func (h *RoomsHandler) SetTravelScript(roomID string, direction string, scriptID
 		return err
 	}
 
+	// Validate Travel Script
+	_, err = h.scripts.scriptsdb.GetScriptByName(scriptName)
+	if err != nil {
+		return err
+	}
+
 	if direction == "up" {
-		room.UpScriptID = scriptID
+		room.UpScriptName = scriptName
 	} else if direction == "down" {
-		room.DownScriptID = scriptID
+		room.DownScriptName = scriptName
 	} else if direction == "north" {
-		room.NorthScriptID = scriptID
+		room.NorthScriptName = scriptName
 	} else if direction == "northeast" {
-		room.NorthEastScriptID = scriptID
+		room.NorthEastScriptName = scriptName
 	} else if direction == "east" {
-		room.EastScriptID = scriptID
+		room.EastScriptName = scriptName
 	} else if direction == "southeast" {
-		room.SouthEastScriptID = scriptID
+		room.SouthEastScriptName = scriptName
 	} else if direction == "south" {
-		room.SouthScriptID = scriptID
+		room.SouthScriptName = scriptName
 	} else if direction == "southwest" {
-		room.SouthWestScriptID = scriptID
+		room.SouthWestScriptName = scriptName
 	} else if direction == "west" {
-		room.WestScriptID = scriptID
+		room.WestScriptName = scriptName
 	} else if direction == "northwest" {
-		room.NorthWestScriptID = scriptID
+		room.NorthWestScriptName = scriptName
 	} else {
 		return errors.New("Unrecognized direction: " + direction)
 	}
@@ -2560,25 +2567,25 @@ func (h *RoomsHandler) ClearTravelScript(roomID string, direction string) (err e
 	}
 
 	if direction == "up" {
-		room.UpScriptID = ""
+		room.UpScriptName = ""
 	} else if direction == "down" {
-		room.DownScriptID = ""
+		room.DownScriptName = ""
 	} else if direction == "north" {
-		room.NorthScriptID = ""
+		room.NorthScriptName = ""
 	} else if direction == "northeast" {
-		room.NorthEastScriptID = ""
+		room.NorthEastScriptName = ""
 	} else if direction == "east" {
-		room.EastScriptID = ""
+		room.EastScriptName = ""
 	} else if direction == "southeast" {
-		room.SouthEastScriptID = ""
+		room.SouthEastScriptName = ""
 	} else if direction == "south" {
-		room.SouthScriptID = ""
+		room.SouthScriptName = ""
 	} else if direction == "southwest" {
-		room.SouthWestScriptID = ""
+		room.SouthWestScriptName = ""
 	} else if direction == "west" {
-		room.WestScriptID = ""
+		room.WestScriptName = ""
 	} else if direction == "northwest" {
-		room.NorthWestScriptID = ""
+		room.NorthWestScriptName = ""
 	} else {
 		return errors.New("Unrecognized direction: " + direction)
 	}
