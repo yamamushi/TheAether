@@ -5,6 +5,7 @@ import (
 	"strconv"
 	"strings"
 	"time"
+	//"fmt"
 )
 
 // UnfoldReadMessage function
@@ -341,17 +342,15 @@ func (h *EventHandler) UnfoldSendMessageTriggerEvent(eventID string, eventmessag
 	}
 
 	// Now we send the message
-	s.ChannelMessageSend(m.ChannelID, FormatEventMessage(event.Data[0], m.Author.ID, m.ChannelID))
+	s.ChannelMessageSend(m.ChannelID, FormatEventMessage(event.TypeFlags[0], m.Author.ID, m.ChannelID))
 	h.DisableEvent(event.ID, m.ChannelID)
 	h.UnWatchEvent(m.ChannelID, event.ID, eventmessagesid)
 	h.eventsdb.SaveEventToDB(event)
 	if event.Data[0] != "nil" {
 		go h.LaunchChildEvent(event.ID, event.Data[0], eventmessagesid, s, m)
 	} else {
-
 		h.eventmessages.TerminateEvents(eventmessagesid)
 	}
-
 	return
 }
 
@@ -368,7 +367,7 @@ func (h *EventHandler) UnfoldMessageChoiceDefaultEvent(eventID string, eventmess
 	}
 
 	messageContent := strings.Fields(strings.ToLower(m.Content))
-
+	//fmt.Println("Checking unfoldmessagechoicedefaultevent")
 	h.DisableEvent(event.ID, m.ChannelID)
 	h.UnWatchEvent(m.ChannelID, event.ID, eventmessagesid)
 	h.eventsdb.SaveEventToDB(event)
@@ -376,18 +375,22 @@ func (h *EventHandler) UnfoldMessageChoiceDefaultEvent(eventID string, eventmess
 	for i, field := range event.TypeFlags {
 		for _, message := range messageContent {
 			if field == message {
+				//fmt.Println("Field: " + field + " Message: " + message)
 				// First we load the keyed eventID in the data array
 				if event.Data[i] != "nil" {
 					go h.LaunchChildEvent(event.ID, event.Data[i], eventmessagesid, s, m)
 				} else {
-					if event.DefaultData != "nil" {
-						go h.LaunchChildEvent(event.ID, event.DefaultData, eventmessagesid, s, m)
-					}
+					go h.LaunchChildEvent(event.ID, event.DefaultData, eventmessagesid, s, m)
 				}
 				return
 			}
 		}
 	}
+	if event.DefaultData != "nil" {
+		//fmt.Print("Launching default event: " + event.DefaultData)
+		go h.LaunchChildEvent(event.ID, event.DefaultData, eventmessagesid, s, m)
+	}
+	return
 }
 
 // UnfoldMessageChoiceDefault function

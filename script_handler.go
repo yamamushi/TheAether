@@ -260,6 +260,9 @@ func (h *ScriptHandler) CreateExecutable(scriptName string, startingeventID stri
 	if err != nil {
 		return err
 	}
+
+	//fmt.Println("At executable creation time here is the event list : ")
+	//fmt.Println(script.EventIDs)
 	return nil
 }
 
@@ -329,6 +332,9 @@ func (h *ScriptHandler) CloneEvents(scriptName string, rooteventID string) (err 
 		return err
 	}
 
+	//fmt.Println("Eventids after list build: " )
+	//fmt.Println(script.EventIDs)
+
 	var clonedEventList []string
 	for _, eventID := range script.EventIDs {
 		event, err := h.eventhandler.eventsdb.GetEventByID(eventID)
@@ -369,6 +375,8 @@ func (h *ScriptHandler) RepairEvents(scriptName string) (err error) {
 	}
 
 	// Now we want to repair the eventlist in our records
+	//fmt.Println("Before repair here is the list: ")
+	//fmt.Println(script.EventIDs)
 	for _, finalscripteventid := range script.EventIDs {
 		eventslist, err := h.GetDataEvents(finalscripteventid)
 		if err != nil {
@@ -403,6 +411,8 @@ func (h *ScriptHandler) RepairEvents(scriptName string) (err error) {
 			}
 		}
 	}
+	//fmt.Println("After repair here is the list: ")
+	//fmt.Println(script.EventIDs)
 	return nil
 }
 
@@ -545,21 +555,21 @@ func (h *ScriptHandler) RemoveScript(scriptName string) (err error) {
 	for _, eventid := range script.EventIDs {
 		event, err := h.eventhandler.eventsdb.GetEventByID(eventid)
 		if err != nil {
-			fmt.Println("Error retrieiving event by id")
+			//fmt.Println("Error retrieiving event by id")
 			return err
 		}
 
 		for _, channelid := range event.Rooms {
 			err = h.eventhandler.DisableEvent(eventid, channelid)
 			if err != nil {
-				fmt.Println("Disable event failure")
+				//fmt.Println("Disable event failure")
 				return err
 			}
 			h.eventhandler.UnWatchEvent("", eventid, "")
 		}
 		err = h.eventhandler.eventsdb.RemoveEventFromDB(event)
 		if err != nil {
-			fmt.Println("Remove event failure")
+			//fmt.Println("Remove event failure")
 			return err
 		}
 	}
@@ -602,16 +612,20 @@ func (h *ScriptHandler) GetDataEvents(eventID string) (eventids []string, err er
 	//fmt.Println("Looking for events in: " +rootEvent.ID)
 	if h.eventhandler.parser.HasEventsInData(rootEvent) {
 		for _, dataeventid := range rootEvent.Data {
-			fmt.Println("Data eventid: " + dataeventid)
+			//fmt.Println("Data eventid: " + dataeventid)
 			if dataeventid != "nil" {
 				datafieldevent, err := h.eventhandler.eventsdb.GetEventByID(dataeventid)
 				if err != nil {
 					return eventids, err
 				}
-				fmt.Println("Found: " + datafieldevent.ID)
+				//fmt.Println("Found: " + datafieldevent.ID)
 				eventids = append(eventids, datafieldevent.ID)
 			}
 		}
+	}
+	defaulteventfield, err := h.eventhandler.eventsdb.GetEventByID(rootEvent.DefaultData)
+	if err == nil {
+		eventids = append(eventids, defaulteventfield.ID)
 	}
 	return eventids, nil
 }
@@ -633,6 +647,9 @@ func (h *ScriptHandler) ExecuteScript(scriptName string, s *discordgo.Session, m
 		return false, errors.New("script has not been setup yet")
 	}
 
+	//fmt.Println("list is " + strconv.Itoa(len(script.EventIDs)))
+	//fmt.Println(script.EventIDs)
+	//fmt.Println("Executing: " + script.EventIDs[0])
 	rootEvent, err := h.eventhandler.eventsdb.GetEventByID(script.EventIDs[0])
 	if err != nil {
 		return false, err
@@ -649,6 +666,7 @@ func (h *ScriptHandler) ExecuteScript(scriptName string, s *discordgo.Session, m
 	//fmt.Println("parsing event: " + rootEvent.ID)
 	if rootEvent.Watchable {
 		//fmt.Println("Adding to watchlist: " + rootEvent.ID)
+		//fmt.Println("Adding root event to watch list: " + rootEvent.ID)
 		err = h.eventhandler.AddEventToWatchList(rootEvent, m.ChannelID, eventmessagesID)
 		if err != nil {
 			return false, err

@@ -18,6 +18,7 @@ type Script struct {
 	Executable bool
 
 	CreatorID    string
+	RootEventID  string
 	EventIDs     []string // The sequential list of events that comprise a script
 	Synchronized bool
 }
