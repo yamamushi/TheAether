@@ -14,8 +14,8 @@ type EventsDB struct {
 type Event struct {
 	ID string `json:"id"`
 
-	Name        string   `json:"name" storm:"unique"` // Names must be unique
-	Description string   `json:"description"`         // 60 characters or less
+	Name        string   `json:"name"`
+	Description string   `json:"description"` // 60 characters or less
 	Rooms       []string `json:"rooms"`
 
 	Type      string   `json:"type"`
@@ -42,7 +42,7 @@ type Event struct {
 	LinkedEvent     bool   `json:"linkedevent"`     // If we are linked, we want to read data from the keyvalue and not passthrough data
 	EventMessagesID string `json:"eventmessagesid"` // If we are writing to a keyvalue, we need to know the ID to write to
 	IsScriptEvent   bool   `json:"isscriptevent"`   // If set to true, this event belongs to a script and should not be manually modified
-	ParentScript    string `json:"parentscript"`
+	OriginalID      string `json:"originalid"`
 }
 
 // SaveEventToDB function

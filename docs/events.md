@@ -92,12 +92,6 @@ Whether or not this event, when triggered, should be put into the watch queue or
 
 i.e. If an event is triggered that is supposed to perform a skill check, that should not be a watchable event as we want it to execute immediately rather than wait for user input to proceed.
 
-**LoadOnBoot**
-
-_bool_
-
-If set to true, the event will be loaded every time the bot starts up.
-
 **Cycles**
 
 _int_

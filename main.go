@@ -75,9 +75,8 @@ func main() {
 		return
 	}
 
-	fmt.Println("Creating KeyValue Store")
+	fmt.Println("Initializing EventMessages Database")
 	eventmessagesdb := EventMessagesDB{db: &dbhandler}
-	err = eventmessagesdb.Init()
 	if err != nil {
 		fmt.Println("Error initializing EventMessages Store: " + err.Error())
 		return
@@ -203,7 +202,8 @@ func main() {
 	dg.AddHandler(eventshandler.ReadEvents)
 
 	fmt.Println("\n|| Initializing Scripting Handler ||\n ")
-	scripthandler := ScriptHandler{conf: &conf, registry: commandhandler.registry, db: &dbhandler, eventhandler: &eventshandler}
+	scripthandler := ScriptHandler{conf: &conf, registry: commandhandler.registry, db: &dbhandler, eventhandler: &eventshandler,
+		eventmessagesdb: &eventmessagesdb}
 	err = scripthandler.Init()
 	if err != nil {
 		fmt.Println("Error starting scripting handler: " + err.Error())
