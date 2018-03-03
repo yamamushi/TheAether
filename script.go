@@ -10,10 +10,12 @@ type ScriptsDB struct {
 
 // Script struct
 type Script struct {
-	ID string
+	ID string `storm:"id"`
 
 	Name        string `storm:"unique"`
 	Description string
+
+	Executable bool
 
 	CreatorID       string
 	EventIDs        []string // The sequential list of events that comprise a script

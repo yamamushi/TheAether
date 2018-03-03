@@ -13,8 +13,9 @@ type EventMessagesDB struct {
 
 // EventMessageContainer struct
 type EventMessageContainer struct {
-	ID string
+	ID string `storm:"id"`
 
+	ScriptID       string
 	EventsComplete bool
 
 	// An event message can contain many types
@@ -87,14 +88,23 @@ func (h *EventMessagesDB) GetAllEventMessages() (eventMessageList []EventMessage
 	return eventMessageList, nil
 }
 
-// Init function
-func (h *EventMessagesDB) Init() (err error) {
-	err = h.db.rawdb.Drop("EventMessages")
+// ClearEventMessage function
+func (h *EventMessagesDB) ClearEventMessage(eventmessageID string, scriptID string) (err error) {
+
+	_, err = h.GetEventMessageByID(eventmessageID)
 	if err != nil {
-		if err.Error() == "bucket not found" {
-			return nil
-		}
 		return err
 	}
+	err = h.RemoveEventMessageByID(eventmessageID)
+	if err != nil {
+		return err
+	}
+
+	eventmessage := EventMessageContainer{ID: eventmessageID, ScriptID: scriptID}
+	err = h.SaveEventMessageToDB(eventmessage)
+	if err != nil {
+		return err
+	}
+
 	return nil
 }
