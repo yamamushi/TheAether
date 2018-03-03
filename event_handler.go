@@ -2,7 +2,6 @@ package main
 
 import (
 	"container/list"
-	"encoding/json"
 	"errors"
 	"fmt"
 	"github.com/bwmarrin/discordgo"
@@ -47,11 +46,11 @@ func (h *EventHandler) Init() (err error) {
 	h.parser.eventsdb = h.eventsdb
 	h.RegisterCommand()
 
-	fmt.Println("Loading Registered Events from Database")
-	err = h.LoadEventsAtBoot()
-	if err != nil {
-		return err
-	}
+	//fmt.Println("Loading Registered Events from Database")
+	//err = h.LoadEventsAtBoot()
+	//if err != nil {
+	//	return err
+	//}
 	return nil
 }
 
@@ -228,11 +227,8 @@ func (h *EventHandler) EventToScript(eventID string) (script string, err error) 
 	if err != nil {
 		return "", err
 	}
-	pretty, err := json.MarshalIndent(script, "", "\t")
-	if err != nil {
-		return "", err
-	}
-	return string(pretty), nil
+
+	return script, nil
 }
 
 // DisableEvent function

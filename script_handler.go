@@ -275,18 +275,27 @@ func (h *ScriptHandler) CloneEvents(scriptName string, rooteventID string) (err 
 	if err != nil {
 		return err
 	}
+	//fmt.Println("Event list: ")
+	//fmt.Println(eventlist)
 	if len(eventlist) > 0 {
 		// While we have events in the list
+		err = h.AddEventToScriptList(rootevent.ID, scriptName)
+		if err != nil {
+			return err
+		}
 		for len(eventlist) > 0 {
 			// Iterate through each event in the list
 			for _, eventinlist := range eventlist {
 				h.AddEventToScriptList(eventinlist, script.Name)
 
 				// Find each event in the data fields of the event in the list we are parsing
+				//fmt.Println("Event in list: " + eventinlist)
 				foundevents, err := h.GetDataEvents(eventinlist)
 				if err != nil {
 					return err
 				}
+				//fmt.Println("Found events: " )
+				//fmt.Println(foundevents)
 				// If we found any events, we add them to the list if not in the list
 				if len(foundevents) > 0 {
 					for _, found := range foundevents {
@@ -299,8 +308,17 @@ func (h *ScriptHandler) CloneEvents(scriptName string, rooteventID string) (err 
 		}
 	} else {
 		script.EventIDs = append(script.EventIDs, rootevent.ID)
+		err = h.scriptsdb.SaveScriptToDB(script)
+		if err != nil {
+			return err
+		}
 	}
+
 	// Now that we have an event list, we want to clone it for our script
+	script, err = h.scriptsdb.GetScriptByName(scriptName)
+	if err != nil {
+		return err
+	}
 
 	var clonedEventList []string
 	for _, eventID := range script.EventIDs {
@@ -323,8 +341,11 @@ func (h *ScriptHandler) CloneEvents(scriptName string, rooteventID string) (err 
 		}
 		clonedEventList = append(clonedEventList, clonedEvent.ID)
 	}
-
+	//fmt.Println("Script eventIDS Before: ")
+	//fmt.Println(script.EventIDs)
 	script.EventIDs = clonedEventList
+	//fmt.Println("Script eventIDS After: ")
+	//fmt.Println(script.EventIDs)
 	err = h.scriptsdb.SaveScriptToDB(script)
 	if err != nil {
 		return err
@@ -432,6 +453,7 @@ func (h *ScriptHandler) AddEventToScriptList(eventID string, scriptName string) 
 
 	for _, eventinscript := range script.EventIDs {
 		if eventinscript == eventID {
+			//fmt.Println("Found event in list, returning nil ")
 			return nil
 		}
 	}
@@ -450,13 +472,16 @@ func (h *ScriptHandler) GetDataEvents(eventID string) (eventids []string, err er
 		return eventids, err
 	}
 	// Now begin our traversal
+	//fmt.Println("Looking for events in: " +rootEvent.ID)
 	if h.eventhandler.parser.HasEventsInData(rootEvent) {
 		for _, dataeventid := range rootEvent.Data {
+			fmt.Println("Data eventid: " + dataeventid)
 			if dataeventid != "nil" {
 				datafieldevent, err := h.eventhandler.eventsdb.GetEventByID(dataeventid)
 				if err != nil {
 					return eventids, err
 				}
+				fmt.Println("Found: " + datafieldevent.ID)
 				eventids = append(eventids, datafieldevent.ID)
 			}
 		}
