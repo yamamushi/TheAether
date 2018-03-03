@@ -118,6 +118,10 @@ func (h *EventParser) ValidateEvent(event Event) (err error) {
 		return h.ValidateSendMessageTriggerEvent(event)
 	} else if event.Type == "TriggerFailureSendError" {
 		return h.ValidateTriggerFailureSendError(event)
+	} else if event.Type == "MessageChoiceDefaultEvent" {
+		return h.ValidateMessageChoiceDefaultEvent(event)
+	} else if event.Type == "MessageChoiceDefault" {
+		return h.ValidateMessageChoiceDefaultEvent(event)
 	}
 	return errors.New("unrecognized event type: " + event.Type)
 }
@@ -290,6 +294,60 @@ func (h *EventParser) ValidateSendMessageTriggerEvent(event Event) (err error) {
 func (h *EventParser) ValidateTriggerFailureSendError(event Event) (err error) {
 	if len(event.Data) < 1 {
 		return errors.New("error validating event - Expected a data field")
+	}
+	return nil
+}
+
+// ValidateMessageChoiceDefault function
+func (h *EventParser) ValidateMessageChoiceDefault(event Event) (err error) {
+	typeflagslen := len(event.TypeFlags)
+	datafieldslen := len(event.Data)
+	if len(event.TypeFlags) < 1 {
+		return errors.New("Error validating event - Expected at least 1 typeflag")
+	}
+	if typeflagslen != datafieldslen {
+		return errors.New("Error validating event - TypeFlags and Data Fields lengths do not match")
+	}
+	if typeflagslen > 10 {
+		return errors.New("Error validating event - Maximum TypeFlags count is 10 but found: " + strconv.Itoa(typeflagslen))
+	}
+	if event.DefaultData == "" {
+		return errors.New("MessageChoiceDefault requires a default message in DefaultData")
+	}
+	return nil
+}
+
+// ValidateMessageChoiceDefaultEvent function
+func (h *EventParser) ValidateMessageChoiceDefaultEvent(event Event) (err error) {
+	typeflagslen := len(event.TypeFlags)
+	datafieldslen := len(event.Data)
+	if len(event.TypeFlags) < 1 {
+		return errors.New("Error validating event - Expected at least 1 typeflag")
+	}
+	if typeflagslen != datafieldslen {
+		return errors.New("Error validating event - TypeFlags and Data Fields lengths do not match")
+	}
+	if typeflagslen > 10 {
+		return errors.New("Error validating event - Maximum TypeFlags count is 10 but found: " + strconv.Itoa(typeflagslen))
+	}
+	if len(event.Data) < 1 {
+		return errors.New("error validating event - Expected at least one data field")
+	}
+	// Now check to see that either the supplied eventID's are valid or set to nil
+	for _, field := range event.Data {
+		if field != "nil" {
+			if !h.eventsdb.ValidateEventByID(field) {
+				return errors.New("Error validating event - Invalid event found in data: " + field)
+			}
+		}
+	}
+	if event.DefaultData == "" {
+		return errors.New("MessageChoiceDefault requires a default event in DefaultData")
+	}
+	if event.DefaultData != "nil" {
+		if !h.eventsdb.ValidateEventByID(event.DefaultData) {
+			return errors.New("Error validating event - Invalid event found in DefaultData: " + event.DefaultData)
+		}
 	}
 	return nil
 }

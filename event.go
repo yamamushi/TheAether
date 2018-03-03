@@ -27,7 +27,8 @@ type Event struct {
 
 	LoadOnBoot bool `json:"-"` // Whether or not to load the event at boot
 	//	Cycles     int      `json:"cycles"`     // Number of times to run the event, a setting of 0 or less will be parsed as "infinite"
-	Data []string `json:"data"` // Different types can contain multiple data fields
+	Data        []string `json:"data"`        // Different types can contain multiple data fields
+	DefaultData string   `json:"defaultdata"` // Default data to fallback on for events that need this
 
 	// Set when event is registered
 	CreatorID string `json:"creatorid"` // The userID of the creator

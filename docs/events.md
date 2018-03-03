@@ -988,3 +988,107 @@ In the following example, the event will trigger a failure status along with the
 ```
 
 [Go to top of page](#table-of-contents)
+
+
+#### MessageChoiceDefault
+
+The MessageChoiceDefault event will trigger a keyed message response when the corresponding keyword is found in a message. If no match is found, the default message will be sent.
+
+    Note: This will only trigger on the first keyword match in a message.
+
+**TypeFlags**
+
+| TypeFlag Field # | Description |
+|-----------|-------------|
+| 0 |  Keyword to trigger on |
+| 1 |  Second keyword to trigger on |
+| 2 |  Third keyword to trigger on |
+| ... |  Up to ten choices may be defined |
+
+**Data**
+
+The data array length **must** match the length of the TypeFlags array.
+
+| Data Field # | Description |
+|-----------|-------------|
+| 0 | Message to send |
+| 1 | Message to send |
+| 2 | Message to send |
+| ... | Up to ten messages may be defined |
+
+**DefaultData**
+
+The default message to send if no match is found.
+
+**Example Event Definition**:
+
+In the following example, the event will send `Hello @user!` and trigger the eventID `5dd4d56f` immediately.
+
+```json
+{
+  "Name":"ExampleMessageChoiceDefault",
+  "Description":"An example event",
+  "type": "MessageChoiceDefault",
+  "TypeFlags": [
+    "password123"
+  ],
+  "data": [
+    "congrats"
+  ],
+  "defaultdata":"Nuh uh uh you didn't say the magic word!"
+}
+```
+
+[Go to top of page](#table-of-contents)
+
+
+#### MessageChoiceDefaultEvent
+
+The MessageChoiceDefaultEvent event will trigger a keyed event when the corresponding keyword is found in a message. If no match is found, the default message will be sent.
+
+    Note: This will only trigger on the first keyword match in a message.
+
+**TypeFlags**
+
+| TypeFlag Field # | Description |
+|-----------|-------------|
+| 0 |  Keyword to trigger on |
+| 1 |  Second keyword to trigger on |
+| 2 |  Third keyword to trigger on |
+| ... |  Up to ten choices may be defined |
+
+**Data**
+
+It is not necessary to define an eventID, but the data array length **must** match the length of the TypeFlags array. If you do not have an event yet defined to trigger, a value of "nil" can be used and updated later. If a value other than _nil_ is defined, a check will be performed to ensure that the ID is valid. 
+
+| Data Field # | Description |
+|-----------|-------------|
+| 0 | ID of event to trigger (or nil) |
+| 1 | ID of event to trigger (or nil) |
+| 2 | ID of event to trigger (or nil) |
+| ... | Up to ten events may be defined |
+
+**DefaultData**
+
+The defautl event to trigger if no match is found.
+
+**Example Event Definition**:
+
+In the following example, the event will send `Hello @user!` and trigger the eventID `5dd4d56f` immediately.
+
+```json
+{
+  "Name":"ExMessageChoiceDefaultEvent",
+  "Description":"An example event",
+  "type": "MessageChoiceDefaultEvent",
+  "TypeFlags": [
+    "Hello _user_!"
+  ],
+  "data": [
+    "5dd4d56f"
+  ],
+  "defaultdata":"lkj4ual"
+}
+```
+
+[Go to top of page](#table-of-contents)

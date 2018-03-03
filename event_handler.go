@@ -609,6 +609,10 @@ func (h *EventHandler) AddEventToWatchList(event Event, roomID string, eventmess
 		h.WatchEvent(h.UnfoldSendMessageTriggerEvent, eventmessagesid, event.ID, roomID)
 	} else if event.Type == "TriggerFailureSendError" {
 		h.WatchEvent(h.UnfoldTriggerFailureSendError, eventmessagesid, event.ID, roomID)
+	} else if event.Type == "MessageChoiceDefaultEvent" {
+		h.WatchEvent(h.UnfoldMessageChoiceDefaultEvent, eventmessagesid, event.ID, roomID)
+	} else if event.Type == "MessageChoiceDefault" {
+		h.WatchEvent(h.UnfoldMessageChoiceDefault, eventmessagesid, event.ID, roomID)
 	}
 	return nil
 }
@@ -711,6 +715,10 @@ func (h *EventHandler) LaunchChildEvent(parenteventID string, childeventID strin
 				h.UnfoldSendMessageTriggerEvent(triggeredevent.ID, eventmessagesid, s, m)
 			} else if triggeredevent.Type == "TriggerFailureSendError" {
 				h.UnfoldTriggerFailureSendError(triggeredevent.ID, eventmessagesid, s, m)
+			} else if triggeredevent.Type == "MessageChoiceDefaultEvent" {
+				h.UnfoldMessageChoiceDefaultEvent(triggeredevent.ID, eventmessagesid, s, m)
+			} else if triggeredevent.Type == "MessageChoiceDefault" {
+				h.UnfoldMessageChoiceDefault(triggeredevent.ID, eventmessagesid, s, m)
 			}
 		}
 	}
