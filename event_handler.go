@@ -2,6 +2,7 @@ package main
 
 import (
 	"container/list"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"github.com/bwmarrin/discordgo"
@@ -180,7 +181,7 @@ func (h *EventHandler) ParseCommand(input []string, s *discordgo.Session, m *dis
 			s.ChannelMessageSend(m.ChannelID, "Command 'script' expects an argument: <eventID>")
 			return
 		}
-		script, err := h.EventToScript(payload[0])
+		script, err := h.EventToJSONString(payload[0])
 		if err != nil {
 			s.ChannelMessageSend(m.ChannelID, "Error retrieving script: "+err.Error())
 			return
@@ -219,8 +220,8 @@ func (h *EventHandler) EnableEvent(eventID, channelID string, keyvalueid string)
 	return nil
 }
 
-// EventToScript function
-func (h *EventHandler) EventToScript(eventID string) (script string, err error) {
+// EventToJSONString function
+func (h *EventHandler) EventToJSONString(eventID string) (script string, err error) {
 	event, err := h.eventsdb.GetEventByID(eventID)
 	if err != nil {
 		return "", err
@@ -645,4 +646,12 @@ func (h *EventHandler) ReadEvents(s *discordgo.Session, m *discordgo.MessageCrea
 			//c.UnWatchEvent(m.ChannelID, handlerid)
 		}
 	}
+}
+
+// UnmarshalEvent function
+func (h *EventHandler) UnmarshalEvent(data []byte) (event Event, err error) {
+	if err := json.Unmarshal(data, &event); err != nil {
+		return event, err
+	}
+	return event, nil
 }

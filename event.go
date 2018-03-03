@@ -42,7 +42,7 @@ type Event struct {
 	LinkedEvent bool `json:"-"` // If we are linked, we want to read data from the keyvalue and not passthrough data
 
 	IsScriptEvent bool   `json:"-"` // If set to true, this event belongs to a script and should not be manually modified
-	OriginalID    string `json:"-"`
+	OriginalID    string `json:"originalid"`
 }
 
 // SaveEventToDB function

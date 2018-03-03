@@ -1,9 +1,12 @@
 package main
 
 import (
+	"encoding/json"
 	"errors"
 	"fmt"
 	"github.com/bwmarrin/discordgo"
+	"io/ioutil"
+	"os"
 	"strconv"
 	"strings"
 	"time"
@@ -145,6 +148,19 @@ func (h *ScriptHandler) ParseCommand(input []string, s *discordgo.Session, m *di
 			return
 		}
 		s.ChannelMessageSend(m.ChannelID, "Script list: \n"+scriptlist)
+		return
+	}
+	if command == "save" {
+		if len(arguments) < 1 {
+			s.ChannelMessageSend(m.ChannelID, "Command 'save' expects an arguments: <scriptName>")
+			return
+		}
+		err := h.SaveScript(arguments[0])
+		if err != nil {
+			s.ChannelMessageSend(m.ChannelID, "Error saving script: "+err.Error())
+			return
+		}
+		s.ChannelMessageSend(m.ChannelID, "Script saved to disk")
 		return
 	}
 	/*
@@ -388,6 +404,127 @@ func (h *ScriptHandler) RepairEvents(scriptName string) (err error) {
 		}
 	}
 	return nil
+}
+
+// SaveScript function
+func (h *ScriptHandler) SaveScript(scriptName string) (err error) {
+	script, err := h.scriptsdb.GetScriptByName(scriptName)
+	if err != nil {
+		return err
+	}
+	if _, err := os.Stat("scripts" + scriptName); err == nil {
+		return errors.New("script directory already exists - failing")
+	}
+	CreateDirIfNotExist("scripts")
+	CreateDirIfNotExist("scripts/" + scriptName)
+
+	for _, eventID := range script.EventIDs {
+		formattedjson, err := h.eventhandler.EventToJSONString(eventID)
+		if err != nil {
+			return err
+		}
+
+		//fmt.Println(formattedjson)
+		err = ioutil.WriteFile("scripts/"+scriptName+"/"+eventID+".event", []byte(formattedjson), 0644)
+		if err != nil {
+			return err
+		}
+	}
+
+	jsonscript, err := h.ScriptToJSONString(scriptName)
+	if err != nil {
+		return err
+	}
+	err = ioutil.WriteFile("scripts/"+scriptName+"/"+scriptName+".script", []byte(jsonscript), 0644)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+// ScriptToJSONString function
+func (h *ScriptHandler) ScriptToJSONString(scriptName string) (jsonscript string, err error) {
+	script, err := h.scriptsdb.GetScriptByName(scriptName)
+	if err != nil {
+		return "", err
+	}
+
+	jsonscript, err = h.ScriptToJSON(script)
+	if err != nil {
+		return "", err
+	}
+
+	return jsonscript, nil
+}
+
+// ScriptToJSON function
+func (h *ScriptHandler) ScriptToJSON(script Script) (formatted string, err error) {
+	marshalledevent, err := json.Marshal(script)
+	if err != nil {
+		return "", err
+	}
+	formatted = string(marshalledevent)
+	return formatted, nil
+}
+
+// LoadScript function
+func (h *ScriptHandler) LoadScript(scriptName string) (err error) {
+	_, err = h.scriptsdb.GetScriptByName(scriptName)
+	if err == nil {
+		return errors.New("script with name " + scriptName + " already exists in database - failing")
+	}
+	if _, err := os.Stat("scripts/" + scriptName); os.IsNotExist(err) {
+		return errors.New("script directory does not exist - failing")
+	}
+
+	files, err := ioutil.ReadDir("scripts/" + scriptName)
+	if err != nil {
+		return errors.New("Error reading directory: " + err.Error())
+	}
+
+	for _, file := range files {
+		if strings.Contains(file.Name(), ".event") {
+			data, err := ioutil.ReadFile(file.Name())
+			if err != nil {
+				return errors.New("Error reading file: " + file.Name() + " - " + err.Error())
+			}
+
+			event, err := h.eventhandler.UnmarshalEvent(data)
+			if err != nil {
+				return errors.New("Error unpacking file: " + file.Name() + " - " + err.Error())
+			}
+
+			err = h.eventhandler.eventsdb.SaveEventToDB(event)
+			if err != nil {
+				return err
+			}
+		} else if strings.Contains(file.Name(), ".script") {
+			data, err := ioutil.ReadFile(file.Name())
+			if err != nil {
+				return errors.New("Error reading file: " + file.Name() + " - " + err.Error())
+			}
+
+			script, err := h.UnmarshalScript(data)
+			if err != nil {
+				return errors.New("Error unpacking file: " + file.Name() + " - " + err.Error())
+			}
+
+			err = h.scriptsdb.SaveScriptToDB(script)
+			if err != nil {
+				return err
+			}
+		}
+	}
+
+	return nil
+}
+
+// UnmarshalScript function
+func (h *ScriptHandler) UnmarshalScript(data []byte) (script Script, err error) {
+	if err := json.Unmarshal(data, &script); err != nil {
+		return script, err
+	}
+	return script, nil
 }
 
 // RemoveScript function

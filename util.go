@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"github.com/bwmarrin/discordgo"
 	"math/rand"
+	"os"
 	"strconv"
 	"strings"
 	"time"
@@ -520,4 +521,15 @@ func AppendIfMissingString(slice []string, i string) []string {
 		}
 	}
 	return append(slice, i)
+}
+
+// CreateDirIfNotExist function
+func CreateDirIfNotExist(dir string) (err error) {
+	if _, err := os.Stat(dir); os.IsNotExist(err) {
+		err = os.MkdirAll(dir, 0755)
+		if err != nil {
+			return err
+		}
+	}
+	return nil
 }
