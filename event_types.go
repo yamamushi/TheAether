@@ -295,7 +295,30 @@ func (h *EventHandler) UnfoldTriggerFailure(eventID string, eventmessagesid stri
 	h.UnWatchEvent(m.ChannelID, event.ID, eventmessagesid)
 	h.eventsdb.SaveEventToDB(event)
 	h.eventmessages.TerminateEvents(eventmessagesid)
+	return
 
+}
+
+// UnfoldTriggerFailureSendError function
+func (h *EventHandler) UnfoldTriggerFailureSendError(eventID string, eventmessagesid string, s *discordgo.Session, m *discordgo.MessageCreate) {
+
+	if !h.IsValidEventMessage(s, m) {
+		return
+	}
+
+	event, err := h.eventsdb.GetEventByID(eventID)
+	if err != nil {
+		s.ChannelMessageSend(m.ChannelID, "Error loading event "+eventID+": Error: "+err.Error())
+		return
+	}
+
+	h.eventmessages.SetErrorMessage(eventmessagesid, event.Data[0])
+	h.eventmessages.SetFailureStatus(eventmessagesid)
+
+	h.DisableEvent(event.ID, m.ChannelID)
+	h.UnWatchEvent(m.ChannelID, event.ID, eventmessagesid)
+	h.eventsdb.SaveEventToDB(event)
+	h.eventmessages.TerminateEvents(eventmessagesid)
 	return
 
 }

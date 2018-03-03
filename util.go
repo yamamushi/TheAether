@@ -474,7 +474,7 @@ func RollDice(faces int, count int) (rolls []int) {
 	for i := 0; i < count; i++ {
 		roll := randomGen.Intn(faces)
 		if roll == 0 {
-			roll = 1
+			roll = count // Always set the roll to at least the minimum die count
 		}
 		rolls = append(rolls, roll)
 	}
@@ -512,7 +512,7 @@ func IsJSON(str string) bool {
 	return json.Unmarshal([]byte(str), &js) == nil
 }
 
-// AppendIfMissingString functiohn
+// AppendIfMissingString function
 func AppendIfMissingString(slice []string, i string) []string {
 	for _, ele := range slice {
 		if ele == i {

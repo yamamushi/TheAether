@@ -25,8 +25,8 @@ func (h *EventParser) ParseFormattedEvent(data string, userID string) (parsed Ev
 	if unmarshallcontainer.Name == "" {
 		return parsed, errors.New("Event requires a name")
 	}
-	if len(unmarshallcontainer.Name) > 20 {
-		return parsed, errors.New("Name must not exceed 20 characters")
+	if len(unmarshallcontainer.Name) > 30 {
+		return parsed, errors.New("Name must not exceed 30 characters")
 	}
 	if unmarshallcontainer.Description == "" {
 		return parsed, errors.New("Event requires a description")
@@ -85,8 +85,10 @@ func (h *EventParser) ValidateEvent(event Event) (err error) {
 		return h.ValidateTriggerFailure(event)
 	} else if event.Type == "SendMessageTriggerEvent" {
 		return h.ValidateSendMessageTriggerEvent(event)
+	} else if event.Type == "TriggerFailureSendError" {
+		return h.ValidateTriggerFailureSendError(event)
 	}
-	return nil
+	return errors.New("unrecognized event type: " + event.Type)
 }
 
 // HasEventsInData function
@@ -249,6 +251,14 @@ func (h *EventParser) ValidateSendMessageTriggerEvent(event Event) (err error) {
 				return errors.New("Error validating event - Invalid event found in data: " + field)
 			}
 		}
+	}
+	return nil
+}
+
+// ValidateTriggerFailureSendError function
+func (h *EventParser) ValidateTriggerFailureSendError(event Event) (err error) {
+	if len(event.Data) < 1 {
+		return errors.New("error validating event - Expected a data field")
 	}
 	return nil
 }

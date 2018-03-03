@@ -254,7 +254,7 @@ func (h *TravelHandler) Travel(direction string, s *discordgo.Session, m *discor
 	if travelscriptName != "" {
 		err = h.ExecTravelScript(travelscriptName, user, s, m)
 		if err != nil {
-			return errors.New("Cannot travel " + direction + ": " + err.Error())
+			return errors.New("Cannot travel " + direction + " - " + err.Error())
 		}
 	}
 
@@ -325,6 +325,10 @@ func (h *TravelHandler) ExecTravelScript(scriptName string, user User, s *discor
 	}
 
 	if status == false {
+		fmt.Println(err.Error())
+		if err == nil {
+			return errors.New("")
+		}
 		return err
 	}
 

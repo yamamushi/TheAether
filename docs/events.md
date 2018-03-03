@@ -654,6 +654,8 @@ In the following example...
 
 ```json
 {
+  "Name":"ExampleRewardExperience",
+  "Description":"An example event",
   "type": "RewardExperience",
   "TypeFlags": [
     "nil"
@@ -692,6 +694,8 @@ In the following example...
 
 ```json
 {
+  "Name":"ExampleTriggerEvent",
+  "Description":"An example event",
   "type": "TriggerEvent",
   "TypeFlags": [
     "nil"
@@ -728,6 +732,8 @@ In the following example...
 
 ```json
 {
+  "Name":"ExampleTimedTriggerEvent",
+  "Description":"An example event",
   "type": "TimedTriggerEvent",
   "TypeFlags": [
     "nil"
@@ -764,6 +770,8 @@ In the following example...
 
 ```json
 {
+  "Name":"ExampleSendMessage",
+  "Description":"An example event",
   "type": "SendMessage",
   "cycles": 0,
   "data": [
@@ -796,6 +804,8 @@ In the following example, the event will wait for 5 seconds before sending `Hell
 
 ```json
 {
+  "Name":"ExampleTimedSendMessage",
+  "Description":"An example event",
   "type": "TimedSendMessage",
   "cycles": 0,
   "TypeFlags": [
@@ -831,6 +841,8 @@ In the following example, the event will search for the word `hello` in the firs
 
 ```json
 {
+  "Name":"ExampleReadMessageTriggerSuccessFail",
+  "Description":"An example event",
   "type": "ReadMessageTriggerSuccessFail",
   "cycles": 0,
   "TypeFlags": [
@@ -863,6 +875,8 @@ In the following example, the event will return an instant succes on the script 
 
 ```json
 {
+  "Name":"ExampleTriggerSuccess",
+  "Description":"An example event",
   "type": "TriggerSuccess"
 }
 ```
@@ -891,6 +905,8 @@ In the following example, the event will return an instant failure on the script
 
 ```json
 {
+  "Name":"ExampleTriggerFailure",
+  "Description":"An example event",
   "type": "TriggerFailure"
 }
 ```
@@ -919,12 +935,46 @@ In the following example, the event will send `Hello @user!` and trigger the eve
 
 ```json
 {
+  "Name":"ExampleSendMessageTriggerEvent",
+  "Description":"An example event",
   "type": "SendMessageTriggerEvent",
   "TypeFlags": [
     "Hello _user_!"
   ],
   "data": [
     "5dd4d56f"
+  ]
+}
+```
+
+[Go to top of page](#table-of-contents)
+
+#### TriggerFailureSendError
+
+
+**TypeFlags**
+
+| TypeFlag Field # | Description |
+|-----------|-------------|
+| 0 |  n/a |
+
+**Data**
+
+| Data Field # | Description |
+|-----------|-------------|
+| 0 | Message to send in failure status |
+
+**Example Event Definition**:
+
+In the following example, the event will trigger a failure status along with the message "Another day!" in the output. 
+
+```json
+{
+  "Name":"ExTriggerFailureSendError",
+  "Description":"An example event",
+  "type": "TriggerFailureSendError",
+  "data": [
+    "Another day!"
   ]
 }
 ```

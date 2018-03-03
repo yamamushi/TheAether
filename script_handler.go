@@ -556,12 +556,16 @@ func (h *ScriptHandler) ExecuteScript(scriptName string, s *discordgo.Session, m
 		return false, err
 	}
 
-	if eventmessage.CheckSuccess {
-		if eventmessage.Successful {
-			return false, nil
-		}
-		return true, nil
+	if eventmessage.CheckError {
+		err = errors.New(eventmessage.ErrorMessage)
 	}
 
-	return false, nil
+	if eventmessage.CheckSuccess {
+		if eventmessage.Successful {
+			return true, err
+		}
+		return false, err
+	}
+
+	return false, err
 }

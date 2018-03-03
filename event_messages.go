@@ -24,8 +24,8 @@ type EventMessageContainer struct {
 	// i.e. a die roll should go into "Roll" rather than a generic int variable
 	Roll int
 
-	CheckResponse bool
-	Response      string
+	CheckError   bool
+	ErrorMessage string
 
 	CheckSuccess bool
 	Successful   bool
@@ -129,6 +129,7 @@ func (h *EventMessagesDB) SetSuccessfulStatus(eventmessageID string) (err error)
 	if err != nil {
 		return err
 	}
+	eventmessage.CheckSuccess = true
 	eventmessage.Successful = true
 	err = h.SaveEventMessageToDB(eventmessage)
 	if err != nil {
@@ -143,7 +144,23 @@ func (h *EventMessagesDB) SetFailureStatus(eventmessageID string) (err error) {
 	if err != nil {
 		return err
 	}
+	eventmessage.CheckSuccess = true
 	eventmessage.Successful = false
+	err = h.SaveEventMessageToDB(eventmessage)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+// SetErrorMessage function
+func (h *EventMessagesDB) SetErrorMessage(eventmessageID string, message string) (err error) {
+	eventmessage, err := h.GetEventMessageByID(eventmessageID)
+	if err != nil {
+		return err
+	}
+	eventmessage.CheckError = true
+	eventmessage.ErrorMessage = message
 	err = h.SaveEventMessageToDB(eventmessage)
 	if err != nil {
 		return err

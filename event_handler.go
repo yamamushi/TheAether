@@ -194,6 +194,9 @@ func (h *EventHandler) ParseCommand(input []string, s *discordgo.Session, m *dis
 			return
 		}
 	}
+	if argument == "update" {
+
+	}
 }
 
 // EnableEvent function
@@ -454,6 +457,8 @@ func (h *EventHandler) AddEventToWatchList(event Event, roomID string, eventmess
 		h.WatchEvent(h.UnfoldTriggerFailure, eventmessagesid, event.ID, roomID)
 	} else if event.Type == "SendMessageTriggerEvent" {
 		h.WatchEvent(h.UnfoldSendMessageTriggerEvent, eventmessagesid, event.ID, roomID)
+	} else if event.Type == "TriggerFailureSendError" {
+		h.WatchEvent(h.UnfoldTriggerFailureSendError, eventmessagesid, event.ID, roomID)
 	}
 	return nil
 }
@@ -554,6 +559,8 @@ func (h *EventHandler) LaunchChildEvent(parenteventID string, childeventID strin
 				h.UnfoldTriggerFailure(triggeredevent.ID, eventmessagesid, s, m)
 			} else if triggeredevent.Type == "SendMessageTriggerEvent" {
 				h.UnfoldSendMessageTriggerEvent(triggeredevent.ID, eventmessagesid, s, m)
+			} else if triggeredevent.Type == "TriggerFailureSendError" {
+				h.UnfoldTriggerFailureSendError(triggeredevent.ID, eventmessagesid, s, m)
 			}
 		}
 	}
