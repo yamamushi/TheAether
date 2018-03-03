@@ -104,9 +104,9 @@ func (h *EventParser) ValidateEvent(event Event) (err error) {
 		return h.ValidateReadMessageChoice(event)
 	} else if event.Type == "ReadMessageChoiceTriggerEvent" {
 		return h.ValidateReadMessageChoiceTriggerEvent(event)
-	} else if event.Type == "SendMessageEvent" {
+	} else if event.Type == "SendMessage" {
 		return h.ValidateSendMessage(event)
-	} else if event.Type == "TimedSendMessageEvent" {
+	} else if event.Type == "TimedSendMessage" {
 		return h.ValidateTimedSendMessageEvent(event)
 	} else if event.Type == "MessageTriggerSuccessFail" {
 		return h.ValidateMessageTriggerSuccessFail(event)
@@ -148,6 +148,12 @@ func (h *EventParser) HasEventsInData(event Event) (hasevents bool) {
 		return false
 	} else if event.Type == "SendMessageTriggerEvent" {
 		return true
+	} else if event.Type == "TriggerFailureSendError" {
+		return false
+	} else if event.Type == "MessageChoiceDefaultEvent" {
+		return true
+	} else if event.Type == "MessageChoiceDefault" {
+		return false
 	}
 	return false
 }
