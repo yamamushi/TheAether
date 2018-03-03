@@ -14,6 +14,8 @@ gh-md-toc
 
 # Project-local glide cache, RE: https://github.com/Masterminds/glide/issues/736
 .glide/
+
+# dep vendor directory (DO NOT f**k up the commit log with dependencies!)
 vendor/
 
 # JetBrains
@@ -62,4 +64,6 @@ TheAether
 
 # Windows generated packages
 pkg/
+
+# Ignoring scripts until this system is stabilized and feature complete
 scripts/
