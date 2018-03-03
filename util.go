@@ -473,6 +473,9 @@ func RollDice(faces int, count int) (rolls []int) {
 
 	for i := 0; i < count; i++ {
 		roll := randomGen.Intn(faces)
+		if roll == 0 {
+			roll = 1
+		}
 		rolls = append(rolls, roll)
 	}
 
@@ -495,6 +498,9 @@ func RollDiceAndAdd(faces int, count int) (total int) {
 	for i := 0; i < count; i++ {
 		roll := randomGen.Intn(faces)
 		total = total + roll
+	}
+	if total == 0 {
+		total = 1
 	}
 
 	return total
