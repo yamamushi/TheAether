@@ -146,6 +146,7 @@ func (h *EventHandler) ParseCommand(input []string, s *discordgo.Session, m *dis
 			s.ChannelMessageSend(m.ChannelID, "Command 'disable' expects two arguments: <EventID> <channel>")
 			return
 		}
+		h.UnWatchEvent(payload[1], payload[0], "")
 		err := h.DisableEvent(payload[0], payload[1])
 		if err != nil {
 			s.ChannelMessageSend(m.ChannelID, "Error unwatching event: "+err.Error())
@@ -356,6 +357,7 @@ func (h *EventHandler) EventToJSONString(eventID string) (script string, err err
 
 // DisableEvent function
 func (h *EventHandler) DisableEvent(eventID string, channelID string) (err error) {
+	channelID = CleanChannel(channelID)
 	_, err = h.eventsdb.GetEventByID(eventID)
 	if err != nil {
 		return err
@@ -369,6 +371,8 @@ func (h *EventHandler) DisableEvent(eventID string, channelID string) (err error
 
 // RemoveEvent function
 func (h *EventHandler) RemoveEvent(eventID string, userID string, s *discordgo.Session, channelID string) (err error) {
+	channelID = CleanChannel(channelID)
+
 	event, err := h.eventsdb.GetEventByID(eventID)
 	if err != nil {
 		return err
@@ -635,6 +639,7 @@ func (h *EventHandler) WatchEvent(Handler func(string, string, *discordgo.Sessio
 
 // UnWatchEvent function
 func (h *EventHandler) UnWatchEvent(ChannelID string, EventID string, EventMessagesID string) {
+	ChannelID = CleanChannel(ChannelID)
 	// Clear usermanager element by iterating
 	for e := h.WatchList.Front(); e != nil; e = e.Next() {
 		r := reflect.ValueOf(e.Value)
