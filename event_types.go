@@ -214,7 +214,7 @@ func (h *EventHandler) UnfoldReadMessageChoiceTriggerEvent(eventID string, event
 		if strings.Contains(m.Content, field) {
 			// First we load the keyed eventID in the data array
 			if event.Data[i] != "nil" {
-				go h.LaunchChildEvent(event.ID, event.Data[i], eventmessagesid, s, m)
+				go h.LaunchChildEvent(event.ID, event.Data[i], eventmessagesid, m.ChannelID, s, m)
 			} else {
 				h.DisableEvent(event.ID, m.ChannelID)
 				h.UnWatchEvent(m.ChannelID, event.ID, eventmessagesid)
@@ -252,10 +252,11 @@ func (h *EventHandler) UnfoldReadMessageTriggerSuccessFail(eventID string, event
 			h.UnWatchEvent(m.ChannelID, event.ID, eventmessagesid)
 			h.eventsdb.SaveEventToDB(event)
 			h.eventmessages.TerminateEvents(eventmessagesid)
-
 			return
 		}
 	}
+	h.eventmessages.SetFailureStatus(eventmessagesid)
+
 	h.DisableEvent(event.ID, m.ChannelID)
 	h.UnWatchEvent(m.ChannelID, event.ID, eventmessagesid)
 	h.eventsdb.SaveEventToDB(event)
@@ -357,7 +358,7 @@ func (h *EventHandler) UnfoldSendMessageTriggerEvent(eventID string, eventmessag
 	h.UnWatchEvent(m.ChannelID, event.ID, eventmessagesid)
 	h.eventsdb.SaveEventToDB(event)
 	if event.Data[0] != "nil" {
-		go h.LaunchChildEvent(event.ID, event.Data[0], eventmessagesid, s, m)
+		go h.LaunchChildEvent(event.ID, event.Data[0], eventmessagesid, m.ChannelID, s, m)
 	} else {
 		h.eventmessages.TerminateEvents(eventmessagesid)
 	}
@@ -387,16 +388,16 @@ func (h *EventHandler) UnfoldMessageChoiceDefaultEvent(eventID string, eventmess
 			//fmt.Println("Field: " + field + " Message: " + message)
 			// First we load the keyed eventID in the data array
 			if event.Data[i] != "nil" {
-				go h.LaunchChildEvent(event.ID, event.Data[i], eventmessagesid, s, m)
+				go h.LaunchChildEvent(event.ID, event.Data[i], eventmessagesid, m.ChannelID, s, m)
 			} else {
-				go h.LaunchChildEvent(event.ID, event.DefaultData, eventmessagesid, s, m)
+				go h.LaunchChildEvent(event.ID, event.DefaultData, eventmessagesid, m.ChannelID, s, m)
 			}
 			return
 		}
 	}
 	if event.DefaultData != "nil" {
 		//fmt.Print("Launching default event: " + event.DefaultData)
-		go h.LaunchChildEvent(event.ID, event.DefaultData, eventmessagesid, s, m)
+		go h.LaunchChildEvent(event.ID, event.DefaultData, eventmessagesid, m.ChannelID, s, m)
 	}
 	h.eventmessages.TerminateEvents(eventmessagesid)
 	return

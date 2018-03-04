@@ -108,8 +108,8 @@ func (h *EventParser) ValidateEvent(event Event) (err error) {
 		return h.ValidateSendMessage(event)
 	} else if event.Type == "TimedSendMessage" {
 		return h.ValidateTimedSendMessageEvent(event)
-	} else if event.Type == "MessageTriggerSuccessFail" {
-		return h.ValidateMessageTriggerSuccessFail(event)
+	} else if event.Type == "ReadMessageTriggerSuccessFail" {
+		return h.ValidateReadMessageTriggerSuccessFail(event)
 	} else if event.Type == "TriggerSuccess" {
 		return h.ValidateTriggerSuccess(event)
 	} else if event.Type == "TriggerFailure" {
@@ -163,9 +163,6 @@ func (h *EventParser) ValidateReadMessage(event Event) (err error) {
 	if len(event.TypeFlags) != 1 {
 		return errors.New("Error validating event - Expected 1 typeflag but found: " + strconv.Itoa(len(event.TypeFlags)))
 	}
-	if !event.Watchable {
-		return errors.New("Error event will not work without watchable:true")
-	}
 	return nil
 }
 
@@ -180,9 +177,6 @@ func (h *EventParser) ValidateReadTimedMessage(event Event) (err error) {
 	}
 	if timeout > 300 {
 		return errors.New("Error validating event - Maximum timeout is 300 but found: " + strconv.Itoa(timeout))
-	}
-	if !event.Watchable {
-		return errors.New("Error event will not work without watchable:true")
 	}
 	return nil
 }
@@ -199,9 +193,6 @@ func (h *EventParser) ValidateReadMessageChoice(event Event) (err error) {
 	}
 	if typeflagslen > 10 {
 		return errors.New("Error validating event - Maximum TypeFlags count is 10 but found: " + strconv.Itoa(typeflagslen))
-	}
-	if !event.Watchable {
-		return errors.New("Error event will not work without watchable:true")
 	}
 	return nil
 }
@@ -230,9 +221,6 @@ func (h *EventParser) ValidateReadMessageChoiceTriggerEvent(event Event) (err er
 			}
 		}
 	}
-	if !event.Watchable {
-		return errors.New("Error event will not work without watchable:true")
-	}
 	return nil
 }
 
@@ -259,13 +247,10 @@ func (h *EventParser) ValidateTimedSendMessageEvent(event Event) (err error) {
 	return nil
 }
 
-// ValidateMessageTriggerSuccessFail function
-func (h *EventParser) ValidateMessageTriggerSuccessFail(event Event) (err error) {
+// ValidateReadMessageTriggerSuccessFail function
+func (h *EventParser) ValidateReadMessageTriggerSuccessFail(event Event) (err error) {
 	if len(event.TypeFlags) < 1 {
 		return errors.New("error validating event - expected one type flag")
-	}
-	if !event.Watchable {
-		return errors.New("Error event will not work without watchable:true")
 	}
 	return nil
 }
@@ -335,9 +320,6 @@ func (h *EventParser) ValidateMessageChoiceDefault(event Event) (err error) {
 	if event.DefaultData == "" {
 		return errors.New("MessageChoiceDefault requires a default message in DefaultData")
 	}
-	if !event.Watchable {
-		return errors.New("Error event will not work without watchable:true")
-	}
 	return nil
 }
 
@@ -372,9 +354,6 @@ func (h *EventParser) ValidateMessageChoiceDefaultEvent(event Event) (err error)
 		if !h.eventsdb.ValidateEventByID(event.DefaultData) {
 			return errors.New("Error validating event - Invalid event found in DefaultData: " + event.DefaultData)
 		}
-	}
-	if !event.Watchable {
-		return errors.New("Error event will not work without watchable:true")
 	}
 	return nil
 }

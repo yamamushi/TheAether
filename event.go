@@ -21,9 +21,7 @@ type Event struct {
 	TypeFlags []string `json:"typeflags"`
 
 	PrivateResponse bool `json:"privateresponse"` // Whether or not to return a response in a private message
-	Watchable       bool `json:"watchable"`       // Whether or not this event should be watched or just executed with a passthrough
-	// If it's a passthrough, we want to write the response to the keyvaluesdb
-	FinalizeOutput bool `json:"finalizeoutput"` // If set to true, we want to notify the keyvalue that our output is finalized
+	FinalizeOutput  bool `json:"finalizeoutput"`  // If set to true, we want to notify the keyvalue that our output is finalized
 
 	LoadOnBoot bool `json:"-"` // Whether or not to load the event at boot
 	//	Cycles     int      `json:"cycles"`     // Number of times to run the event, a setting of 0 or less will be parsed as "infinite"
