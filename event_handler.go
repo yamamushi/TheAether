@@ -7,9 +7,7 @@ import (
 	"fmt"
 	"github.com/bwmarrin/discordgo"
 	"io/ioutil"
-	"reflect"
 	"strings"
-	"time"
 )
 
 // This handles the discord input interface for registering events and managing them
@@ -29,14 +27,6 @@ type EventHandler struct {
 	eventsdb      *EventsDB
 	parser        *EventParser
 	eventmessages *EventMessagesDB
-}
-
-// EventCallback struct
-type EventCallback struct {
-	ChannelID       string
-	EventID         string
-	EventMessagesID string
-	Handler         func(string, string, *discordgo.Session, *discordgo.MessageCreate)
 }
 
 // Init function
@@ -133,7 +123,7 @@ func (h *EventHandler) ParseCommand(input []string, s *discordgo.Session, m *dis
 			return
 		}
 		payload[1] = CleanChannel(payload[1])
-		err := h.EnableEvent(payload[0], payload[1], "")
+		err := h.EnableEvent(payload[0], payload[1], "", s, m)
 		if err != nil {
 			s.ChannelMessageSend(m.ChannelID, "Error enabling event: "+err.Error())
 			return
@@ -251,7 +241,7 @@ func (h *EventHandler) ParseCommand(input []string, s *discordgo.Session, m *dis
 }
 
 // EnableEvent function
-func (h *EventHandler) EnableEvent(eventID, channelID string, keyvalueid string) (err error) {
+func (h *EventHandler) EnableEvent(eventID, channelID string, keyvalueid string, s *discordgo.Session, m *discordgo.MessageCreate) (err error) {
 	channelID = CleanChannel(channelID)
 	event, err := h.eventsdb.GetEventByID(eventID)
 	if err != nil {
@@ -263,7 +253,7 @@ func (h *EventHandler) EnableEvent(eventID, channelID string, keyvalueid string)
 		return err
 	}
 
-	err = h.LoadEvent(event.ID, keyvalueid)
+	err = h.LoadEvent(event.ID, keyvalueid, s, m)
 	if err != nil {
 		return err
 	}
@@ -522,10 +512,11 @@ func (h *EventHandler) LoadEventsAtBoot() (err error) {
 
 	for _, event := range events {
 		if event.LoadOnBoot {
-			err = h.LoadEvent(event.ID, "")
+			/*err = h.LoadEvent(event.ID, "")
 			if err != nil {
 				return err
 			}
+			*/
 		}
 	}
 	return nil
@@ -573,7 +564,7 @@ func (h *EventHandler) RemoveEventFromRoom(eventID string, roomID string) (err e
 }
 
 // LoadEvent function
-func (h *EventHandler) LoadEvent(eventID string, keyvalueid string) (err error) {
+func (h *EventHandler) LoadEvent(eventID string, keyvalueid string, s *discordgo.Session, m *discordgo.MessageCreate) (err error) {
 	event, err := h.eventsdb.GetEventByID(eventID)
 	if err != nil {
 		return err
@@ -581,152 +572,9 @@ func (h *EventHandler) LoadEvent(eventID string, keyvalueid string) (err error) 
 
 	// Refer to the github wiki page on Events for information on types
 	for _, room := range event.Rooms {
-		err = h.AddEventToWatchList(event, room, keyvalueid)
-		if err != nil {
-			return err
-		}
+		h.LaunchChildEvent("", event.ID, keyvalueid, room, s, m)
 	}
 	return nil
-}
-
-// AddEventToWatchList function
-func (h *EventHandler) AddEventToWatchList(event Event, roomID string, eventmessagesid string) (err error) {
-	if event.Type == "ReadMessage" {
-		h.WatchEvent(h.UnfoldReadMessage, eventmessagesid, event.ID, roomID)
-	} else if event.Type == "ReadTimedMessage" {
-		h.WatchEvent(h.UnfoldReadTimedMessage, eventmessagesid, event.ID, roomID)
-	} else if event.Type == "ReadMessageChoice" {
-		h.WatchEvent(h.UnfoldReadMessageChoiceTriggerMessage, eventmessagesid, event.ID, roomID)
-	} else if event.Type == "ReadMessageChoiceTriggerEvent" {
-		h.WatchEvent(h.UnfoldReadMessageChoiceTriggerEvent, eventmessagesid, event.ID, roomID)
-	} else if event.Type == "SendMessage" {
-		h.WatchEvent(h.UnfoldSendMessage, eventmessagesid, event.ID, roomID)
-	} else if event.Type == "TimedSendMessage" {
-		h.WatchEvent(h.UnfoldTimedSendMessage, eventmessagesid, event.ID, roomID)
-	} else if event.Type == "MessageTriggerSuccessFail" {
-		h.WatchEvent(h.UnfoldReadMessageTriggerSuccessFail, eventmessagesid, event.ID, roomID)
-	} else if event.Type == "TriggerSuccess" {
-		h.WatchEvent(h.UnfoldTriggerSuccess, eventmessagesid, event.ID, roomID)
-	} else if event.Type == "TriggerFailure" {
-		h.WatchEvent(h.UnfoldTriggerFailure, eventmessagesid, event.ID, roomID)
-	} else if event.Type == "SendMessageTriggerEvent" {
-		h.WatchEvent(h.UnfoldSendMessageTriggerEvent, eventmessagesid, event.ID, roomID)
-	} else if event.Type == "TriggerFailureSendError" {
-		h.WatchEvent(h.UnfoldTriggerFailureSendError, eventmessagesid, event.ID, roomID)
-	} else if event.Type == "MessageChoiceDefaultEvent" {
-		h.WatchEvent(h.UnfoldMessageChoiceDefaultEvent, eventmessagesid, event.ID, roomID)
-	} else if event.Type == "MessageChoiceDefault" {
-		h.WatchEvent(h.UnfoldMessageChoiceDefault, eventmessagesid, event.ID, roomID)
-	}
-	return nil
-}
-
-// WatchEvent function
-func (h *EventHandler) WatchEvent(Handler func(string, string, *discordgo.Session, *discordgo.MessageCreate), EventMessagesID string, EventID string, ChannelID string) {
-	// Make sure we don't duplicate events in the watch list
-	for e := h.WatchList.Front(); e != nil; e = e.Next() {
-		r := reflect.ValueOf(e.Value)
-		eventmessagesid := reflect.Indirect(r).FieldByName("EventMessagesID")
-		eventID := reflect.Indirect(r).FieldByName("EventID")
-		channel := reflect.Indirect(r).FieldByName("ChannelID")
-		if channel.String() == ChannelID && eventID.String() == EventID && eventmessagesid.String() == EventMessagesID {
-			return
-		}
-	}
-	item := EventCallback{ChannelID: ChannelID, EventID: EventID, Handler: Handler, EventMessagesID: EventMessagesID}
-	h.WatchList.PushBack(item)
-}
-
-// UnWatchEvent function
-func (h *EventHandler) UnWatchEvent(ChannelID string, EventID string, EventMessagesID string) {
-	ChannelID = CleanChannel(ChannelID)
-	// Clear usermanager element by iterating
-	for e := h.WatchList.Front(); e != nil; e = e.Next() {
-		r := reflect.ValueOf(e.Value)
-		eventmessagesid := reflect.Indirect(r).FieldByName("EventMessagesID")
-		channel := reflect.Indirect(r).FieldByName("ChannelID")
-		eventID := reflect.Indirect(r).FieldByName("EventID")
-
-		if ChannelID == "" || EventMessagesID == "" {
-			if eventID.String() == EventID {
-				h.WatchList.Remove(e)
-				h.RemoveEventFromRoom(EventID, ChannelID)
-			}
-		} else {
-			if channel.String() == ChannelID && eventID.String() == EventID && eventmessagesid.String() == EventMessagesID {
-				h.WatchList.Remove(e)
-				h.RemoveEventFromRoom(EventID, ChannelID)
-			}
-		}
-	}
-}
-
-// ListEnabled function
-func (h *EventHandler) ListEnabled(channelID string) (formatted string, err error) {
-	formatted = "```\n"
-	for e := h.WatchList.Front(); e != nil; e = e.Next() {
-		r := reflect.ValueOf(e.Value)
-		eventmessagesid := reflect.Indirect(r).FieldByName("EventMessagesID")
-		eventID := reflect.Indirect(r).FieldByName("EventID")
-		channel := reflect.Indirect(r).FieldByName("ChannelID")
-		if channel.String() == channelID {
-			formatted = formatted + "ID: " + eventID.String() + " EventMessagesID: " + eventmessagesid.String() + "\n"
-		}
-	}
-	formatted = formatted + "\n```\n"
-	return formatted, nil
-}
-
-// LaunchChildEvent function
-func (h *EventHandler) LaunchChildEvent(parenteventID string, childeventID string, eventmessagesid string, s *discordgo.Session, m *discordgo.MessageCreate) {
-	// First we load the keyed eventID in the data array
-	if childeventID != "nil" {
-		triggeredevent, err := h.eventsdb.GetEventByID(childeventID)
-		if err != nil {
-			s.ChannelMessageSend(m.ChannelID, "Error triggering keyed event - Source: "+
-				parenteventID+" Trigger: "+childeventID+" Error: "+err.Error())
-			return
-		}
-
-		if triggeredevent.Watchable {
-			err = h.AddEventToWatchList(triggeredevent, m.ChannelID, eventmessagesid)
-			if err != nil {
-				s.ChannelMessageSend(m.ChannelID, "Error watching keyed event - Source: "+
-					parenteventID+" Trigger: "+childeventID+" Error: "+err.Error())
-				return
-			}
-		} else {
-			// If we aren't adding the event to the watchlist, we want to passthrough and trigger it immediately with a 2 second time delay
-			time.Sleep(time.Duration(time.Second * 2))
-			if triggeredevent.Type == "ReadMessage" {
-				h.UnfoldReadMessage(triggeredevent.ID, eventmessagesid, s, m)
-			} else if triggeredevent.Type == "ReadTimedMessage" {
-				h.UnfoldTimedSendMessage(triggeredevent.ID, eventmessagesid, s, m)
-			} else if triggeredevent.Type == "ReadMessageChoice" {
-				h.UnfoldReadMessageChoiceTriggerMessage(triggeredevent.ID, eventmessagesid, s, m)
-			} else if triggeredevent.Type == "ReadMessageChoiceTriggerEvent" {
-				h.UnfoldReadMessageChoiceTriggerEvent(triggeredevent.ID, eventmessagesid, s, m)
-			} else if triggeredevent.Type == "SendMessage" {
-				h.UnfoldSendMessage(triggeredevent.ID, eventmessagesid, s, m)
-			} else if triggeredevent.Type == "TimedSendMessage" {
-				h.UnfoldTimedSendMessage(triggeredevent.ID, eventmessagesid, s, m)
-			} else if triggeredevent.Type == "MessageTriggerSuccessFail" {
-				h.UnfoldReadMessageTriggerSuccessFail(triggeredevent.ID, eventmessagesid, s, m)
-			} else if triggeredevent.Type == "TriggerSuccess" {
-				h.UnfoldTriggerSuccess(triggeredevent.ID, eventmessagesid, s, m)
-			} else if triggeredevent.Type == "TriggerFailure" {
-				h.UnfoldTriggerFailure(triggeredevent.ID, eventmessagesid, s, m)
-			} else if triggeredevent.Type == "SendMessageTriggerEvent" {
-				h.UnfoldSendMessageTriggerEvent(triggeredevent.ID, eventmessagesid, s, m)
-			} else if triggeredevent.Type == "TriggerFailureSendError" {
-				h.UnfoldTriggerFailureSendError(triggeredevent.ID, eventmessagesid, s, m)
-			} else if triggeredevent.Type == "MessageChoiceDefaultEvent" {
-				h.UnfoldMessageChoiceDefaultEvent(triggeredevent.ID, eventmessagesid, s, m)
-			} else if triggeredevent.Type == "MessageChoiceDefault" {
-				h.UnfoldMessageChoiceDefault(triggeredevent.ID, eventmessagesid, s, m)
-			}
-		}
-	}
 }
 
 // CheckCycles function
@@ -774,40 +622,6 @@ func (h *EventHandler) IsValidEventMessage(s *discordgo.Session, m *discordgo.Me
 		return false
 	}
 	return true
-}
-
-// ReadEvents function
-func (h *EventHandler) ReadEvents(s *discordgo.Session, m *discordgo.MessageCreate) {
-	for e := h.WatchList.Front(); e != nil; e = e.Next() {
-		r := reflect.ValueOf(e.Value)
-		channelid := reflect.Indirect(r).FieldByName("ChannelID")
-
-		if m.ChannelID == channelid.String() {
-			// We get the handler interface from our "Handler" field
-			handler := reflect.Indirect(r).FieldByName("Handler")
-
-			// We get our argument list from the Args field
-			arglist := reflect.Indirect(r).FieldByName("EventID")
-			eventid := arglist.String()
-
-			eventmessagesid := reflect.Indirect(r).FieldByName("EventMessagesID")
-			eventmessageid := eventmessagesid.String()
-
-			// We now type the interface to the handler type
-			//v := reflect.ValueOf(handler)
-			rargs := make([]reflect.Value, 4)
-
-			//var sizeofargs = len(rargs)
-			rargs[0] = reflect.ValueOf(eventid)
-			rargs[1] = reflect.ValueOf(eventmessageid)
-			rargs[2] = reflect.ValueOf(s)
-			rargs[3] = reflect.ValueOf(m)
-
-			go handler.Call(rargs)
-			//handlerid := reflect.Indirect(r).FieldByName("HandlerID").String()
-			//c.UnWatchEvent(m.ChannelID, handlerid)
-		}
-	}
 }
 
 // UnmarshalEvent function

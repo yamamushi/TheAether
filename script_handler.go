@@ -663,18 +663,8 @@ func (h *ScriptHandler) ExecuteScript(scriptName string, s *discordgo.Session, m
 		return false, err
 	}
 
-	//fmt.Println("parsing event: " + rootEvent.ID)
-	if rootEvent.Watchable {
-		//fmt.Println("Adding to watchlist: " + rootEvent.ID)
-		err = h.eventhandler.AddEventToWatchList(rootEvent, m.ChannelID, eventmessagesID)
-		if err != nil {
-			return false, err
-		}
-	} else {
-		//fmt.Println("Launching root event: " + rootEvent.ID)
-		// If we aren't watching the event, we'd like to get the key value response from it
-		h.eventhandler.LaunchChildEvent("RootEvent", rootEvent.ID, eventmessagesID, s, m)
-	}
+	//fmt.Println("Launching root event: " + rootEvent.ID)
+	h.eventhandler.LaunchChildEvent("RootEvent", rootEvent.ID, eventmessagesID, m.ChannelID, s, m)
 
 	// Now we page the event message container looking for
 	for true {
@@ -684,7 +674,7 @@ func (h *ScriptHandler) ExecuteScript(scriptName string, s *discordgo.Session, m
 			return false, err
 		}
 		if eventmessage.EventsComplete {
-			fmt.Println("Caught events complete")
+			//fmt.Println("Caught events complete")
 			break
 		}
 	}
@@ -695,11 +685,7 @@ func (h *ScriptHandler) ExecuteScript(scriptName string, s *discordgo.Session, m
 		if err != nil {
 			return false, err
 		}
-
-		h.eventhandler.DisableEvent(event.ID, m.ChannelID)
-		h.eventhandler.UnWatchEvent(m.ChannelID, event.ID, eventmessagesID)
-		h.eventhandler.eventsdb.SaveEventToDB(event)
-		h.eventhandler.eventmessages.TerminateEvents(eventmessagesID)
+		h.eventhandler.StopEvents(event, m.ChannelID, eventmessagesID)
 	}
 
 	eventmessage, err = h.eventmessagesdb.GetEventMessageByID(eventmessagesID)

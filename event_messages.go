@@ -167,3 +167,27 @@ func (h *EventMessagesDB) SetErrorMessage(eventmessageID string, message string)
 	}
 	return nil
 }
+
+// SetDieRoll function
+func (h *EventMessagesDB) SetDieRoll(eventmessageID string, roll int) (err error) {
+	eventmessage, err := h.GetEventMessageByID(eventmessageID)
+	if err != nil {
+		return err
+	}
+	eventmessage.Roll = roll
+	err = h.SaveEventMessageToDB(eventmessage)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+// GetDieRoll function
+func (h *EventMessagesDB) GetDieRoll(eventmessageID string, message string) (roll int, err error) {
+	eventmessage, err := h.GetEventMessageByID(eventmessageID)
+	if err != nil {
+		return 0, err
+	}
+	roll = eventmessage.Roll
+	return roll, nil
+}

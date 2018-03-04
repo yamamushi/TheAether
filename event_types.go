@@ -10,15 +10,6 @@ import (
 
 // UnfoldReadMessage function
 func (h *EventHandler) UnfoldReadMessage(eventID string, eventmessagesid string, s *discordgo.Session, m *discordgo.MessageCreate) {
-	// Ignore all messages created by the bot itself
-	if m.Author.ID == s.State.User.ID {
-		return
-	}
-	// Ignore bots
-	if m.Author.Bot {
-		return
-	}
-
 	event, err := h.eventsdb.GetEventByID(eventID)
 	if err != nil {
 		s.ChannelMessageSend(m.ChannelID, "Error loading event: "+eventID+" Error: "+err.Error())
@@ -30,45 +21,20 @@ func (h *EventHandler) UnfoldReadMessage(eventID string, eventmessagesid string,
 		if strings.Contains(m.Content, field) {
 			// First we send the data
 			s.ChannelMessageSend(m.ChannelID, FormatEventMessage(event.Data[0], m.Author.ID, m.ChannelID))
-
-			//h.CheckCycles(event, eventmessagesid, s, m)
-			h.UnWatchEvent(m.ChannelID, event.ID, eventmessagesid)
-			_ = h.DisableEvent(event.ID, m.ChannelID)
-			/*if err != nil {
-				s.ChannelMessageSend(m.ChannelID, "Error disabling event: "+event.ID+" Error: "+err.Error())
-				return
-			}*/
-			_ = h.eventsdb.SaveEventToDB(event)
-			/*if err != nil {
-				s.ChannelMessageSend(m.ChannelID, "Error saving event: "+event.ID+" Error: "+err.Error())
-				return
-			}*/
-			// We are at the end so we terminate
-			h.eventmessages.TerminateEvents(eventmessagesid)
+			h.StopEvents(event, m.ChannelID, eventmessagesid)
 			return
 		}
 	}
-	h.DisableEvent(event.ID, m.ChannelID)
-	h.UnWatchEvent(m.ChannelID, event.ID, eventmessagesid)
-	h.eventsdb.SaveEventToDB(event)
-	h.eventmessages.TerminateEvents(eventmessagesid)
+	h.StopEvents(event, m.ChannelID, eventmessagesid)
 	return
 }
 
 // UnfoldReadTimedMessage function
 func (h *EventHandler) UnfoldReadTimedMessage(eventID string, eventmessagesid string, s *discordgo.Session, m *discordgo.MessageCreate) {
-	// Ignore all messages created by the bot itself
-	if m.Author.ID == s.State.User.ID {
-		return
-	}
-	// Ignore bots
-	if m.Author.Bot {
-		return
-	}
-
 	event, err := h.eventsdb.GetEventByID(eventID)
 	if err != nil {
 		s.ChannelMessageSend(m.ChannelID, "Error loading event "+eventID+": Error: "+err.Error())
+		h.StopEvents(event, m.ChannelID, eventmessagesid)
 		return
 	}
 
@@ -82,64 +48,35 @@ func (h *EventHandler) UnfoldReadTimedMessage(eventID string, eventmessagesid st
 			time.Sleep(time.Duration(timeout) * time.Second)
 			// Now we send the data
 			s.ChannelMessageSend(m.ChannelID, FormatEventMessage(event.Data[0], m.Author.ID, m.ChannelID))
-
-			h.DisableEvent(event.ID, m.ChannelID)
-			h.UnWatchEvent(m.ChannelID, event.ID, eventmessagesid)
-			h.eventsdb.SaveEventToDB(event)
-			h.eventmessages.TerminateEvents(eventmessagesid)
-
+			h.StopEvents(event, m.ChannelID, eventmessagesid)
 			return
 		}
 	}
-	h.DisableEvent(event.ID, m.ChannelID)
-	h.UnWatchEvent(m.ChannelID, event.ID, eventmessagesid)
-	h.eventsdb.SaveEventToDB(event)
-	h.eventmessages.TerminateEvents(eventmessagesid)
+	h.StopEvents(event, m.ChannelID, eventmessagesid)
 	return
 }
 
 // UnfoldSendMessage function
 func (h *EventHandler) UnfoldSendMessage(eventID string, eventmessagesid string, s *discordgo.Session, m *discordgo.MessageCreate) {
-	// Ignore all messages created by the bot itself
-	if m.Author.ID == s.State.User.ID {
-		return
-	}
-	// Ignore bots
-	if m.Author.Bot {
-		return
-	}
-
 	event, err := h.eventsdb.GetEventByID(eventID)
 	if err != nil {
 		s.ChannelMessageSend(m.ChannelID, "Error loading event "+eventID+": Error: "+err.Error())
+		h.StopEvents(event, m.ChannelID, eventmessagesid)
 		return
 	}
 
 	// Now we send the data
 	s.ChannelMessageSend(m.ChannelID, FormatEventMessage(event.Data[0], m.Author.ID, m.ChannelID))
-
-	h.DisableEvent(event.ID, m.ChannelID)
-	h.UnWatchEvent(m.ChannelID, event.ID, eventmessagesid)
-	h.eventsdb.SaveEventToDB(event)
-	h.eventmessages.TerminateEvents(eventmessagesid)
-
+	h.StopEvents(event, m.ChannelID, eventmessagesid)
 	return
 }
 
 // UnfoldTimedSendMessage function
 func (h *EventHandler) UnfoldTimedSendMessage(eventID string, eventmessagesid string, s *discordgo.Session, m *discordgo.MessageCreate) {
-	// Ignore all messages created by the bot itself
-	if m.Author.ID == s.State.User.ID {
-		return
-	}
-	// Ignore bots
-	if m.Author.Bot {
-		return
-	}
-
 	event, err := h.eventsdb.GetEventByID(eventID)
 	if err != nil {
 		s.ChannelMessageSend(m.ChannelID, "Error loading event "+eventID+": Error: "+err.Error())
+		h.StopEvents(event, m.ChannelID, eventmessagesid)
 		return
 	}
 
@@ -149,29 +86,16 @@ func (h *EventHandler) UnfoldTimedSendMessage(eventID string, eventmessagesid st
 	time.Sleep(time.Duration(timeout) * time.Second)
 	// Now we send the data
 	s.ChannelMessageSend(m.ChannelID, FormatEventMessage(event.Data[0], m.Author.ID, m.ChannelID))
-
-	h.DisableEvent(event.ID, m.ChannelID)
-	h.UnWatchEvent(m.ChannelID, event.ID, eventmessagesid)
-	h.eventsdb.SaveEventToDB(event)
-	h.eventmessages.TerminateEvents(eventmessagesid)
-
+	h.StopEvents(event, m.ChannelID, eventmessagesid)
 	return
 }
 
 // UnfoldReadMessageChoiceTriggerMessage function
 func (h *EventHandler) UnfoldReadMessageChoiceTriggerMessage(eventID string, eventmessagesid string, s *discordgo.Session, m *discordgo.MessageCreate) {
-	// Ignore all messages created by the bot itself
-	if m.Author.ID == s.State.User.ID {
-		return
-	}
-	// Ignore bots
-	if m.Author.Bot {
-		return
-	}
-
 	event, err := h.eventsdb.GetEventByID(eventID)
 	if err != nil {
 		s.ChannelMessageSend(m.ChannelID, "Error loading event "+eventID+": Error: "+err.Error())
+		h.StopEvents(event, m.ChannelID, eventmessagesid)
 		return
 	}
 
@@ -181,32 +105,20 @@ func (h *EventHandler) UnfoldReadMessageChoiceTriggerMessage(eventID string, eve
 		if strings.Contains(m.Content, field) {
 			// First we send the data that is keyed to the field
 			s.ChannelMessageSend(m.ChannelID, FormatEventMessage(event.Data[i], m.Author.ID, m.ChannelID))
-
-			h.DisableEvent(event.ID, m.ChannelID)
-			h.UnWatchEvent(m.ChannelID, event.ID, eventmessagesid)
-			h.eventsdb.SaveEventToDB(event)
-			h.eventmessages.TerminateEvents(eventmessagesid)
-
+			h.StopEvents(event, m.ChannelID, eventmessagesid)
 			return
 		}
 	}
-	h.DisableEvent(event.ID, m.ChannelID)
-	h.UnWatchEvent(m.ChannelID, event.ID, eventmessagesid)
-	h.eventsdb.SaveEventToDB(event)
-	h.eventmessages.TerminateEvents(eventmessagesid)
+	h.StopEvents(event, m.ChannelID, eventmessagesid)
 	return
 }
 
 // UnfoldReadMessageChoiceTriggerEvent function
 func (h *EventHandler) UnfoldReadMessageChoiceTriggerEvent(eventID string, eventmessagesid string, s *discordgo.Session, m *discordgo.MessageCreate) {
-
-	if !h.IsValidEventMessage(s, m) {
-		return
-	}
-
 	event, err := h.eventsdb.GetEventByID(eventID)
 	if err != nil {
 		s.ChannelMessageSend(m.ChannelID, "Error loading event "+eventID+": Error: "+err.Error())
+		h.StopEvents(event, m.ChannelID, eventmessagesid)
 		return
 	}
 
@@ -214,30 +126,20 @@ func (h *EventHandler) UnfoldReadMessageChoiceTriggerEvent(eventID string, event
 		if strings.Contains(m.Content, field) {
 			// First we load the keyed eventID in the data array
 			if event.Data[i] != "nil" {
-				go h.LaunchChildEvent(event.ID, event.Data[i], eventmessagesid, s, m)
+				go h.LaunchChildEvent(event.ID, event.Data[i], eventmessagesid, m.ChannelID, s, m)
+				h.EventComplete(event, m.ChannelID, eventmessagesid)
 			} else {
-				h.DisableEvent(event.ID, m.ChannelID)
-				h.UnWatchEvent(m.ChannelID, event.ID, eventmessagesid)
-				h.eventsdb.SaveEventToDB(event)
-				h.eventmessages.TerminateEvents(eventmessagesid)
+				h.StopEvents(event, m.ChannelID, eventmessagesid)
 			}
 			return
 		}
 	}
-	h.DisableEvent(event.ID, m.ChannelID)
-	h.UnWatchEvent(m.ChannelID, event.ID, eventmessagesid)
-	h.eventsdb.SaveEventToDB(event)
-	h.eventmessages.TerminateEvents(eventmessagesid)
+	h.StopEvents(event, m.ChannelID, eventmessagesid)
 	return
 }
 
 // UnfoldReadMessageTriggerSuccessFail function
 func (h *EventHandler) UnfoldReadMessageTriggerSuccessFail(eventID string, eventmessagesid string, s *discordgo.Session, m *discordgo.MessageCreate) {
-
-	if !h.IsValidEventMessage(s, m) {
-		return
-	}
-
 	event, err := h.eventsdb.GetEventByID(eventID)
 	if err != nil {
 		s.ChannelMessageSend(m.ChannelID, "Error loading event "+eventID+": Error: "+err.Error())
@@ -247,29 +149,17 @@ func (h *EventHandler) UnfoldReadMessageTriggerSuccessFail(eventID string, event
 	for _, field := range event.TypeFlags {
 		if strings.Contains(m.Content, field) {
 			h.eventmessages.SetSuccessfulStatus(eventmessagesid)
-
-			h.DisableEvent(event.ID, m.ChannelID)
-			h.UnWatchEvent(m.ChannelID, event.ID, eventmessagesid)
-			h.eventsdb.SaveEventToDB(event)
-			h.eventmessages.TerminateEvents(eventmessagesid)
-
+			h.StopEvents(event, m.ChannelID, eventmessagesid)
 			return
 		}
 	}
-	h.DisableEvent(event.ID, m.ChannelID)
-	h.UnWatchEvent(m.ChannelID, event.ID, eventmessagesid)
-	h.eventsdb.SaveEventToDB(event)
-	h.eventmessages.TerminateEvents(eventmessagesid)
+	h.eventmessages.SetFailureStatus(eventmessagesid)
+	h.StopEvents(event, m.ChannelID, eventmessagesid)
 	return
 }
 
 // UnfoldTriggerSuccess function
 func (h *EventHandler) UnfoldTriggerSuccess(eventID string, eventmessagesid string, s *discordgo.Session, m *discordgo.MessageCreate) {
-
-	if !h.IsValidEventMessage(s, m) {
-		return
-	}
-
 	event, err := h.eventsdb.GetEventByID(eventID)
 	if err != nil {
 		s.ChannelMessageSend(m.ChannelID, "Error loading event "+eventID+": Error: "+err.Error())
@@ -278,22 +168,12 @@ func (h *EventHandler) UnfoldTriggerSuccess(eventID string, eventmessagesid stri
 
 	h.eventmessages.SetSuccessfulStatus(eventmessagesid)
 
-	h.DisableEvent(event.ID, m.ChannelID)
-	h.UnWatchEvent(m.ChannelID, event.ID, eventmessagesid)
-	h.eventsdb.SaveEventToDB(event)
-	h.eventmessages.TerminateEvents(eventmessagesid)
-
+	h.StopEvents(event, m.ChannelID, eventmessagesid)
 	return
-
 }
 
 // UnfoldTriggerFailure function
 func (h *EventHandler) UnfoldTriggerFailure(eventID string, eventmessagesid string, s *discordgo.Session, m *discordgo.MessageCreate) {
-
-	if !h.IsValidEventMessage(s, m) {
-		return
-	}
-
 	event, err := h.eventsdb.GetEventByID(eventID)
 	if err != nil {
 		s.ChannelMessageSend(m.ChannelID, "Error loading event "+eventID+": Error: "+err.Error())
@@ -301,22 +181,12 @@ func (h *EventHandler) UnfoldTriggerFailure(eventID string, eventmessagesid stri
 	}
 
 	h.eventmessages.SetFailureStatus(eventmessagesid)
-
-	h.DisableEvent(event.ID, m.ChannelID)
-	h.UnWatchEvent(m.ChannelID, event.ID, eventmessagesid)
-	h.eventsdb.SaveEventToDB(event)
-	h.eventmessages.TerminateEvents(eventmessagesid)
+	h.StopEvents(event, m.ChannelID, eventmessagesid)
 	return
-
 }
 
 // UnfoldTriggerFailureSendError function
 func (h *EventHandler) UnfoldTriggerFailureSendError(eventID string, eventmessagesid string, s *discordgo.Session, m *discordgo.MessageCreate) {
-
-	if !h.IsValidEventMessage(s, m) {
-		return
-	}
-
 	event, err := h.eventsdb.GetEventByID(eventID)
 	if err != nil {
 		s.ChannelMessageSend(m.ChannelID, "Error loading event "+eventID+": Error: "+err.Error())
@@ -325,26 +195,12 @@ func (h *EventHandler) UnfoldTriggerFailureSendError(eventID string, eventmessag
 
 	h.eventmessages.SetErrorMessage(eventmessagesid, event.Data[0])
 	h.eventmessages.SetFailureStatus(eventmessagesid)
-
-	h.DisableEvent(event.ID, m.ChannelID)
-	h.UnWatchEvent(m.ChannelID, event.ID, eventmessagesid)
-	h.eventsdb.SaveEventToDB(event)
-	h.eventmessages.TerminateEvents(eventmessagesid)
+	h.StopEvents(event, m.ChannelID, eventmessagesid)
 	return
-
 }
 
 // UnfoldSendMessageTriggerEvent function
 func (h *EventHandler) UnfoldSendMessageTriggerEvent(eventID string, eventmessagesid string, s *discordgo.Session, m *discordgo.MessageCreate) {
-	// Ignore all messages created by the bot itself
-	if m.Author.ID == s.State.User.ID {
-		return
-	}
-	// Ignore bots
-	if m.Author.Bot {
-		return
-	}
-
 	event, err := h.eventsdb.GetEventByID(eventID)
 	if err != nil {
 		s.ChannelMessageSend(m.ChannelID, "Error loading event "+eventID+": Error: "+err.Error())
@@ -353,69 +209,52 @@ func (h *EventHandler) UnfoldSendMessageTriggerEvent(eventID string, eventmessag
 
 	// Now we send the message
 	s.ChannelMessageSend(m.ChannelID, FormatEventMessage(event.TypeFlags[0], m.Author.ID, m.ChannelID))
-	h.DisableEvent(event.ID, m.ChannelID)
-	h.UnWatchEvent(m.ChannelID, event.ID, eventmessagesid)
-	h.eventsdb.SaveEventToDB(event)
+	h.EventComplete(event, m.ChannelID, eventmessagesid)
 	if event.Data[0] != "nil" {
-		go h.LaunchChildEvent(event.ID, event.Data[0], eventmessagesid, s, m)
+		go h.LaunchChildEvent(event.ID, event.Data[0], eventmessagesid, m.ChannelID, s, m)
+		h.EventComplete(event, m.ChannelID, eventmessagesid)
 	} else {
-		h.eventmessages.TerminateEvents(eventmessagesid)
+		h.StopEvents(event, m.ChannelID, eventmessagesid)
 	}
-	h.eventmessages.TerminateEvents(eventmessagesid)
 	return
 }
 
 // UnfoldMessageChoiceDefaultEvent function
 func (h *EventHandler) UnfoldMessageChoiceDefaultEvent(eventID string, eventmessagesid string, s *discordgo.Session, m *discordgo.MessageCreate) {
-	if !h.IsValidEventMessage(s, m) {
-		return
-	}
-
 	event, err := h.eventsdb.GetEventByID(eventID)
 	if err != nil {
 		s.ChannelMessageSend(m.ChannelID, "Error loading event "+eventID+": Error: "+err.Error())
+		h.StopEvents(event, m.ChannelID, eventmessagesid)
 		return
 	}
-
-	//fmt.Println("Checking unfoldmessagechoicedefaultevent")
-	h.DisableEvent(event.ID, m.ChannelID)
-	h.UnWatchEvent(m.ChannelID, event.ID, eventmessagesid)
-	h.eventsdb.SaveEventToDB(event)
 
 	for i, field := range event.TypeFlags {
 		if strings.Contains(m.Content, field) {
 			//fmt.Println("Field: " + field + " Message: " + message)
 			// First we load the keyed eventID in the data array
 			if event.Data[i] != "nil" {
-				go h.LaunchChildEvent(event.ID, event.Data[i], eventmessagesid, s, m)
+				go h.LaunchChildEvent(event.ID, event.Data[i], eventmessagesid, m.ChannelID, s, m)
 			} else {
-				go h.LaunchChildEvent(event.ID, event.DefaultData, eventmessagesid, s, m)
+				go h.LaunchChildEvent(event.ID, event.DefaultData, eventmessagesid, m.ChannelID, s, m)
 			}
+			h.EventComplete(event, m.ChannelID, eventmessagesid)
 			return
 		}
 	}
 	if event.DefaultData != "nil" {
 		//fmt.Print("Launching default event: " + event.DefaultData)
-		go h.LaunchChildEvent(event.ID, event.DefaultData, eventmessagesid, s, m)
+		go h.LaunchChildEvent(event.ID, event.DefaultData, eventmessagesid, m.ChannelID, s, m)
 	}
-	h.eventmessages.TerminateEvents(eventmessagesid)
+	h.StopEvents(event, m.ChannelID, eventmessagesid)
 	return
 }
 
 // UnfoldMessageChoiceDefault function
 func (h *EventHandler) UnfoldMessageChoiceDefault(eventID string, eventmessagesid string, s *discordgo.Session, m *discordgo.MessageCreate) {
-	// Ignore all messages created by the bot itself
-	if m.Author.ID == s.State.User.ID {
-		return
-	}
-	// Ignore bots
-	if m.Author.Bot {
-		return
-	}
-
 	event, err := h.eventsdb.GetEventByID(eventID)
 	if err != nil {
 		s.ChannelMessageSend(m.ChannelID, "Error loading event "+eventID+": Error: "+err.Error())
+		h.StopEvents(event, m.ChannelID, eventmessagesid)
 		return
 	}
 
@@ -423,19 +262,46 @@ func (h *EventHandler) UnfoldMessageChoiceDefault(eventID string, eventmessagesi
 		if strings.Contains(m.Content, field) {
 			// First we send the data that is keyed to the field
 			s.ChannelMessageSend(m.ChannelID, FormatEventMessage(event.Data[i], m.Author.ID, m.ChannelID))
-
-			h.DisableEvent(event.ID, m.ChannelID)
-			h.UnWatchEvent(m.ChannelID, event.ID, eventmessagesid)
-			h.eventsdb.SaveEventToDB(event)
-			h.eventmessages.TerminateEvents(eventmessagesid)
-
+			h.StopEvents(event, m.ChannelID, eventmessagesid)
 			return
 		}
 	}
 	s.ChannelMessageSend(m.ChannelID, FormatEventMessage(event.DefaultData, m.Author.ID, m.ChannelID))
-	h.DisableEvent(event.ID, m.ChannelID)
-	h.UnWatchEvent(m.ChannelID, event.ID, eventmessagesid)
-	h.eventsdb.SaveEventToDB(event)
-	h.eventmessages.TerminateEvents(eventmessagesid)
+	h.StopEvents(event, m.ChannelID, eventmessagesid)
+	return
+}
+
+// UnfoldRollDiceSum function
+func (h *EventHandler) UnfoldRollDiceSum(eventID string, eventmessagesid string, s *discordgo.Session, m *discordgo.MessageCreate) {
+	event, err := h.eventsdb.GetEventByID(eventID)
+	if err != nil {
+		s.ChannelMessageSend(m.ChannelID, "Error loading event "+eventID+": Error: "+err.Error())
+		return
+	}
+
+	faces, err := strconv.Atoi(event.TypeFlags[0])
+	if err != nil {
+		h.StopEvents(event, m.ChannelID, eventmessagesid)
+		return
+	}
+	count, err := strconv.Atoi(event.TypeFlags[1])
+	if err != nil {
+		h.StopEvents(event, m.ChannelID, eventmessagesid)
+		return
+	}
+
+	roll := RollDiceAndAdd(faces, count)
+	err = h.eventmessages.SetDieRoll(eventmessagesid, roll)
+	if err != nil {
+		h.StopEvents(event, m.ChannelID, eventmessagesid)
+		return
+	}
+
+	if event.Data[0] != "nil" {
+		go h.LaunchChildEvent(event.ID, event.Data[0], eventmessagesid, m.ChannelID, s, m)
+		h.EventComplete(event, m.ChannelID, eventmessagesid)
+		return
+	}
+	h.StopEvents(event, m.ChannelID, eventmessagesid)
 	return
 }
