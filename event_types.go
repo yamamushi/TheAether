@@ -25,12 +25,9 @@ func (h *EventHandler) UnfoldReadMessage(eventID string, eventmessagesid string,
 		return
 	}
 
-	keyword := event.TypeFlags[0]
-	messageContent := strings.Fields(strings.ToLower(m.Content))
-
-	for _, messagefield := range messageContent {
+	for _, field := range event.TypeFlags {
 		// We don't need to check for the userID here because that's what checking for event.Attachable did
-		if messagefield == keyword {
+		if strings.Contains(m.Content, field) {
 			// First we send the data
 			s.ChannelMessageSend(m.ChannelID, FormatEventMessage(event.Data[0], m.Author.ID, m.ChannelID))
 
@@ -76,7 +73,7 @@ func (h *EventHandler) UnfoldReadTimedMessage(eventID string, eventmessagesid st
 	messageContent := strings.Fields(strings.ToLower(m.Content))
 
 	for _, messagefield := range messageContent {
-		if messagefield == keyword {
+		if strings.Contains(messagefield, keyword) {
 			// First we want to sleep for our timeout period
 			time.Sleep(time.Duration(timeout) * time.Second)
 			// Now we send the data
@@ -170,21 +167,19 @@ func (h *EventHandler) UnfoldReadMessageChoiceTriggerMessage(eventID string, eve
 		return
 	}
 
-	messageContent := strings.Fields(strings.ToLower(m.Content))
+	//messageContent := strings.Fields(strings.ToLower(m.Content))
 
 	for i, field := range event.TypeFlags {
-		for _, message := range messageContent {
-			if field == message {
-				// First we send the data that is keyed to the field
-				s.ChannelMessageSend(m.ChannelID, FormatEventMessage(event.Data[i], m.Author.ID, m.ChannelID))
+		if strings.Contains(m.Content, field) {
+			// First we send the data that is keyed to the field
+			s.ChannelMessageSend(m.ChannelID, FormatEventMessage(event.Data[i], m.Author.ID, m.ChannelID))
 
-				h.DisableEvent(event.ID, m.ChannelID)
-				h.UnWatchEvent(m.ChannelID, event.ID, eventmessagesid)
-				h.eventsdb.SaveEventToDB(event)
-				h.eventmessages.TerminateEvents(eventmessagesid)
+			h.DisableEvent(event.ID, m.ChannelID)
+			h.UnWatchEvent(m.ChannelID, event.ID, eventmessagesid)
+			h.eventsdb.SaveEventToDB(event)
+			h.eventmessages.TerminateEvents(eventmessagesid)
 
-				return
-			}
+			return
 		}
 	}
 }
@@ -202,22 +197,18 @@ func (h *EventHandler) UnfoldReadMessageChoiceTriggerEvent(eventID string, event
 		return
 	}
 
-	messageContent := strings.Fields(strings.ToLower(m.Content))
-
 	for i, field := range event.TypeFlags {
-		for _, message := range messageContent {
-			if field == message {
-				// First we load the keyed eventID in the data array
-				if event.Data[i] != "nil" {
-					go h.LaunchChildEvent(event.ID, event.Data[i], eventmessagesid, s, m)
-				} else {
-					h.DisableEvent(event.ID, m.ChannelID)
-					h.UnWatchEvent(m.ChannelID, event.ID, eventmessagesid)
-					h.eventsdb.SaveEventToDB(event)
-					h.eventmessages.TerminateEvents(eventmessagesid)
-				}
-				return
+		if strings.Contains(m.Content, field) {
+			// First we load the keyed eventID in the data array
+			if event.Data[i] != "nil" {
+				go h.LaunchChildEvent(event.ID, event.Data[i], eventmessagesid, s, m)
+			} else {
+				h.DisableEvent(event.ID, m.ChannelID)
+				h.UnWatchEvent(m.ChannelID, event.ID, eventmessagesid)
+				h.eventsdb.SaveEventToDB(event)
+				h.eventmessages.TerminateEvents(eventmessagesid)
 			}
+			return
 		}
 	}
 }
@@ -235,20 +226,16 @@ func (h *EventHandler) UnfoldReadMessageTriggerSuccessFail(eventID string, event
 		return
 	}
 
-	messageContent := strings.Fields(strings.ToLower(m.Content))
-
 	for _, field := range event.TypeFlags {
-		for _, message := range messageContent {
-			if field == message {
-				h.eventmessages.SetSuccessfulStatus(eventmessagesid)
+		if strings.Contains(m.Content, field) {
+			h.eventmessages.SetSuccessfulStatus(eventmessagesid)
 
-				h.DisableEvent(event.ID, m.ChannelID)
-				h.UnWatchEvent(m.ChannelID, event.ID, eventmessagesid)
-				h.eventsdb.SaveEventToDB(event)
-				h.eventmessages.TerminateEvents(eventmessagesid)
+			h.DisableEvent(event.ID, m.ChannelID)
+			h.UnWatchEvent(m.ChannelID, event.ID, eventmessagesid)
+			h.eventsdb.SaveEventToDB(event)
+			h.eventmessages.TerminateEvents(eventmessagesid)
 
-				return
-			}
+			return
 		}
 	}
 }
@@ -366,24 +353,21 @@ func (h *EventHandler) UnfoldMessageChoiceDefaultEvent(eventID string, eventmess
 		return
 	}
 
-	messageContent := strings.Fields(strings.ToLower(m.Content))
 	//fmt.Println("Checking unfoldmessagechoicedefaultevent")
 	h.DisableEvent(event.ID, m.ChannelID)
 	h.UnWatchEvent(m.ChannelID, event.ID, eventmessagesid)
 	h.eventsdb.SaveEventToDB(event)
 
 	for i, field := range event.TypeFlags {
-		for _, message := range messageContent {
-			if field == message {
-				//fmt.Println("Field: " + field + " Message: " + message)
-				// First we load the keyed eventID in the data array
-				if event.Data[i] != "nil" {
-					go h.LaunchChildEvent(event.ID, event.Data[i], eventmessagesid, s, m)
-				} else {
-					go h.LaunchChildEvent(event.ID, event.DefaultData, eventmessagesid, s, m)
-				}
-				return
+		if strings.Contains(m.Content, field) {
+			//fmt.Println("Field: " + field + " Message: " + message)
+			// First we load the keyed eventID in the data array
+			if event.Data[i] != "nil" {
+				go h.LaunchChildEvent(event.ID, event.Data[i], eventmessagesid, s, m)
+			} else {
+				go h.LaunchChildEvent(event.ID, event.DefaultData, eventmessagesid, s, m)
 			}
+			return
 		}
 	}
 	if event.DefaultData != "nil" {
@@ -410,21 +394,17 @@ func (h *EventHandler) UnfoldMessageChoiceDefault(eventID string, eventmessagesi
 		return
 	}
 
-	messageContent := strings.Fields(strings.ToLower(m.Content))
-
 	for i, field := range event.TypeFlags {
-		for _, message := range messageContent {
-			if field == message {
-				// First we send the data that is keyed to the field
-				s.ChannelMessageSend(m.ChannelID, FormatEventMessage(event.Data[i], m.Author.ID, m.ChannelID))
+		if strings.Contains(m.Content, field) {
+			// First we send the data that is keyed to the field
+			s.ChannelMessageSend(m.ChannelID, FormatEventMessage(event.Data[i], m.Author.ID, m.ChannelID))
 
-				h.DisableEvent(event.ID, m.ChannelID)
-				h.UnWatchEvent(m.ChannelID, event.ID, eventmessagesid)
-				h.eventsdb.SaveEventToDB(event)
-				h.eventmessages.TerminateEvents(eventmessagesid)
+			h.DisableEvent(event.ID, m.ChannelID)
+			h.UnWatchEvent(m.ChannelID, event.ID, eventmessagesid)
+			h.eventsdb.SaveEventToDB(event)
+			h.eventmessages.TerminateEvents(eventmessagesid)
 
-				return
-			}
+			return
 		}
 	}
 	s.ChannelMessageSend(m.ChannelID, FormatEventMessage(event.DefaultData, m.Author.ID, m.ChannelID))
