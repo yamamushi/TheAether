@@ -666,7 +666,6 @@ func (h *ScriptHandler) ExecuteScript(scriptName string, s *discordgo.Session, m
 	//fmt.Println("parsing event: " + rootEvent.ID)
 	if rootEvent.Watchable {
 		//fmt.Println("Adding to watchlist: " + rootEvent.ID)
-		//fmt.Println("Adding root event to watch list: " + rootEvent.ID)
 		err = h.eventhandler.AddEventToWatchList(rootEvent, m.ChannelID, eventmessagesID)
 		if err != nil {
 			return false, err
@@ -685,6 +684,7 @@ func (h *ScriptHandler) ExecuteScript(scriptName string, s *discordgo.Session, m
 			return false, err
 		}
 		if eventmessage.EventsComplete {
+			fmt.Println("Caught events complete")
 			break
 		}
 	}
