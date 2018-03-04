@@ -1446,7 +1446,7 @@ func (h *RoomsHandler) AddUserIDToRoomRecord(userID string, roomID string, guild
 
 	for _, roomUserID := range room.UserIDs {
 		if userID == roomUserID {
-			fmt.Println("User already in room!: " + userID + " size of rooms: " + strconv.Itoa(len(room.UserIDs)))
+			//fmt.Println("User already in room!: " + userID + " size of rooms: " + strconv.Itoa(len(room.UserIDs)))
 			return nil // already in record
 		}
 	}

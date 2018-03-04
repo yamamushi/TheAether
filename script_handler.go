@@ -685,11 +685,7 @@ func (h *ScriptHandler) ExecuteScript(scriptName string, s *discordgo.Session, m
 		if err != nil {
 			return false, err
 		}
-
-		h.eventhandler.DisableEvent(event.ID, m.ChannelID)
-		h.eventhandler.UnWatchEvent(m.ChannelID, event.ID, eventmessagesID)
-		h.eventhandler.eventsdb.SaveEventToDB(event)
-		h.eventhandler.eventmessages.TerminateEvents(eventmessagesID)
+		h.eventhandler.StopEvents(event, m.ChannelID, eventmessagesID)
 	}
 
 	eventmessage, err = h.eventmessagesdb.GetEventMessageByID(eventmessagesID)

@@ -75,6 +75,10 @@ func (h *EventHandler) ListEnabled(channelID string) (formatted string, err erro
 
 // ReadEvents function
 func (h *EventHandler) ReadEvents(s *discordgo.Session, m *discordgo.MessageCreate) {
+	if !h.IsValidEventMessage(s, m) {
+		return
+	}
+
 	for e := h.WatchList.Front(); e != nil; e = e.Next() {
 		r := reflect.ValueOf(e.Value)
 		channelid := reflect.Indirect(r).FieldByName("ChannelID")
@@ -105,4 +109,17 @@ func (h *EventHandler) ReadEvents(s *discordgo.Session, m *discordgo.MessageCrea
 			//c.UnWatchEvent(m.ChannelID, handlerid)
 		}
 	}
+}
+
+// StopEvents function
+func (h *EventHandler) StopEvents(event Event, channelID string, eventmessagesid string) {
+	h.EventComplete(event, channelID, eventmessagesid)
+	h.eventmessages.TerminateEvents(eventmessagesid)
+}
+
+// EventComplete function
+func (h *EventHandler) EventComplete(event Event, channelID string, eventmessagesid string) {
+	h.DisableEvent(event.ID, channelID)
+	h.UnWatchEvent(channelID, event.ID, eventmessagesid)
+	h.eventsdb.SaveEventToDB(event)
 }

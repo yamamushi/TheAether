@@ -96,34 +96,38 @@ func (h *EventParser) EventToJSON(event Event) (formatted string, err error) {
 // This will take an event and validate the correct number of arguments were passed to it
 // Refer to the github wiki page on Events for information on types
 func (h *EventParser) ValidateEvent(event Event) (err error) {
-	if event.Type == "ReadMessage" {
+	switch event.Type {
+	case "ReadMessage":
 		return h.ValidateReadMessage(event)
-	} else if event.Type == "ReadTimedMessage" {
+	case "ReadTimedMessage":
 		return h.ValidateReadTimedMessage(event)
-	} else if event.Type == "ReadMessageChoice" {
+	case "ReadMessageChoice":
 		return h.ValidateReadMessageChoice(event)
-	} else if event.Type == "ReadMessageChoiceTriggerEvent" {
+	case "ReadMessageChoiceTriggerEvent":
 		return h.ValidateReadMessageChoiceTriggerEvent(event)
-	} else if event.Type == "SendMessage" {
+	case "SendMessage":
 		return h.ValidateSendMessage(event)
-	} else if event.Type == "TimedSendMessage" {
+	case "TimedSendMessage":
 		return h.ValidateTimedSendMessageEvent(event)
-	} else if event.Type == "ReadMessageTriggerSuccessFail" {
+	case "ReadMessageTriggerSuccessFail":
 		return h.ValidateReadMessageTriggerSuccessFail(event)
-	} else if event.Type == "TriggerSuccess" {
+	case "TriggerSuccess":
 		return h.ValidateTriggerSuccess(event)
-	} else if event.Type == "TriggerFailure" {
+	case "TriggerFailure":
 		return h.ValidateTriggerFailure(event)
-	} else if event.Type == "SendMessageTriggerEvent" {
+	case "SendMessageTriggerEvent":
 		return h.ValidateSendMessageTriggerEvent(event)
-	} else if event.Type == "TriggerFailureSendError" {
+	case "TriggerFailureSendError":
 		return h.ValidateTriggerFailureSendError(event)
-	} else if event.Type == "MessageChoiceDefaultEvent" {
+	case "MessageChoiceDefaultEvent":
 		return h.ValidateMessageChoiceDefaultEvent(event)
-	} else if event.Type == "MessageChoiceDefault" {
+	case "MessageChoiceDefault":
 		return h.ValidateMessageChoiceDefaultEvent(event)
+	case "RollDiceSum":
+		return h.ValidateRollDiceSum(event)
+	default:
+		return errors.New("unrecognized event type: " + event.Type)
 	}
-	return errors.New("unrecognized event type: " + event.Type)
 }
 
 // HasEventsInData function
@@ -353,6 +357,32 @@ func (h *EventParser) ValidateMessageChoiceDefaultEvent(event Event) (err error)
 	if event.DefaultData != "nil" {
 		if !h.eventsdb.ValidateEventByID(event.DefaultData) {
 			return errors.New("Error validating event - Invalid event found in DefaultData: " + event.DefaultData)
+		}
+	}
+	return nil
+}
+
+// ValidateRollDiceSum function
+func (h *EventParser) ValidateRollDiceSum(event Event) (err error) {
+	if len(event.TypeFlags) < 2 {
+		return errors.New("Error validating event - Expected two type flags")
+	}
+	for i := range event.TypeFlags {
+		_, err := strconv.Atoi(event.TypeFlags[i])
+		if err != nil {
+			return errors.New("Invalid value in type flags: " + event.TypeFlags[i])
+		}
+	}
+
+	if len(event.Data) < 1 {
+		return errors.New("error validating event - Expected one data field")
+	}
+	// Now check to see that either the supplied eventID's are valid or set to nil
+	for _, field := range event.Data {
+		if field != "nil" {
+			if !h.eventsdb.ValidateEventByID(field) {
+				return errors.New("Error validating event - Invalid event found in data: " + field)
+			}
 		}
 	}
 	return nil

@@ -14,33 +14,37 @@ func (h *EventHandler) LaunchChildEvent(parenteventID string, childeventID strin
 				parenteventID+" Trigger: "+childeventID+" Error: "+err.Error())
 			return
 		}
-
-		if triggeredevent.Type == "ReadMessage" {
+		switch triggeredevent.Type {
+		case "ReadMessage":
 			h.WatchEvent(h.UnfoldReadMessage, eventmessagesid, triggeredevent.ID, channelID)
-		} else if triggeredevent.Type == "ReadTimedMessage" {
+		case "ReadTimedMessage":
 			h.WatchEvent(h.UnfoldReadTimedMessage, eventmessagesid, triggeredevent.ID, channelID)
-		} else if triggeredevent.Type == "ReadMessageChoice" {
+		case "ReadMessageChoice":
 			h.WatchEvent(h.UnfoldReadMessageChoiceTriggerMessage, eventmessagesid, triggeredevent.ID, channelID)
-		} else if triggeredevent.Type == "ReadMessageChoiceTriggerEvent" {
+		case "ReadMessageChoiceTriggerEvent":
 			h.WatchEvent(h.UnfoldReadMessageChoiceTriggerEvent, eventmessagesid, triggeredevent.ID, channelID)
-		} else if triggeredevent.Type == "SendMessage" {
+		case "SendMessage":
 			h.UnfoldSendMessage(triggeredevent.ID, eventmessagesid, s, m)
-		} else if triggeredevent.Type == "TimedSendMessage" {
+		case "TimedSendMessage":
 			h.UnfoldTimedSendMessage(triggeredevent.ID, eventmessagesid, s, m)
-		} else if triggeredevent.Type == "ReadMessageTriggerSuccessFail" {
+		case "ReadMessageTriggerSuccessFail":
 			h.WatchEvent(h.UnfoldReadMessageTriggerSuccessFail, eventmessagesid, triggeredevent.ID, channelID)
-		} else if triggeredevent.Type == "TriggerSuccess" {
+		case "TriggerSuccess":
 			h.UnfoldTriggerSuccess(triggeredevent.ID, eventmessagesid, s, m)
-		} else if triggeredevent.Type == "TriggerFailure" {
+		case "TriggerFailure":
 			h.UnfoldTriggerFailure(triggeredevent.ID, eventmessagesid, s, m)
-		} else if triggeredevent.Type == "SendMessageTriggerEvent" {
+		case "SendMessageTriggerEvent":
 			h.UnfoldSendMessageTriggerEvent(triggeredevent.ID, eventmessagesid, s, m)
-		} else if triggeredevent.Type == "TriggerFailureSendError" {
+		case "TriggerFailureSendError":
 			h.UnfoldTriggerFailureSendError(triggeredevent.ID, eventmessagesid, s, m)
-		} else if triggeredevent.Type == "MessageChoiceDefaultEvent" {
-			h.WatchEvent(h.UnfoldMessageChoiceDefaultEvent, eventmessagesid, triggeredevent.ID, channelID)
-		} else if triggeredevent.Type == "MessageChoiceDefault" {
+		case "MessageChoiceDefault":
 			h.WatchEvent(h.UnfoldMessageChoiceDefault, eventmessagesid, triggeredevent.ID, channelID)
+		case "MessageChoiceDefaultEvent":
+			h.WatchEvent(h.UnfoldMessageChoiceDefaultEvent, eventmessagesid, triggeredevent.ID, channelID)
+		case "RollDiceSum":
+			h.UnfoldRollDiceSum(triggeredevent.ID, eventmessagesid, s, m)
+		default:
+			return
 		}
 	}
 }
