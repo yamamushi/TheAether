@@ -163,6 +163,9 @@ func (h *EventParser) ValidateReadMessage(event Event) (err error) {
 	if len(event.TypeFlags) != 1 {
 		return errors.New("Error validating event - Expected 1 typeflag but found: " + strconv.Itoa(len(event.TypeFlags)))
 	}
+	if !event.Watchable {
+		return errors.New("Error event will not work without watchable:true")
+	}
 	return nil
 }
 
@@ -177,6 +180,9 @@ func (h *EventParser) ValidateReadTimedMessage(event Event) (err error) {
 	}
 	if timeout > 300 {
 		return errors.New("Error validating event - Maximum timeout is 300 but found: " + strconv.Itoa(timeout))
+	}
+	if !event.Watchable {
+		return errors.New("Error event will not work without watchable:true")
 	}
 	return nil
 }
@@ -193,6 +199,9 @@ func (h *EventParser) ValidateReadMessageChoice(event Event) (err error) {
 	}
 	if typeflagslen > 10 {
 		return errors.New("Error validating event - Maximum TypeFlags count is 10 but found: " + strconv.Itoa(typeflagslen))
+	}
+	if !event.Watchable {
+		return errors.New("Error event will not work without watchable:true")
 	}
 	return nil
 }
@@ -220,6 +229,9 @@ func (h *EventParser) ValidateReadMessageChoiceTriggerEvent(event Event) (err er
 				return errors.New("Error validating event - Invalid event found in data: " + field)
 			}
 		}
+	}
+	if !event.Watchable {
+		return errors.New("Error event will not work without watchable:true")
 	}
 	return nil
 }
@@ -251,6 +263,9 @@ func (h *EventParser) ValidateTimedSendMessageEvent(event Event) (err error) {
 func (h *EventParser) ValidateMessageTriggerSuccessFail(event Event) (err error) {
 	if len(event.TypeFlags) < 1 {
 		return errors.New("error validating event - expected one type flag")
+	}
+	if !event.Watchable {
+		return errors.New("Error event will not work without watchable:true")
 	}
 	return nil
 }
@@ -320,6 +335,9 @@ func (h *EventParser) ValidateMessageChoiceDefault(event Event) (err error) {
 	if event.DefaultData == "" {
 		return errors.New("MessageChoiceDefault requires a default message in DefaultData")
 	}
+	if !event.Watchable {
+		return errors.New("Error event will not work without watchable:true")
+	}
 	return nil
 }
 
@@ -354,6 +372,9 @@ func (h *EventParser) ValidateMessageChoiceDefaultEvent(event Event) (err error)
 		if !h.eventsdb.ValidateEventByID(event.DefaultData) {
 			return errors.New("Error validating event - Invalid event found in DefaultData: " + event.DefaultData)
 		}
+	}
+	if !event.Watchable {
+		return errors.New("Error event will not work without watchable:true")
 	}
 	return nil
 }

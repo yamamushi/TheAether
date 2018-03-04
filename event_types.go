@@ -48,6 +48,10 @@ func (h *EventHandler) UnfoldReadMessage(eventID string, eventmessagesid string,
 			return
 		}
 	}
+	h.DisableEvent(event.ID, m.ChannelID)
+	h.UnWatchEvent(m.ChannelID, event.ID, eventmessagesid)
+	h.eventsdb.SaveEventToDB(event)
+	h.eventmessages.TerminateEvents(eventmessagesid)
 	return
 }
 
@@ -87,6 +91,10 @@ func (h *EventHandler) UnfoldReadTimedMessage(eventID string, eventmessagesid st
 			return
 		}
 	}
+	h.DisableEvent(event.ID, m.ChannelID)
+	h.UnWatchEvent(m.ChannelID, event.ID, eventmessagesid)
+	h.eventsdb.SaveEventToDB(event)
+	h.eventmessages.TerminateEvents(eventmessagesid)
 	return
 }
 
@@ -182,6 +190,11 @@ func (h *EventHandler) UnfoldReadMessageChoiceTriggerMessage(eventID string, eve
 			return
 		}
 	}
+	h.DisableEvent(event.ID, m.ChannelID)
+	h.UnWatchEvent(m.ChannelID, event.ID, eventmessagesid)
+	h.eventsdb.SaveEventToDB(event)
+	h.eventmessages.TerminateEvents(eventmessagesid)
+	return
 }
 
 // UnfoldReadMessageChoiceTriggerEvent function
@@ -211,6 +224,11 @@ func (h *EventHandler) UnfoldReadMessageChoiceTriggerEvent(eventID string, event
 			return
 		}
 	}
+	h.DisableEvent(event.ID, m.ChannelID)
+	h.UnWatchEvent(m.ChannelID, event.ID, eventmessagesid)
+	h.eventsdb.SaveEventToDB(event)
+	h.eventmessages.TerminateEvents(eventmessagesid)
+	return
 }
 
 // UnfoldReadMessageTriggerSuccessFail function
@@ -238,6 +256,11 @@ func (h *EventHandler) UnfoldReadMessageTriggerSuccessFail(eventID string, event
 			return
 		}
 	}
+	h.DisableEvent(event.ID, m.ChannelID)
+	h.UnWatchEvent(m.ChannelID, event.ID, eventmessagesid)
+	h.eventsdb.SaveEventToDB(event)
+	h.eventmessages.TerminateEvents(eventmessagesid)
+	return
 }
 
 // UnfoldTriggerSuccess function
@@ -338,6 +361,7 @@ func (h *EventHandler) UnfoldSendMessageTriggerEvent(eventID string, eventmessag
 	} else {
 		h.eventmessages.TerminateEvents(eventmessagesid)
 	}
+	h.eventmessages.TerminateEvents(eventmessagesid)
 	return
 }
 
@@ -374,6 +398,7 @@ func (h *EventHandler) UnfoldMessageChoiceDefaultEvent(eventID string, eventmess
 		//fmt.Print("Launching default event: " + event.DefaultData)
 		go h.LaunchChildEvent(event.ID, event.DefaultData, eventmessagesid, s, m)
 	}
+	h.eventmessages.TerminateEvents(eventmessagesid)
 	return
 }
 
